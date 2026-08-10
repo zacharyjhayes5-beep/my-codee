@@ -1,0 +1,132 @@
+@import 'tailwindcss';
+
+/* Self-hosted variable fonts — no network request to Google Fonts. */
+@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/public-sans';
+
+/*
+  Design system. See CLAUDE.md at the repo root before changing any of this.
+  Three brand colors (green / navy / gold) + warm neutrals.
+*/
+@theme {
+  --color-brand-green: #1b5e4b;
+  --color-brand-green-dark: #14483a;
+  --color-brand-green-light: #e7f0ec;
+  --color-brand-navy: #12263f;
+  --color-brand-navy-light: #1d3b5c;
+  --color-brand-gold: #c98a16;
+
+  --color-sand: #faf8f4;
+  --color-ink: #1f2933;
+  --color-muted: #5b6672;
+  --color-line: #e4e0d8;
+
+  --font-heading: 'Fraunces Variable', ui-serif, Georgia, serif;
+  --font-body: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-sand);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    font-variation-settings: 'SOFT' 0, 'WONK' 0;
+    color: var(--color-brand-navy);
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-green);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  @media (width >= 48rem) {
+    padding-inline: 2rem;
+  }
+}
+
+/* Body copy inside long-form prose blocks (resource posts). */
+@utility prose-hayes {
+  color: var(--color-ink);
+  line-height: 1.7;
+
+  & h2 {
+    font-size: 1.5rem;
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  & h3 {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  & p {
+    margin-bottom: 1.25rem;
+  }
+  & ul,
+  & ol {
+    margin-bottom: 1.25rem;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  & ul {
+    list-style: disc;
+  }
+  & ol {
+    list-style: decimal;
+  }
+  & a {
+    color: var(--color-brand-green);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  & strong {
+    font-weight: 600;
+    color: var(--color-brand-navy);
+  }
+  & blockquote {
+    border-left: 3px solid var(--color-brand-gold);
+    padding-left: 1rem;
+    margin-bottom: 1.25rem;
+    color: var(--color-muted);
+  }
+}

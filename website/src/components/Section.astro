@@ -1,0 +1,23 @@
+---
+interface Props {
+  /** Background treatment. */
+  tone?: 'sand' | 'white' | 'green' | 'navy';
+  id?: string;
+  class?: string;
+}
+
+const { tone = 'sand', id, class: className = '' } = Astro.props;
+
+const tones = {
+  sand: 'bg-sand',
+  white: 'bg-white',
+  green: 'bg-brand-green-light',
+  navy: 'bg-brand-navy text-white',
+};
+---
+
+<section id={id} class={`py-16 md:py-24 ${tones[tone]} ${className}`}>
+  <div class="container-page">
+    <slot />
+  </div>
+</section>

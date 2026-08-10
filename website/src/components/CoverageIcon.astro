@@ -1,0 +1,29 @@
+---
+// Inline SVG icons — no icon font, no extra request.
+interface Props {
+  name: 'auto' | 'home' | 'life' | 'business';
+  class?: string;
+}
+const { name, class: className = 'h-6 w-6' } = Astro.props;
+
+const paths: Record<Props['name'], string> = {
+  auto: 'M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm14 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM3 17v-4l2-5a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 8l2 5v4M6 13h12',
+  home: 'M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5M9.5 21v-6h5v6',
+  life: 'M12 20.5S3.5 15 3.5 9.2A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.5 2.8c0 5.8-8.5 11.3-8.5 11.3Z',
+  business:
+    'M3 21h18M5 21V7l7-4 7 4v14M9.5 21v-4.5h5V21M9 8h.01M15 8h.01M9 12h.01M15 12h.01',
+};
+---
+
+<svg
+  class={className}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.6"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  <path d={paths[name]}></path>
+</svg>

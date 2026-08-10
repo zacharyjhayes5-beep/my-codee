@@ -1,0 +1,38 @@
+---
+import Button from './Button.astro';
+import { contact } from '../config';
+
+interface Props {
+  title?: string;
+  body?: string;
+}
+
+const {
+  title = 'Two ways to start — pick whichever is easier.',
+  body = 'Send a few details and I will come back with options, or grab a time and we will talk it through. No pressure either way.',
+} = Astro.props;
+---
+
+<section class="bg-brand-green text-white">
+  <div class="container-page py-16 md:py-20">
+    <div class="max-w-2xl">
+      <h2 class="text-3xl font-semibold text-white md:text-4xl">{title}</h2>
+      <p class="mt-4 text-lg text-white/85">{body}</p>
+    </div>
+    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+      <Button
+        href="/quote"
+        size="lg"
+        class="bg-white text-brand-green hover:bg-brand-green-light"
+      >
+        Get a quote
+      </Button>
+      <Button href={contact.calendarUrl} variant="ghost" size="lg" rel="noopener">
+        Schedule a call
+      </Button>
+      <Button href={contact.phoneHref} variant="ghost" size="lg">
+        {contact.phone}
+      </Button>
+    </div>
+  </div>
+</section>

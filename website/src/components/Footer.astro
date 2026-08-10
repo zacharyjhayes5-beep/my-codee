@@ -1,0 +1,67 @@
+---
+import { site, contact, addressLine } from '../config';
+import { coverage } from '../data/coverage';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="bg-brand-navy text-white">
+  <div class="container-page py-16">
+    <div class="grid gap-12 md:grid-cols-4">
+      <div class="md:col-span-2 max-w-sm">
+        <p class="font-heading text-2xl font-semibold text-white">{site.name}</p>
+        <p class="mt-1 text-sm text-white/60">Farm Bureau Insurance</p>
+        <p class="mt-4 text-white/80">
+          Auto, home, life, and business coverage for {site.city} and West {
+            site.state
+          }. Local agent, straight answers, no pressure.
+        </p>
+        <a
+          href="/quote"
+          class="mt-6 inline-flex rounded-lg bg-white px-5 py-3 font-semibold text-brand-navy transition-colors hover:bg-brand-green-light"
+          >Get a quote</a
+        >
+      </div>
+
+      <div>
+        <h2 class="text-sm font-semibold tracking-widest text-brand-gold uppercase">
+          Coverage
+        </h2>
+        <ul class="mt-4 grid gap-3 text-white/80">
+          {
+            coverage.map((c) => (
+              <li>
+                <a class="hover:text-white" href={`/coverage/${c.slug}`}>
+                  {c.title}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-sm font-semibold tracking-widest text-brand-gold uppercase">
+          Get in touch
+        </h2>
+        <ul class="mt-4 grid gap-3 text-white/80">
+          <li><a class="hover:text-white" href={contact.phoneHref}>{contact.phone}</a></li>
+          <li><a class="hover:text-white" href={contact.emailHref}>{contact.email}</a></li>
+          <li>{addressLine}</li>
+          <li><a class="hover:text-white" href="/contact">Contact &amp; hours</a></li>
+          <li><a class="hover:text-white" href="/resources">Resources</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div
+      class="mt-12 border-t border-white/15 pt-8 text-sm text-white/50 flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+    >
+      <p>&copy; {year} {site.legalName}. All rights reserved.</p>
+      <p>
+        Coverage descriptions are summaries only — the policy document governs
+        what is actually covered.
+      </p>
+    </div>
+  </div>
+</footer>

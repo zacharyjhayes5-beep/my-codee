@@ -1,0 +1,218 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/Button.astro';
+import Card from '../components/Card.astro';
+import Section from '../components/Section.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import CoverageIcon from '../components/CoverageIcon.astro';
+import CTASection from '../components/CTASection.astro';
+import officeImage from '../assets/office.jpg';
+import { coverage } from '../data/coverage';
+import { site, contact } from '../config';
+
+const steps = [
+  {
+    n: '1',
+    title: 'Tell me what you have',
+    body: 'A quick form or a phone call. Current declarations page if you have one — it saves us both time.',
+  },
+  {
+    n: '2',
+    title: 'We talk it through',
+    body: 'Fifteen minutes, usually. I explain what your coverage actually does and where the real gaps are.',
+  },
+  {
+    n: '3',
+    title: 'You get options',
+    body: 'Written out plainly, with the tradeoffs named. You decide. If your current policy is better, I will say so.',
+  },
+];
+---
+
+<BaseLayout
+  title={site.name}
+  description={`${site.description} Serving Grand Rapids and West Michigan.`}
+>
+  <!-- Hero: text-only so the largest paint is instant. No hero image to load. -->
+  <section class="relative overflow-hidden bg-brand-navy">
+    <div
+      class="absolute inset-0 opacity-[0.14]"
+      aria-hidden="true"
+      style="background-image:radial-gradient(circle at 78% 18%, #1B5E4B 0, transparent 45%), radial-gradient(circle at 12% 88%, #C98A16 0, transparent 40%)"
+    >
+    </div>
+
+    <div class="container-page relative py-20 md:py-28">
+      <div class="max-w-3xl">
+        <p
+          class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 ring-1 ring-white/15"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-brand-gold" aria-hidden="true"
+          ></span>
+          Farm Bureau Insurance &middot; {site.city}, {site.stateAbbr}
+        </p>
+
+        <h1
+          class="mt-6 text-4xl leading-[1.08] font-semibold text-white sm:text-5xl md:text-[3.5rem]"
+        >
+          Insurance advice from a neighbor, not a call center.
+        </h1>
+
+        <p class="mt-6 max-w-xl text-lg text-white/80 md:text-xl">
+          I&rsquo;m {site.agent}, and I own Hayes Agency here in {site.city}. I
+          help West Michigan families and business owners cover what they&rsquo;ve
+          worked for &mdash; and I&rsquo;ll tell you plainly when you don&rsquo;t
+          need something.
+        </p>
+
+        <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+          <Button href="/quote" size="lg">Get a quote</Button>
+          <Button href={contact.calendarUrl} variant="ghost" size="lg" rel="noopener">
+            Schedule a call
+          </Button>
+        </div>
+
+        <p class="mt-6 text-sm text-white/60">
+          Prefer the phone? <a
+            class="font-semibold text-white underline underline-offset-4"
+            href={contact.phoneHref}>{contact.phone}</a
+          > &mdash; you&rsquo;ll reach my office, not a queue.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Short intro -->
+  <Section tone="white">
+    <div class="grid gap-12 md:grid-cols-12 md:items-start">
+      <div class="md:col-span-7">
+        <SectionHeading
+          eyebrow="Why work with a local agent"
+          title="You can buy insurance in four minutes online. Understanding it takes a conversation."
+          lead="Most people find out what their policy actually does on the worst day of their year. My job is to make sure that day holds no surprises."
+        />
+        <p class="mt-6 max-w-prose text-lg text-muted">
+          Hayes Agency is a Farm Bureau Insurance agency serving {site.city} and
+          the surrounding communities. I write auto, home, life, and business
+          coverage &mdash; and because I live here, I&rsquo;m the one who picks
+          up when something goes wrong.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <Button href="/about" variant="secondary">More about the agency</Button>
+          <Button href="/coverage" variant="secondary">Browse coverage</Button>
+        </div>
+      </div>
+
+      <div class="md:col-span-5">
+        <ul class="grid gap-4">
+          {
+            [
+              ['One person, start to finish', 'The same agent quotes your policy, answers your questions, and helps with a claim.'],
+              ['Straight answers about cost', 'Where you can reasonably save, and where cutting coverage is a bad trade.'],
+              ['Reviewed as life changes', 'New driver, new house, new business — coverage should keep up with you.'],
+            ].map(([title, body]) => (
+              <li class="flex gap-4 rounded-xl bg-sand p-5 ring-1 ring-line/70">
+                <svg
+                  class="mt-0.5 h-6 w-6 shrink-0 text-brand-green"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m5 12.5 4.5 4.5L19 7.5" />
+                </svg>
+                <div>
+                  <p class="font-semibold text-brand-navy">{title}</p>
+                  <p class="mt-1 text-muted">{body}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <!-- Coverage -->
+  <Section tone="sand">
+    <SectionHeading
+      eyebrow="Coverage"
+      title="What I can help you with"
+      lead="Four lines of business, each explained in plain English — what it covers, who it's for, and what people usually get wrong."
+    />
+    <div class="mt-10 grid gap-5 sm:grid-cols-2">
+      {
+        coverage.map((c) => (
+          <Card href={`/coverage/${c.slug}`}>
+            <span class="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-brand-green-light text-brand-green">
+              <CoverageIcon name={c.icon} />
+            </span>
+            <h3 class="mt-5 text-xl font-semibold">{c.title}</h3>
+            <p class="mt-2 text-muted">{c.summary}</p>
+            <p class="mt-4 font-semibold text-brand-green">
+              Learn more <span aria-hidden="true">&rarr;</span>
+            </p>
+          </Card>
+        ))
+      }
+    </div>
+  </Section>
+
+  <!-- How it works -->
+  <Section tone="white">
+    <SectionHeading
+      eyebrow="How it works"
+      title="No calculators, no instant rate that changes later"
+      lead="Real numbers depend on real details. So we skip the estimator and just talk — it takes about fifteen minutes."
+    />
+    <ol class="mt-10 grid gap-6 md:grid-cols-3">
+      {
+        steps.map((s) => (
+          <li class="rounded-xl bg-sand p-6 ring-1 ring-line/70 md:p-8">
+            <span class="font-heading text-4xl font-semibold text-brand-gold">
+              {s.n}
+            </span>
+            <h3 class="mt-3 text-xl font-semibold">{s.title}</h3>
+            <p class="mt-2 text-muted">{s.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <!-- Community — below the fold, lazy image -->
+  <Section tone="sand">
+    <div class="grid items-center gap-12 md:grid-cols-2">
+      <Image
+        src={officeImage}
+        alt="Hayes Agency in Grand Rapids, Michigan"
+        widths={[480, 800, 1200]}
+        sizes="(min-width: 768px) 45vw, 100vw"
+        loading="lazy"
+        decoding="async"
+        class="w-full rounded-xl object-cover"
+      />
+      <div>
+        <SectionHeading
+          eyebrow="Local, actually"
+          title="Grand Rapids is home, not a territory"
+          lead="I know which neighborhoods flood, what a rebuild costs on this side of the state, and how brutal a January commute on the Beltline can be."
+        />
+        <p class="mt-6 max-w-prose text-lg text-muted">
+          That&rsquo;s not a sales line &mdash; it changes the advice. It&rsquo;s
+          the difference between a policy that technically exists and one that
+          holds up when you need it.
+        </p>
+        <div class="mt-8">
+          <Button href="/about" variant="secondary">Meet your agent</Button>
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <CTASection />
+</BaseLayout>

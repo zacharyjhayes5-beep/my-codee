@@ -1,0 +1,45 @@
+---
+interface Props {
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+  align?: 'left' | 'center';
+  invert?: boolean;
+  as?: 'h1' | 'h2';
+}
+
+const {
+  eyebrow,
+  title,
+  lead,
+  align = 'left',
+  invert = false,
+  as: Tag = 'h2',
+} = Astro.props;
+---
+
+<div class={align === 'center' ? 'text-center mx-auto max-w-2xl' : 'max-w-2xl'}>
+  {
+    eyebrow && (
+      <p
+        class={`mb-3 text-sm font-semibold tracking-widest uppercase ${
+          invert ? 'text-brand-gold' : 'text-brand-green'
+        }`}
+      >
+        {eyebrow}
+      </p>
+    )
+  }
+  <Tag
+    class={`text-3xl md:text-4xl font-semibold ${invert ? 'text-white' : ''}`}
+  >
+    {title}
+  </Tag>
+  {
+    lead && (
+      <p class={`mt-4 text-lg ${invert ? 'text-white/80' : 'text-muted'}`}>
+        {lead}
+      </p>
+    )
+  }
+</div>

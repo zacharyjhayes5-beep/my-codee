@@ -1,0 +1,73 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site, contact } from '../config';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Omit from search engines (e.g. the thank-you page). */
+  noindex?: boolean;
+}
+
+const { title, description = site.description, noindex = false } = Astro.props;
+
+const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+
+// Local business structured data — helps the agency show up in local search.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'InsuranceAgency',
+  name: site.legalName,
+  description: site.description,
+  url: canonical.origin,
+  telephone: contact.phone,
+  email: contact.email,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: contact.address.street,
+    addressLocality: contact.address.city,
+    addressRegion: contact.address.state,
+    postalCode: contact.address.zip,
+    addressCountry: 'US',
+  },
+  areaServed: `${site.city}, ${site.stateAbbr}`,
+  founder: { '@type': 'Person', name: site.agent },
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <meta name="theme-color" content="#1B5E4B" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline
+    ></script>
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <Header />
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
