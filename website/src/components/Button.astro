@@ -2,7 +2,8 @@
 interface Props {
   href?: string;
   type?: 'button' | 'submit';
-  variant?: 'primary' | 'secondary' | 'ghost';
+  /** `inverse` is the primary action on a dark or brand-colored background. */
+  variant?: 'primary' | 'secondary' | 'ghost' | 'inverse';
   size?: 'md' | 'lg';
   class?: string;
   [key: string]: unknown;
@@ -30,6 +31,7 @@ const variants = {
   secondary:
     'bg-white text-brand-navy ring-1 ring-line hover:bg-brand-green-light hover:ring-brand-green/30',
   ghost: 'text-white ring-1 ring-white/40 hover:bg-white/10',
+  inverse: 'bg-white text-brand-green hover:bg-brand-green-light',
 };
 
 const cls = [base, sizes[size], variants[variant], className].join(' ');

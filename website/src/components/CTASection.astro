@@ -20,13 +20,7 @@ const {
       <p class="mt-4 text-lg text-white/85">{body}</p>
     </div>
     <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-      <Button
-        href="/quote"
-        size="lg"
-        class="bg-white text-brand-green hover:bg-brand-green-light"
-      >
-        Get a quote
-      </Button>
+      <Button href="/quote" variant="inverse" size="lg">Get a quote</Button>
       <Button href={contact.calendarUrl} variant="ghost" size="lg" rel="noopener">
         Schedule a call
       </Button>

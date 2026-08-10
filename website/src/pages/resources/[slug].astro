@@ -1,0 +1,89 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/Section.astro';
+import CTASection from '../../components/CTASection.astro';
+import { site } from '../../config';
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('resources');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const related = (await getCollection('resources'))
+  .filter((p) => p.id !== post.id)
+  .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf())
+  .slice(0, 3);
+
+const published = post.data.publishedAt.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <article>
+    <Section tone="white">
+      <div class="mx-auto max-w-3xl">
+        <nav aria-label="Breadcrumb" class="text-sm text-muted">
+          <a class="hover:text-brand-green" href="/resources">Resources</a>
+          <span class="mx-2" aria-hidden="true">/</span>
+          <span>{post.data.topic}</span>
+        </nav>
+
+        <h1 class="mt-6 text-4xl font-semibold md:text-5xl">{post.data.title}</h1>
+
+        <div class="mt-5 flex flex-wrap items-center gap-3 text-sm text-muted">
+          <span
+            class="rounded-full bg-brand-green-light px-3 py-1 font-semibold text-brand-green-dark"
+            >{post.data.topic}</span
+          >
+          <time datetime={post.data.publishedAt.toISOString()}>{published}</time>
+          <span aria-hidden="true">&middot;</span>
+          <span>{post.data.readingMinutes} min read</span>
+        </div>
+
+        <p class="mt-6 border-l-2 border-brand-gold pl-5 text-lg text-muted">
+          {post.data.description}
+        </p>
+
+        <div class="prose-hayes mt-10 text-lg">
+          <Content />
+        </div>
+
+        <p class="mt-12 rounded-xl bg-sand p-6 text-sm text-muted ring-1 ring-line">
+          General information from {site.agent} at {site.name}, not advice about
+          your specific policy. Coverage, limits, and exclusions vary — your
+          policy documents govern.
+        </p>
+      </div>
+    </Section>
+  </article>
+
+  <Section tone="sand">
+    <h2 class="text-2xl font-semibold">Keep reading</h2>
+    <div class="mt-8 grid gap-4 md:grid-cols-3">
+      {
+        related.map((p) => (
+          <a
+            href={`/resources/${p.id}`}
+            class="group rounded-xl bg-white p-6 ring-1 ring-line/70 transition-shadow hover:shadow-[0_8px_24px_rgba(18,38,63,0.08)]"
+          >
+            <span class="text-sm font-semibold text-brand-green">{p.data.topic}</span>
+            <h3 class="mt-2 text-lg font-semibold group-hover:text-brand-green">
+              {p.data.title}
+            </h3>
+            <p class="mt-2 text-sm text-muted">{p.data.description}</p>
+          </a>
+        ))
+      }
+    </div>
+  </Section>
+
+  <CTASection />
+</BaseLayout>

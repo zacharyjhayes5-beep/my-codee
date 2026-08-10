@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import Button from '../components/Button.astro';
+import { contact } from '../config';
+---
+
+<BaseLayout title="Page not found" description="That page doesn't exist." noindex>
+  <Section tone="white">
+    <div class="mx-auto max-w-xl text-center">
+      <p class="font-heading text-6xl font-semibold text-brand-gold">404</p>
+      <h1 class="mt-4 text-3xl font-semibold md:text-4xl">
+        That page isn&rsquo;t here
+      </h1>
+      <p class="mt-4 text-lg text-muted">
+        The link may be old or slightly off. Try the coverage pages, or just call
+        me &mdash; that&rsquo;s usually faster anyway.
+      </p>
+      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <Button href="/">Back home</Button>
+        <Button href="/coverage" variant="secondary">Browse coverage</Button>
+        <Button href={contact.phoneHref} variant="secondary">{contact.phone}</Button>
+      </div>
+    </div>
+  </Section>
+</BaseLayout>

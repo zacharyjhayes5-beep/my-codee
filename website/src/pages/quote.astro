@@ -44,8 +44,8 @@ const expect = [
           <p class="mt-2 text-muted">
             Online estimators quote a price for a person who doesn&rsquo;t exist,
             then change it once the real details show up. I&rsquo;d rather ask
-            five questions and give you a number that holds. If you want it fast,
-            <a
+            five questions and give you a number that holds. If you want it
+            fast,&#32;<a
               class="font-semibold text-brand-green underline underline-offset-4"
               href={contact.phoneHref}>call {contact.phone}</a
             > &mdash; we can usually do it on that call.
@@ -86,10 +86,8 @@ const expect = [
               Grab fifteen minutes on my calendar, or call the office directly.
             </p>
             <div class="mt-5 grid gap-3">
-              <Button
-                href={contact.calendarUrl}
-                class="bg-white text-brand-navy hover:bg-brand-green-light"
-                rel="noopener">Schedule a call</Button
+              <Button href={contact.calendarUrl} variant="inverse" rel="noopener"
+                >Schedule a call</Button
               >
               <Button href={contact.phoneHref} variant="ghost"
                 >{contact.phone}</Button
