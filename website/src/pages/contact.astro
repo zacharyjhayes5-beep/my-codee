@@ -1,0 +1,162 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import LeadForm from '../components/LeadForm.astro';
+import Button from '../components/Button.astro';
+import { site, contact, addressLine } from '../config';
+
+const mapsQuery = encodeURIComponent(`${site.name}, ${addressLine}`);
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+---
+
+<BaseLayout
+  title="Contact"
+  description={`Call, email, or visit ${site.name} in ${site.city}, ${site.stateAbbr}. Office hours, directions, and a contact form that reaches the agent directly.`}
+>
+  <Section tone="white">
+    <div class="grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-7">
+        <h1 class="text-4xl font-semibold md:text-5xl">Get in touch</h1>
+        <p class="mt-5 max-w-prose text-lg text-muted">
+          Questions about a policy, a claim, or something you&rsquo;re not sure
+          is covered? Send it over. Every message here reaches me directly.
+        </p>
+        <div class="mt-10">
+          <LeadForm source="contact" id="contact-form" />
+        </div>
+      </div>
+
+      <aside class="lg:col-span-5">
+        <div class="grid gap-6">
+          <div class="rounded-xl bg-sand p-6 ring-1 ring-line md:p-8">
+            <h2 class="text-xl font-semibold">Reach the office</h2>
+            <dl class="mt-5 grid gap-5">
+              <div>
+                <dt class="text-sm font-semibold tracking-wide text-muted uppercase">
+                  Phone
+                </dt>
+                <dd class="mt-1">
+                  <a
+                    class="text-lg font-semibold text-brand-green underline underline-offset-4"
+                    href={contact.phoneHref}>{contact.phone}</a
+                  >
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-semibold tracking-wide text-muted uppercase">
+                  Email
+                </dt>
+                <dd class="mt-1">
+                  <a
+                    class="text-lg font-semibold text-brand-green underline underline-offset-4 break-all"
+                    href={contact.emailHref}>{contact.email}</a
+                  >
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-semibold tracking-wide text-muted uppercase">
+                  Claims
+                </dt>
+                <dd class="mt-1 text-muted">
+                  Call the office first if you can &mdash; I&rsquo;ll walk you
+                  through it and make sure it&rsquo;s filed correctly. Outside
+                  business hours, Farm Bureau&rsquo;s 24-hour claims line is on
+                  your ID card.
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="rounded-xl bg-sand p-6 ring-1 ring-line md:p-8">
+            <h2 class="text-xl font-semibold">Office hours</h2>
+            <dl class="mt-4 grid gap-2">
+              {
+                contact.hours.map((h) => (
+                  <div class="flex justify-between gap-4 border-b border-line/70 pb-2 last:border-0">
+                    <dt class="text-ink">{h.days}</dt>
+                    <dd class="text-right text-muted">{h.time}</dd>
+                  </div>
+                ))
+              }
+            </dl>
+            <p class="mt-4 text-sm text-muted">
+              Evenings and weekends work too &mdash; a lot of my clients can only
+              talk after work. Just ask.
+            </p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </Section>
+
+  <!-- Location -->
+  <Section tone="sand">
+    <div class="grid gap-8 md:grid-cols-12 md:items-center">
+      <div class="md:col-span-5">
+        <h2 class="text-3xl font-semibold">Visit the office</h2>
+        <address class="mt-4 text-lg text-muted not-italic">
+          {contact.address.street}<br />
+          {contact.address.city}, {contact.address.state}
+          {contact.address.zip}
+        </address>
+        <p class="mt-4 text-muted">
+          Free parking on site. If stopping in is hard to fit in, I&rsquo;m happy
+          to come to you &mdash; that&rsquo;s normal for me.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <Button href={mapsUrl} rel="noopener noreferrer" target="_blank">
+            Get directions
+          </Button>
+          <Button href={contact.calendarUrl} variant="secondary" rel="noopener">
+            Schedule a call
+          </Button>
+        </div>
+      </div>
+
+      <div class="md:col-span-7">
+        <!--
+          Static map placeholder — deliberately not an embedded Google Maps
+          iframe, which loads ~1MB of third-party JS and sets cookies.
+          TODO(owner): swap in a static map image or an iframe behind a click.
+        -->
+        <div
+          class="relative aspect-[16/10] overflow-hidden rounded-xl bg-brand-navy ring-1 ring-line"
+        >
+          <div
+            class="absolute inset-0 opacity-25"
+            aria-hidden="true"
+            style="background-image:linear-gradient(#FAF8F4 1px, transparent 1px), linear-gradient(90deg, #FAF8F4 1px, transparent 1px); background-size: 48px 48px;"
+          >
+          </div>
+          <div
+            class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center"
+          >
+            <svg
+              class="h-10 w-10 text-brand-gold"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"></path>
+              <circle cx="12" cy="10" r="2.5"></circle>
+            </svg>
+            <p class="mt-4 font-heading text-2xl font-semibold text-white">
+              {site.name}
+            </p>
+            <p class="mt-1 text-white/70">{addressLine}</p>
+            <a
+              class="mt-4 rounded-lg bg-white/10 px-4 py-2 font-semibold text-white ring-1 ring-white/20 hover:bg-white/20"
+              href={mapsUrl}
+              rel="noopener noreferrer"
+              target="_blank">Open in Google Maps</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </Section>
+</BaseLayout>

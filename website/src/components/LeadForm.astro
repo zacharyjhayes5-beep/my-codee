@@ -1,0 +1,187 @@
+---
+import Button from './Button.astro';
+import { FORM_ENDPOINT, coverageTypes } from '../config';
+
+interface Props {
+  /** Distinguishes submissions in the inbox: 'quote' | 'contact'. */
+  source?: string;
+  /** Preselect a coverage type, e.g. from a coverage page. */
+  defaultCoverage?: string;
+  id?: string;
+}
+
+const { source = 'quote', defaultCoverage = '', id = 'lead-form' } = Astro.props;
+
+const field =
+  'mt-2 block w-full rounded-lg border-0 bg-white px-4 py-3 text-base text-ink ring-1 ring-line placeholder:text-muted/60 focus:ring-2 focus:ring-brand-green';
+const label = 'block text-sm font-semibold text-brand-navy';
+---
+
+<form
+  id={id}
+  class="grid gap-5"
+  action={FORM_ENDPOINT}
+  method="POST"
+  data-lead-form
+>
+  <!--
+    Native POST works with JavaScript disabled; the endpoint should honor
+    _redirect. The inline script below upgrades this to fetch + inline success.
+  -->
+  <input type="hidden" name="_source" value={source} />
+  <input type="hidden" name="_redirect" value="/thank-you" />
+
+  <!-- Honeypot: hidden from people, tempting to bots. -->
+  <div class="hidden" aria-hidden="true">
+    <label for={`${id}-company-website`}>Leave this field empty</label>
+    <input
+      id={`${id}-company-website`}
+      type="text"
+      name="company_website"
+      tabindex="-1"
+      autocomplete="off"
+    />
+  </div>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <label class={label} for={`${id}-name`}>Name</label>
+      <input
+        class={field}
+        id={`${id}-name`}
+        name="name"
+        type="text"
+        required
+        autocomplete="name"
+        placeholder="Jordan Miller"
+      />
+    </div>
+    <div>
+      <label class={label} for={`${id}-phone`}>Phone</label>
+      <input
+        class={field}
+        id={`${id}-phone`}
+        name="phone"
+        type="tel"
+        inputmode="tel"
+        autocomplete="tel"
+        placeholder="(616) 555-0100"
+      />
+    </div>
+  </div>
+
+  <div>
+    <label class={label} for={`${id}-email`}>Email</label>
+    <input
+      class={field}
+      id={`${id}-email`}
+      name="email"
+      type="email"
+      required
+      autocomplete="email"
+      placeholder="you@example.com"
+    />
+  </div>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <label class={label} for={`${id}-coverage`}>What do you need covered?</label>
+      <select class={field} id={`${id}-coverage`} name="coverage_type" required>
+        <option value="" disabled selected={!defaultCoverage}>Choose one…</option>
+        {
+          coverageTypes.map((c) => (
+            <option value={c.value} selected={defaultCoverage === c.value}>
+              {c.label}
+            </option>
+          ))
+        }
+      </select>
+    </div>
+    <div>
+      <label class={label} for={`${id}-contact-pref`}>Best way to reach you</label>
+      <select class={field} id={`${id}-contact-pref`} name="contact_preference">
+        <option value="either">Either is fine</option>
+        <option value="call">Phone call</option>
+        <option value="text">Text</option>
+        <option value="email">Email</option>
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <label class={label} for={`${id}-notes`}>
+      Anything I should know? <span class="font-normal text-muted">(optional)</span>
+    </label>
+    <textarea
+      class={field}
+      id={`${id}-notes`}
+      name="notes"
+      rows="4"
+      placeholder="Two cars and a house in Kentwood, currently with another carrier. Renewal is in March."></textarea>
+  </div>
+
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+    <Button type="submit" size="lg" class="w-full sm:w-auto" data-submit>
+      Send my details
+    </Button>
+    <p class="text-sm text-muted">
+      I&rsquo;ll reply within one business day. Your information is used only to
+      prepare your quote &mdash; never sold or shared.
+    </p>
+  </div>
+
+  <p
+    class="hidden rounded-lg bg-brand-green-light px-4 py-3 text-brand-green-dark ring-1 ring-brand-green/20"
+    data-form-success
+    role="status"
+  >
+    Thanks — I&rsquo;ve got your details and will be in touch within one
+    business day.
+  </p>
+  <p
+    class="hidden rounded-lg bg-red-50 px-4 py-3 text-red-800 ring-1 ring-red-200"
+    data-form-error
+    role="alert"
+  >
+    Something went wrong sending that. Please call the office and I&rsquo;ll take
+    your details directly.
+  </p>
+</form>
+
+<script>
+  // Progressive enhancement only — the form already works as a native POST.
+  document.querySelectorAll<HTMLFormElement>('[data-lead-form]').forEach((form) => {
+    const success = form.querySelector<HTMLElement>('[data-form-success]');
+    const error = form.querySelector<HTMLElement>('[data-form-error]');
+    const button = form.querySelector<HTMLButtonElement>('[data-submit]');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      success?.classList.add('hidden');
+      error?.classList.add('hidden');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Sending…';
+      }
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error(String(response.status));
+        form.reset();
+        success?.classList.remove('hidden');
+        success?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch {
+        error?.classList.remove('hidden');
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Send my details';
+        }
+      }
+    });
+  });
+</script>

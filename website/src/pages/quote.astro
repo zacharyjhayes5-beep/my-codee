@@ -1,0 +1,127 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import LeadForm from '../components/LeadForm.astro';
+import Button from '../components/Button.astro';
+import { contact, site } from '../config';
+
+const expect = [
+  {
+    title: 'A reply within one business day',
+    body: 'From me, not an auto-responder. If you send it on a Saturday, expect Monday.',
+  },
+  {
+    title: 'A few follow-up questions',
+    body: 'Drivers, vehicles, square footage, what you already carry. This is the part that makes the number real.',
+  },
+  {
+    title: 'Options in writing',
+    body: 'Usually two or three, with the tradeoffs spelled out — not one take-it-or-leave-it price.',
+  },
+];
+---
+
+<BaseLayout
+  title="Get a Quote"
+  description={`Request an auto, home, life, or business insurance quote from ${site.name} in ${site.city}, ${site.stateAbbr}. A real agent follows up within one business day.`}
+>
+  <Section tone="white">
+    <div class="grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-7">
+        <h1 class="text-4xl font-semibold md:text-5xl">Get a quote</h1>
+        <p class="mt-5 max-w-prose text-lg text-muted">
+          Send me the basics and I&rsquo;ll come back with real options. It takes
+          about two minutes, and there&rsquo;s no obligation on the other side of
+          it.
+        </p>
+
+        <div
+          class="mt-8 rounded-xl bg-brand-green-light p-6 ring-1 ring-brand-green/15"
+        >
+          <p class="font-semibold text-brand-navy">
+            Why there&rsquo;s no instant number on this page
+          </p>
+          <p class="mt-2 text-muted">
+            Online estimators quote a price for a person who doesn&rsquo;t exist,
+            then change it once the real details show up. I&rsquo;d rather ask
+            five questions and give you a number that holds. If you want it fast,
+            <a
+              class="font-semibold text-brand-green underline underline-offset-4"
+              href={contact.phoneHref}>call {contact.phone}</a
+            > &mdash; we can usually do it on that call.
+          </p>
+        </div>
+
+        <div class="mt-10">
+          <LeadForm source="quote" id="quote-form" />
+        </div>
+      </div>
+
+      <aside class="lg:col-span-5">
+        <div class="lg:sticky lg:top-28 grid gap-6">
+          <div class="rounded-xl bg-sand p-6 ring-1 ring-line md:p-8">
+            <h2 class="text-xl font-semibold">What happens next</h2>
+            <ol class="mt-5 grid gap-5">
+              {
+                expect.map((item, i) => (
+                  <li class="flex gap-4">
+                    <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-green font-semibold text-white">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p class="font-semibold text-brand-navy">{item.title}</p>
+                      <p class="mt-1 text-muted">{item.body}</p>
+                    </div>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+
+          <div class="rounded-xl bg-brand-navy p-6 text-white md:p-8">
+            <h2 class="text-xl font-semibold text-white">
+              Would you rather just talk?
+            </h2>
+            <p class="mt-2 text-white/80">
+              Grab fifteen minutes on my calendar, or call the office directly.
+            </p>
+            <div class="mt-5 grid gap-3">
+              <Button
+                href={contact.calendarUrl}
+                class="bg-white text-brand-navy hover:bg-brand-green-light"
+                rel="noopener">Schedule a call</Button
+              >
+              <Button href={contact.phoneHref} variant="ghost"
+                >{contact.phone}</Button
+              >
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-sand p-6 ring-1 ring-line md:p-8">
+            <h2 class="text-xl font-semibold">Speeds things up</h2>
+            <ul class="mt-4 grid gap-2 text-muted">
+              <li>&middot; Your current declarations page (any carrier)</li>
+              <li>&middot; Drivers and vehicles in the household</li>
+              <li>&middot; Year built and square footage, for a home</li>
+              <li>&middot; When your current policy renews</li>
+            </ul>
+            <p class="mt-4 text-sm text-muted">
+              Don&rsquo;t have these handy? Send the form anyway &mdash; we can
+              fill gaps on the call.
+            </p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </Section>
+</BaseLayout>
+
+<script>
+  // Coverage pages deep-link here as /quote?coverage=auto. Static output can't
+  // read query params at build time, so preselect on the client.
+  const requested = new URLSearchParams(location.search).get('coverage');
+  const select = document.querySelector<HTMLSelectElement>('#quote-form-coverage');
+  if (requested && select?.querySelector(`option[value="${CSS.escape(requested)}"]`)) {
+    select.value = requested;
+  }
+</script>

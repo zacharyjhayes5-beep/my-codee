@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import Button from '../components/Button.astro';
+import { contact } from '../config';
+---
+
+<BaseLayout
+  title="Thanks — I got your details"
+  description="Your request reached Hayes Agency. I'll be in touch within one business day."
+  noindex
+>
+  <Section tone="white">
+    <div class="mx-auto max-w-2xl text-center">
+      <span
+        class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-green-light text-brand-green"
+      >
+        <svg
+          class="h-8 w-8"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m5 12.5 4.5 4.5L19 7.5"></path>
+        </svg>
+      </span>
+      <h1 class="mt-6 text-4xl font-semibold md:text-5xl">Got it — thank you.</h1>
+      <p class="mt-5 text-lg text-muted">
+        Your details are with me. I&rsquo;ll follow up within one business day,
+        usually sooner. If it&rsquo;s urgent, calling is faster.
+      </p>
+      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <Button href={contact.phoneHref}>{contact.phone}</Button>
+        <Button href="/resources" variant="secondary">Read while you wait</Button>
+      </div>
+    </div>
+  </Section>
+</BaseLayout>
