@@ -2,25 +2,28 @@ import { useState } from "react";
 import "./App.css";
 import { ProgressTab } from "./components/ProgressTab";
 import { CalendarTab } from "./components/CalendarTab";
-import { CrmTab } from "./components/CrmTab";
+import { ProspectsTab } from "./components/ProspectsTab";
 import { useLocalStorage } from "./lib/storage";
-import { defaultPolicyLines } from "./lib/defaultData";
-import type { CalendarEvent, Lead, PolicyLine, TodoItem } from "./types";
+import { defaultOwnerName, defaultPeriod } from "./lib/defaultData";
+import { LINES_KEY, PROSPECTS_KEY, migratedLines, migratedProspects } from "./lib/migrate";
+import type { CalendarEvent, Period, PolicyLine, Prospect, TodoItem } from "./types";
 
-type Tab = "progress" | "calendar" | "crm";
+type Tab = "progress" | "calendar" | "prospects";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "progress", label: "Progress" },
   { id: "calendar", label: "Calendar & To-Do" },
-  { id: "crm", label: "Leads & Customers" },
+  { id: "prospects", label: "Prospects" },
 ];
 
 function App() {
   const [tab, setTab] = useState<Tab>("progress");
-  const [lines, setLines] = useLocalStorage<PolicyLine[]>("fb-dashboard:lines", defaultPolicyLines);
+  const [lines, setLines] = useLocalStorage<PolicyLine[]>(LINES_KEY, migratedLines);
+  const [period, setPeriod] = useLocalStorage<Period>("fb-dashboard:period", defaultPeriod);
   const [events, setEvents] = useLocalStorage<CalendarEvent[]>("fb-dashboard:events", []);
   const [todos, setTodos] = useLocalStorage<TodoItem[]>("fb-dashboard:todos", []);
-  const [leads, setLeads] = useLocalStorage<Lead[]>("fb-dashboard:leads", []);
+  const [prospects, setProspects] = useLocalStorage<Prospect[]>(PROSPECTS_KEY, migratedProspects);
+  const [ownerName, setOwnerName] = useLocalStorage<string>("fb-dashboard:owner", defaultOwnerName);
 
   return (
     <div className="app">
@@ -39,11 +42,20 @@ function App() {
       </header>
 
       <main>
-        {tab === "progress" && <ProgressTab lines={lines} onChange={setLines} />}
+        {tab === "progress" && (
+          <ProgressTab lines={lines} onChange={setLines} period={period} onPeriodChange={setPeriod} />
+        )}
         {tab === "calendar" && (
           <CalendarTab events={events} onEventsChange={setEvents} todos={todos} onTodosChange={setTodos} />
         )}
-        {tab === "crm" && <CrmTab leads={leads} onChange={setLeads} />}
+        {tab === "prospects" && (
+          <ProspectsTab
+            prospects={prospects}
+            onChange={setProspects}
+            ownerName={ownerName}
+            onOwnerNameChange={setOwnerName}
+          />
+        )}
       </main>
     </div>
   );

@@ -1,32 +1,57 @@
-# React + TypeScript + Vite
+# Agency Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Book-of-business tracker for a Farm Bureau Michigan agency. React + TypeScript + Vite,
+deployed to GitHub Pages. All data lives in the browser's local storage — nothing is sent
+anywhere, and the data stays on the machine and browser you enter it on.
 
-Currently, two official plugins are available:
+## Tabs
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Progress** — policy counts against the goal for the current period (Property 40,
+Casualty 40, Life 25). Both period dates are editable at the top; everything else on the
+tab is derived from them:
 
-## React Compiler
+- *Pace* compares where you are against where you'd be if the goal were spread evenly
+  across the period. The tick mark on each meter is that same on-pace point.
+- *Needed per week* is the remaining policies divided by the weeks left.
+- Premium tracking is there but has no goal set — enter one per line to turn on the meter.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Calendar & To-Do** — month view with events per day, plus a running task list.
 
-## Expanding the Oxlint configuration
+**Prospects** — profiles built from Granola call notes. See below.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Importing Granola notes
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Export a note from Granola as Markdown (or plain text), then drop it on the import
+box — several at once is fine — or paste the text instead. Each note is read for:
+
+| Field | Where it comes from |
+| --- | --- |
+| Name | An `Attendees:`/`Client:` line, otherwise the note title (`Zach <> Mike Donnelly`, `Discovery call with Sarah Whitcomb`), otherwise the filename, otherwise a "talked to …" phrase in the body |
+| Area | An `Area:`/`Location:` line, a `City, MI` mention, a "lives in …" phrase, or any recognized Michigan city or county |
+| Lines of business | Keyword matches for property, casualty and life. Sentences containing a rejection ("not interested in life insurance") are skipped |
+| Phone / email | First match in the note that isn't yours |
+| Date | The date near the top of the note, or in the filename |
+
+The "Your name" field tells the parser which person in the note is you, so it picks the
+other one. Everything it extracts lands in an editable review card before it's saved —
+correct anything there, then save.
+
+If a note matches someone already on the list (same name or email), the card offers to
+add the note to that existing profile instead of creating a duplicate.
+
+Once saved, every field stays editable on the profile card: name, status, lines of
+business, area, phone, email, next step, and the notes themselves. Notes can be added by
+hand too.
+
+Statuses: New → Contacted → Meeting Scheduled → Open to Quote → Closed, plus Lost.
+
+## Development
+
+```sh
+npm install
+npm run dev      # local dev server
+npm run build    # type-check + production build
+npm run lint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Pushing to `main` deploys via `.github/workflows/deploy-pages.yml`.
