@@ -455,6 +455,174 @@
   font-weight: 500;
 }
 
+/* NADP tier section */
+.tier-section {
+  border-top: 1px solid var(--gridline);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tier-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.tier-head p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.tier-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tier-card.current {
+  border-color: var(--accent);
+}
+
+.tier-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tier-card-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tier-multiplier {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tier-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  padding: 2px 9px;
+  background: color-mix(in srgb, var(--status-good) 16%, transparent);
+  color: var(--status-good);
+}
+
+.tier-badge.current {
+  background: var(--accent-track);
+  color: var(--accent);
+}
+
+.tank-row {
+  display: flex;
+  gap: 12px;
+  justify-content: space-around;
+}
+
+.tier-foot {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--gridline);
+  padding-top: 10px;
+}
+
+.tier-done {
+  color: var(--status-good);
+  font-weight: 500;
+}
+
+/* Gas tank gauge */
+.gas-tank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tank-svg {
+  width: 100%;
+  max-width: 92px;
+  height: auto;
+}
+
+.tank-body {
+  fill: var(--surface-2);
+}
+
+.tank-outline {
+  fill: none;
+  stroke: var(--baseline);
+  stroke-width: 2;
+}
+
+.tank-metal {
+  fill: var(--baseline);
+}
+
+.tank-scale line {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+
+.tank-mark {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tank-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  text-align: center;
+}
+
+.tank-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.tank-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tank-goal {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.tank-pct {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Shared buttons */
 .primary-btn {
   border: none;

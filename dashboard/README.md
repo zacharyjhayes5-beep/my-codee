@@ -15,6 +15,22 @@ tab is derived from them:
 - *Needed per week* is the remaining policies divided by the weeks left.
 - Premium tracking is there but has no goal set — enter one per line to turn on the meter.
 
+Below that, **NADP tiers** shows the 6-month checkpoint from the commission
+multiplier table in the 2026 Agency Compensation guide (Part V). Each tier is a
+card with two gas-tank gauges that fill as you close policies:
+
+| Tier | Multiplier | Property + Casualty | Life |
+| --- | --- | --- | --- |
+| Tier 1 | 0.50 | 50 | 12 |
+| Tier 2 | 0.70 | 63 | 18 |
+| Tier 3 | 1.00 | 77 | 24 |
+
+Property and Casualty count together because the guide's P/C table is a single
+combined policy count. The tank colour tracks the fill — red, amber, blue, then
+green at 100% — and the highest tier where both counts land is marked "You are
+here". Targets live in `monthSixTiers` in `src/lib/defaultData.ts`; other month
+rows from the same table can be dropped in there.
+
 **Calendar & To-Do** — month view with events per day, plus a running task list.
 
 **Prospects** — profiles built from Granola call notes. See below.

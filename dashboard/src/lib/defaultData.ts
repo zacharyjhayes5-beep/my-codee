@@ -35,6 +35,25 @@ export const statusClass: Record<ProspectStatus, string> = {
   Lost: "badge-critical",
 };
 
+/**
+ * NADP commission-multiplier tiers, month 6 row of the 2026 Agency
+ * Compensation guide (Part V, page 8). Property and Casualty are counted
+ * together there, so `pc` is the combined target.
+ */
+export interface Tier {
+  id: string;
+  name: string;
+  multiplier: string;
+  pc: number;
+  life: number;
+}
+
+export const monthSixTiers: Tier[] = [
+  { id: "tier-1", name: "Tier 1", multiplier: "0.50", pc: 50, life: 12 },
+  { id: "tier-2", name: "Tier 2", multiplier: "0.70", pc: 63, life: 18 },
+  { id: "tier-3", name: "Tier 3", multiplier: "1.00", pc: 77, life: 24 },
+];
+
 export const seriesColors: Record<LineId, string> = {
   property: "var(--series-1)",
   casualty: "var(--series-2)",

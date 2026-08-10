@@ -4,6 +4,7 @@ import type { Period, PolicyLine } from "../types";
 import { seriesColors } from "../lib/defaultData";
 import { Meter } from "./Meter";
 import { StatTile } from "./StatTile";
+import { TierSection } from "./TierSection";
 
 function formatCurrency(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -199,6 +200,8 @@ export function ProgressTab({ lines, onChange, period, onPeriodChange }: Progres
           );
         })}
       </div>
+
+      <TierSection lines={lines} />
     </div>
   );
 }
