@@ -1,0 +1,78 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/Section.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import Card from '../../components/Card.astro';
+import CoverageIcon from '../../components/CoverageIcon.astro';
+import CTASection from '../../components/CTASection.astro';
+import { coverage } from '../../data/coverage';
+import { site } from '../../config';
+---
+
+<BaseLayout
+  title="Coverage"
+  description={`Auto, home, life, and business insurance from ${site.name}, a Farm Bureau Insurance agency in ${site.city}, ${site.stateAbbr}. Plain-English explanations of what each policy covers.`}
+>
+  <Section tone="white">
+    <SectionHeading
+      as="h1"
+      eyebrow="Coverage"
+      title="What each policy actually does"
+      lead="Four lines of business, explained the way I'd explain them at my kitchen table — what's covered, who it's for, and the parts people most often get wrong."
+    />
+
+    <div class="mt-10 grid gap-5 sm:grid-cols-2">
+      {
+        coverage.map((c) => (
+          <Card href={`/coverage/${c.slug}`}>
+            <span class="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-brand-green-light text-brand-green">
+              <CoverageIcon name={c.icon} />
+            </span>
+            <h2 class="mt-5 text-xl font-semibold">{c.title}</h2>
+            <p class="mt-2 text-muted">{c.summary}</p>
+            <ul class="mt-4 grid gap-1.5 text-sm text-muted">
+              {c.covers.slice(0, 3).map((item) => (
+                <li class="flex gap-2">
+                  <span class="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand-gold" aria-hidden="true" />
+                  {item.title}
+                </li>
+              ))}
+            </ul>
+            <p class="mt-5 font-semibold text-brand-green">
+              Learn more <span aria-hidden="true">&rarr;</span>
+            </p>
+          </Card>
+        ))
+      }
+    </div>
+  </Section>
+
+  <Section tone="sand">
+    <div class="grid gap-10 md:grid-cols-12">
+      <div class="md:col-span-5">
+        <SectionHeading
+          eyebrow="Bundling"
+          title="Most households here end up with two or three of these"
+        />
+      </div>
+      <div class="md:col-span-7">
+        <p class="max-w-prose text-lg text-muted">
+          Putting auto and home with the same company usually lowers both, and it
+          makes claims simpler when one event touches both policies &mdash; a
+          tree through the garage and the car underneath it, say. Life is
+          separate but often the one that matters most.
+        </p>
+        <p class="mt-4 max-w-prose text-lg text-muted">
+          You don&rsquo;t have to move everything at once. Plenty of clients
+          start with one policy and shift the rest at renewal, once they&rsquo;ve
+          seen how I work.
+        </p>
+      </div>
+    </div>
+  </Section>
+
+  <CTASection
+    title="Not sure which of these you need?"
+    body="That's a normal place to start. Send a few details or grab fifteen minutes and we'll sort it out together."
+  />
+</BaseLayout>

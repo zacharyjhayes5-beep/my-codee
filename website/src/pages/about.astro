@@ -1,0 +1,161 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Button from '../components/Button.astro';
+import CTASection from '../components/CTASection.astro';
+import portrait from '../assets/portrait.jpg';
+import { site, contact } from '../config';
+
+const values = [
+  {
+    title: 'Plain language, always',
+    body: 'If I use a word like "subrogation" without explaining it, stop me. You should be able to describe your own coverage to your spouse afterward.',
+  },
+  {
+    title: 'I will talk you out of things',
+    body: "Some coverage isn't worth what it costs for your situation. Saying so is how I keep clients for twenty years instead of one.",
+  },
+  {
+    title: 'You get a person',
+    body: 'The same agent quotes your policy, picks up when you call, and helps you through a claim. No transfers, no ticket numbers.',
+  },
+  {
+    title: 'Advice that ages well',
+    body: 'A policy written for who you were five years ago is a policy with holes in it. We review as life changes.',
+  },
+];
+---
+
+<BaseLayout
+  title="About"
+  description={`Meet ${site.agent}, owner of Hayes Agency — a Farm Bureau Insurance agency in Grand Rapids, Michigan.`}
+>
+  <Section tone="white">
+    <div class="grid gap-12 md:grid-cols-12 md:items-center">
+      <div class="md:col-span-7">
+        <SectionHeading
+          as="h1"
+          eyebrow="About the agency"
+          title={`Hi — I'm ${site.agent}.`}
+          lead={`I own Hayes Agency, a Farm Bureau Insurance agency in ${site.city}. I help families and business owners around West Michigan protect what they've built.`}
+        />
+        <div class="mt-6 max-w-prose space-y-5 text-lg text-muted">
+          <p>
+            I got into this work because of how people talk about insurance:
+            with a shrug, or with real frustration. It&rsquo;s something most of
+            us buy without understanding, hold onto for years, and then
+            discover the details of at the worst possible moment.
+          </p>
+          <p>
+            That&rsquo;s a fixable problem, and fixing it is basically the whole
+            job. I&rsquo;d rather spend an extra twenty minutes explaining why
+            your liability limit matters than sell you a cheaper policy
+            you&rsquo;ll regret. When you call my office, you get me &mdash; not
+            a queue, not a chatbot, not a stranger three states away reading
+            your file for the first time.
+          </p>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <Button href={contact.calendarUrl} rel="noopener">Schedule a call</Button>
+          <Button href="/quote" variant="secondary">Get a quote</Button>
+        </div>
+      </div>
+
+      <div class="md:col-span-5">
+        <figure>
+          <Image
+            src={portrait}
+            alt={`${site.agent}, owner of ${site.name}`}
+            widths={[400, 640, 900]}
+            sizes="(min-width: 768px) 38vw, 100vw"
+            loading="lazy"
+            decoding="async"
+            class="w-full rounded-xl object-cover"
+          />
+          <figcaption class="mt-3 text-sm text-muted">
+            {site.agent} &middot; {site.agentTitle}
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </Section>
+
+  <Section tone="sand">
+    <SectionHeading
+      eyebrow="Why Farm Bureau"
+      title="A company that started with people who couldn't get covered"
+      lead="Farm Bureau Insurance of Michigan was founded in 1949 by Michigan farmers who were tired of being underserved by out-of-state carriers."
+    />
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <p class="max-w-prose text-lg text-muted">
+        The company has only ever written business in Michigan. Every claim
+        adjuster, every underwriter, every dollar of it stays in this state.
+        That matters more than it sounds like it should: when a hailstorm crosses
+        Kent County, the people handling your claim understand what happened
+        because it happened to them too.
+      </p>
+      <p class="max-w-prose text-lg text-muted">
+        It also means the coverage is built for how people actually live here
+        &mdash; older housing stock, hard winters, deer on every back road, and
+        a lot of small businesses and part-time farms that don&rsquo;t fit a
+        national carrier&rsquo;s tidy categories.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="white">
+    <SectionHeading
+      eyebrow="How I work"
+      title="Four things you can count on"
+    />
+    <div class="mt-10 grid gap-6 sm:grid-cols-2">
+      {
+        values.map((v) => (
+          <div class="rounded-xl bg-sand p-6 ring-1 ring-line/70 md:p-8">
+            <h3 class="text-xl font-semibold">{v.title}</h3>
+            <p class="mt-2 text-muted">{v.body}</p>
+          </div>
+        ))
+      }
+    </div>
+  </Section>
+
+  <Section tone="green">
+    <div class="grid gap-10 md:grid-cols-12 md:items-center">
+      <div class="md:col-span-7">
+        <SectionHeading
+          eyebrow="In the community"
+          title="I live here too"
+          lead="My kids' school is here. My clients are people I run into at the hardware store, which is a pretty effective quality-control system."
+        />
+        <p class="mt-6 max-w-prose text-lg text-muted">
+          Hayes Agency supports youth sports, school fundraisers, and local
+          nonprofits around {site.city}. If your organization is looking for a
+          sponsor or someone to talk through insurance basics with your members,
+          reach out &mdash; I&rsquo;m glad to help.
+        </p>
+      </div>
+      <div class="md:col-span-5">
+        <div class="rounded-xl bg-white p-6 ring-1 ring-line md:p-8">
+          <p class="font-semibold text-brand-navy">Serving</p>
+          <p class="mt-2 text-muted">
+            Grand Rapids, East Grand Rapids, Kentwood, Wyoming, Walker,
+            Grandville, Rockford, Ada, Cascade, Caledonia, Byron Center, Comstock
+            Park &mdash; and anywhere else in Michigan you happen to be.
+          </p>
+          <a
+            class="mt-5 inline-flex font-semibold text-brand-green underline underline-offset-4"
+            href={contact.phoneHref}>{contact.phone}</a
+          >
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <CTASection
+    title="Let's start with a conversation."
+    body="Tell me what you have now and what you're worried about. I'll tell you straight whether it needs changing."
+  />
+</BaseLayout>
