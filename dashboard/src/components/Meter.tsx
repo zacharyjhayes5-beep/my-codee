@@ -4,12 +4,16 @@ interface MeterProps {
   goal: number;
   format: (n: number) => string;
   dotColor?: string;
+  /** Where the "on pace for today" marker sits, 0–100. */
+  pacePct?: number;
 }
 
-export function Meter({ label, value, goal, format, dotColor }: MeterProps) {
-  const pct = goal > 0 ? (value / goal) * 100 : 0;
+export function Meter({ label, value, goal, format, dotColor, pacePct }: MeterProps) {
+  const hasGoal = goal > 0;
+  const pct = hasGoal ? (value / goal) * 100 : 0;
   const clamped = Math.min(100, Math.max(0, pct));
-  const met = goal > 0 && value >= goal;
+  const met = hasGoal && value >= goal;
+  const paceClamped = pacePct === undefined ? null : Math.min(100, Math.max(0, pacePct));
 
   return (
     <div className="meter">
@@ -19,7 +23,8 @@ export function Meter({ label, value, goal, format, dotColor }: MeterProps) {
           {label}
         </span>
         <span className="meter-value">
-          {format(value)} <span className="meter-goal">/ {format(goal)} goal</span>
+          {format(value)}{" "}
+          {hasGoal && <span className="meter-goal">/ {format(goal)} goal</span>}
         </span>
       </div>
       <div className="meter-track">
@@ -30,8 +35,15 @@ export function Meter({ label, value, goal, format, dotColor }: MeterProps) {
             background: met ? "var(--status-good)" : "var(--accent)",
           }}
         />
+        {hasGoal && paceClamped !== null && (
+          <span
+            className="meter-pace"
+            style={{ left: `${paceClamped}%` }}
+            title={`On pace for today: ${format(Math.round((paceClamped / 100) * goal))}`}
+          />
+        )}
       </div>
-      <span className="meter-pct">{pct.toFixed(0)}% of goal</span>
+      <span className="meter-pct">{hasGoal ? `${pct.toFixed(0)}% of goal` : "No goal set"}</span>
     </div>
   );
 }

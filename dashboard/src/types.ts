@@ -1,4 +1,4 @@
-export type LineId = "property" | "casualty" | "life" | "commercial" | "surplus";
+export type LineId = "property" | "casualty" | "life";
 
 export interface PolicyLine {
   id: LineId;
@@ -7,6 +7,11 @@ export interface PolicyLine {
   policyGoal: number;
   premium: number;
   premiumGoal: number;
+}
+
+export interface Period {
+  start: string; // ISO yyyy-mm-dd
+  end: string; // ISO yyyy-mm-dd
 }
 
 export interface TodoItem {
@@ -23,15 +28,32 @@ export interface CalendarEvent {
   title: string;
 }
 
-export type LeadStatus = "New" | "Contacted" | "Quoted" | "Sold" | "Lost";
+export type ProspectStatus =
+  | "New"
+  | "Contacted"
+  | "Meeting Scheduled"
+  | "Open to Quote"
+  | "Closed"
+  | "Lost";
 
-export interface Lead {
+export interface ProspectNote {
+  id: string;
+  date: string; // ISO yyyy-mm-dd — when the call happened
+  title: string;
+  body: string;
+  source: "granola" | "manual";
+}
+
+export interface Prospect {
   id: string;
   name: string;
+  status: ProspectStatus;
+  lines: LineId[];
+  area: string;
   phone: string;
   email: string;
-  status: LeadStatus;
-  line: LineId | "unknown";
-  notes: string;
+  nextStep: string;
+  notes: ProspectNote[];
   createdAt: string;
+  updatedAt: string;
 }
