@@ -33,18 +33,42 @@ export interface Period {
   end: string; // ISO yyyy-mm-dd
 }
 
-export interface TodoItem {
+/** How soon a task needs attention — drives the sections on the To-Do tab. */
+export type Urgency = "now" | "week" | "soon" | "someday";
+
+/** Where a task came from. Suggestions keep their origin after approval. */
+export type TaskSource = "manual" | "obsidian" | "gmail";
+
+export interface Task {
   id: string;
   text: string;
+  /** The context that came with it — the note excerpt, the email body. */
+  detail: string;
+  urgency: Urgency;
   done: boolean;
-  dueDate?: string;
+  dueDate?: string; // ISO yyyy-mm-dd
+  source: TaskSource;
+  /** Note title or "sender — subject", so the task can be traced back. */
+  sourceRef?: string;
+  createdAt: string;
+  completedAt?: string;
 }
 
-export interface CalendarEvent {
+/**
+ * A task the importer thinks is worth doing, held until it's approved or
+ * rejected. Same shape as a task minus the state a task carries.
+ */
+export interface Suggestion {
   id: string;
-  date: string; // ISO yyyy-mm-dd
-  time?: string;
-  title: string;
+  text: string;
+  detail: string;
+  urgency: Urgency;
+  dueDate?: string;
+  source: "obsidian" | "gmail";
+  sourceRef: string;
+  /** Why the importer flagged it — shown on the card. */
+  reason: string;
+  createdAt: string;
 }
 
 export type ProspectStatus =

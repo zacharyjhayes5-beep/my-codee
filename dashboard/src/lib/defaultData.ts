@@ -1,4 +1,4 @@
-import type { LineId, Period, PolicyLine, ProspectStatus } from "../types";
+import type { LineId, Period, PolicyLine, ProspectStatus, Urgency } from "../types";
 
 export const defaultPolicyLines: PolicyLine[] = [
   { id: "property", name: "Property", policyGoal: 40, premiumGoal: 0 },
@@ -25,6 +25,28 @@ export const prospectStatuses: ProspectStatus[] = [
   "Closed",
   "Lost",
 ];
+
+/** The four sections of the To-Do tab, in the order they're shown. */
+export const urgencyLevels: { id: Urgency; name: string; blurb: string }[] = [
+  { id: "now", name: "Now", blurb: "Today, or already late" },
+  { id: "week", name: "This week", blurb: "Has a day on it" },
+  { id: "soon", name: "Soon", blurb: "Matters, no date yet" },
+  { id: "someday", name: "Someday", blurb: "When there's room" },
+];
+
+export const urgencyColor: Record<Urgency, string> = {
+  now: "var(--status-critical)",
+  week: "var(--status-warning)",
+  soon: "var(--accent)",
+  someday: "var(--text-muted)",
+};
+
+export const urgencyName: Record<Urgency, string> = {
+  now: "Now",
+  week: "This week",
+  soon: "Soon",
+  someday: "Someday",
+};
 
 export const statusClass: Record<ProspectStatus, string> = {
   New: "badge-muted",
