@@ -46,7 +46,9 @@
 
 .tab-bar button.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
+  font-weight: 600;
+  box-shadow: var(--glow-blue);
 }
 
 .tab-panel {
@@ -448,7 +450,7 @@
 .add-row button {
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 6px;
   padding: 6px 14px;
   cursor: pointer;
@@ -526,7 +528,9 @@
 
 .book-tabs button.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
+  font-weight: 600;
+  box-shadow: var(--glow-blue);
 }
 
 .month-select,
@@ -817,7 +821,7 @@
 .primary-btn {
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 6px;
   padding: 7px 14px;
   cursor: pointer;
@@ -836,7 +840,7 @@
 .danger-btn {
   border: none;
   background: var(--status-critical);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 6px;
   padding: 7px 14px;
   cursor: pointer;
@@ -1017,7 +1021,7 @@
 
 .mode-toggle button.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .draft-fields {
@@ -1093,8 +1097,9 @@
 }
 
 .chip.on {
-  color: #fff;
+  color: var(--on-accent);
   border-color: transparent;
+  font-weight: 600;
 }
 
 .chip-property.on {
@@ -1143,11 +1148,13 @@
 .filter-chip.on {
   background: var(--accent);
   border-color: transparent;
-  color: #fff;
+  color: var(--on-accent);
+  font-weight: 600;
+  box-shadow: var(--glow-blue);
 }
 
 .filter-chip.on span {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(3, 7, 13, 0.7);
 }
 
 .toolbar-right {
@@ -1322,7 +1329,7 @@
 }
 
 .badge-warning {
-  color: #92640c;
+  color: var(--status-warning);
 }
 
 .badge-serious {
@@ -1333,15 +1340,6 @@
   color: var(--status-critical);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) .badge-warning {
-    color: var(--status-warning);
-  }
-}
-:root[data-theme="dark"] .badge-warning {
-  color: var(--status-warning);
-}
-
 @media (max-width: 860px) {
   .calendar-layout {
     grid-template-columns: 1fr;
@@ -1349,4 +1347,77 @@
   .line-inputs {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* ---------- neon accents ---------- */
+
+.app-header h1 {
+  color: var(--text-primary);
+  animation: glow-text-blue 3.4s ease-in-out infinite;
+}
+
+.stat-tile.accent {
+  border-color: transparent;
+  animation: pulse-blue 2.8s ease-in-out infinite;
+}
+
+.stat-tile.accent .stat-value {
+  color: var(--accent);
+}
+
+.tier-card.current {
+  border-color: transparent;
+  animation: pulse-blue 2.8s ease-in-out infinite;
+}
+
+.tier-badge.current {
+  animation: pulse-blue 2.4s ease-in-out infinite;
+}
+
+.pace-pill.behind {
+  color: var(--neon-red);
+  animation: glow-text-red 2.2s ease-in-out infinite;
+}
+
+.pace-pill.good {
+  color: var(--status-good);
+}
+
+.book-totals strong.net {
+  color: var(--accent);
+  animation: glow-text-blue 3s ease-in-out infinite;
+}
+
+.tank-fuel {
+  animation: fuel-shimmer 2.6s ease-in-out infinite;
+}
+
+.primary-btn {
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.35);
+  transition: box-shadow 0.2s ease;
+}
+
+.primary-btn:hover {
+  box-shadow: var(--glow-blue), 0 0 0 1px rgba(0, 229, 255, 0.6);
+}
+
+.danger-btn:hover,
+.remove-btn:hover {
+  box-shadow: var(--glow-red);
+  color: var(--neon-red);
+}
+
+.drop-zone.dragging {
+  animation: pulse-blue 1.4s ease-in-out infinite;
+}
+
+.tier-done {
+  color: var(--status-good);
+}
+
+/* Tables read better with a touch more separation on dark */
+.book-table tbody tr:hover,
+.crm-table tbody tr:hover {
+  background: rgba(0, 229, 255, 0.04);
 }

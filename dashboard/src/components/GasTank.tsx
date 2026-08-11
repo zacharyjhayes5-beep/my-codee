@@ -47,9 +47,10 @@ export function GasTank({ label, value, goal }: GasTankProps) {
 
         {/* Fuel */}
         <g clipPath={`url(#${clipId})`}>
-          <rect x="14" y={surface} width="72" height={bottom - surface} fill={color} opacity="0.85" />
+          <rect className="tank-fuel" x="14" y={surface} width="72" height={bottom - surface} fill={color} />
           {pct > 0 && pct < 100 && (
             <path
+              className="tank-fuel"
               d={`M14 ${surface} q 9 -4 18 0 t 18 0 t 18 0 t 18 0 V ${surface + 6} H14 Z`}
               fill={color}
             />

@@ -1,81 +1,39 @@
 :root {
-  color-scheme: light;
-  --surface-1: #fcfcfb;
-  --page: #f9f9f7;
-  --surface-2: #ffffff;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --gridline: #e1e0d9;
-  --baseline: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.1);
+  color-scheme: dark;
 
-  --accent: #2a78d6;
-  --accent-track: #cde2fb;
+  /* Surfaces — near-black with a cold cast */
+  --page: #05070c;
+  --surface-1: #0b0f18;
+  --surface-2: #111826;
+  --gridline: #1a2333;
+  --baseline: #2b3a52;
+  --border: rgba(0, 229, 255, 0.13);
 
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-serious: #ec835a;
-  --status-critical: #d03b3b;
+  --text-primary: #e9f4ff;
+  --text-secondary: #94a7c4;
+  --text-muted: #64789a;
 
-  --series-1: #2a78d6; /* Property */
-  --series-2: #eb6834; /* Casualty */
-  --series-3: #1baf7a; /* Life */
-  --series-4: #eda100; /* Commercial */
-  --series-5: #e87ba4; /* Surplus */
+  /* Neon accents */
+  --accent: #00e5ff;
+  --accent-soft: rgba(0, 229, 255, 0.14);
+  --accent-track: rgba(0, 229, 255, 0.16);
+  --neon-red: #ff2d55;
+  --neon-red-soft: rgba(255, 45, 85, 0.14);
+  --on-accent: #03070d;
+
+  --status-good: #00ffa3;
+  --status-warning: #ffb020;
+  --status-serious: #ff7849;
+  --status-critical: #ff2d55;
+
+  --series-1: #00e5ff; /* Property — neon blue */
+  --series-2: #ff2d55; /* Casualty — neon red */
+  --series-3: #b06bff; /* Life — violet, the blend of the two */
+
+  --glow-blue: 0 0 18px rgba(0, 229, 255, 0.28);
+  --glow-red: 0 0 18px rgba(255, 45, 85, 0.28);
 
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --surface-1: #1a1a19;
-    --page: #0d0d0d;
-    --surface-2: #212120;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --gridline: #2c2c2a;
-    --baseline: #383835;
-    --border: rgba(255, 255, 255, 0.1);
-
-    --accent: #3987e5;
-    --accent-track: #184f95;
-
-    --status-good: #0ca30c;
-    --status-warning: #fab219;
-    --status-serious: #ec835a;
-    --status-critical: #d03b3b;
-
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-  }
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --surface-1: #1a1a19;
-  --page: #0d0d0d;
-  --surface-2: #212120;
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #898781;
-  --gridline: #2c2c2a;
-  --baseline: #383835;
-  --border: rgba(255, 255, 255, 0.1);
-
-  --accent: #3987e5;
-  --accent-track: #184f95;
-
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --series-4: #c98500;
-  --series-5: #d55181;
 }
 
 * {
@@ -92,6 +50,10 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--text-primary);
+  background-image:
+    radial-gradient(900px 500px at 12% -8%, rgba(0, 229, 255, 0.08), transparent 60%),
+    radial-gradient(760px 460px at 92% 4%, rgba(255, 45, 85, 0.07), transparent 62%);
+  background-attachment: fixed;
 }
 
 button,
@@ -101,4 +63,76 @@ textarea {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+}
+
+input,
+select,
+textarea {
+  color-scheme: dark;
+}
+
+::selection {
+  background: rgba(0, 229, 255, 0.28);
+}
+
+/* ---------- neon pulses ---------- */
+
+@keyframes pulse-blue {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.22), 0 0 10px rgba(0, 229, 255, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.55), 0 0 26px rgba(0, 229, 255, 0.32);
+  }
+}
+
+@keyframes pulse-red {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(255, 45, 85, 0.22), 0 0 10px rgba(255, 45, 85, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(255, 45, 85, 0.55), 0 0 26px rgba(255, 45, 85, 0.32);
+  }
+}
+
+@keyframes glow-text-blue {
+  0%,
+  100% {
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.25);
+  }
+  50% {
+    text-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+  }
+}
+
+@keyframes glow-text-red {
+  0%,
+  100% {
+    text-shadow: 0 0 6px rgba(255, 45, 85, 0.25);
+  }
+  50% {
+    text-shadow: 0 0 16px rgba(255, 45, 85, 0.6);
+  }
+}
+
+@keyframes fuel-shimmer {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
