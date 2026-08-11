@@ -1,35 +1,39 @@
 # Agency Dashboard
 
 Book-of-business tracker for a Farm Bureau Michigan agency. React + TypeScript + Vite,
-deployed to GitHub Pages. All data lives in the browser's local storage — nothing is sent
-anywhere, and the data stays on the machine and browser you enter it on.
+deployed to GitHub Pages. Single dark theme with neon blue and red accents; pulsing is
+reserved for the net commission tile, the current tier, behind-pace pills and the import
+drop zone, and all of it stops under `prefers-reduced-motion`.
+
+All data lives in the browser's local storage — nothing is sent anywhere, and the data
+stays on the machine and browser you enter it on.
 
 ## Tabs
 
-**Progress** — policy counts against the goal for the current period (Property 40,
-Casualty 40, Life 25). Both period dates are editable at the top; everything else on the
-tab is derived from them:
+**Progress** — the book of business and everything derived from it.
 
-- *Pace* compares where you are against where you'd be if the goal were spread evenly
-  across the period. The tick mark on each meter is that same on-pace point.
-- *Needed per week* is the remaining policies divided by the weeks left.
-- Premium tracking is there but has no goal set — enter one per line to turn on the meter.
+*Book of business* is the workbook ported over, formulas intact:
 
-Below that, **NADP tiers** shows the 6-month checkpoint from the commission
-multiplier table in the 2026 Agency Compensation guide (Part V). Each tier is a
-card with two gas-tank gauges that fill as you close policies:
+```
+Gross Commission = Premium x Percentage Earned
+Net Commission   = Gross + (Gross x Multiplier)
+```
 
-| Tier | Multiplier | Property + Casualty | Life |
-| --- | --- | --- | --- |
-| Tier 1 | 0.50 | 50 | 12 |
-| Tier 2 | 0.70 | 63 | 18 |
-| Tier 3 | 1.00 | 77 | 24 |
+Three books match the workbook's sheets — Personal, Life (adds death benefit
+and a running count) and Commercial (company name and notes) — with a month
+filter standing in for the twelve monthly sheets. The footer totals mirror the
+sheet: total premium, average premium, average commission, plus running gross
+and net. Line of business is a dropdown drawn from the guide's rate tables,
+each option mapped to a property/casualty/life category.
 
-Property and Casualty count together because the guide's P/C table is a single
-combined policy count. The tank colour tracks the fill — red, amber, blue, then
-green at 100% — and the highest tier where both counts land is marked "You are
-here". Targets live in `monthSixTiers` in `src/lib/defaultData.ts`; other month
-rows from the same table can be dropped in there.
+Everything above and below that table is derived from it. Policy counts and
+premium are never typed in twice:
+
+- *Earnings tiles* — net commission, gross commission and total premium for
+  policies whose effective date falls inside the goal period.
+- *Goals* — policy and premium meters per line. Counts come from the book; you
+  set only the targets. The tick on each meter is the on-pace point.
+- *Pace* — days left, ahead/behind, and policies needed per week.
 
 **Calendar & To-Do** — month view with events per day, plus a running task list.
 
