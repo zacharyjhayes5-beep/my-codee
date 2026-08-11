@@ -455,6 +455,196 @@
   font-weight: 500;
 }
 
+/* Section headings */
+.section-head h2,
+.book-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.section-head p,
+.book-head p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+.goals-section,
+.book-section {
+  border-top: 1px solid var(--gridline);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stat-tile.accent {
+  border-color: var(--accent);
+}
+
+.earnings-row {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* Book of business */
+.book-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.book-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.book-tabs {
+  display: flex;
+  gap: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.book-tabs button {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.book-tabs button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.month-select,
+.book-table select,
+.book-table input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.book-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-1);
+  font-size: 0.82rem;
+}
+
+.book-table th,
+.book-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--gridline);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.book-table th {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  position: sticky;
+  top: 0;
+  background: var(--surface-1);
+}
+
+.book-table input,
+.book-table select {
+  border-color: transparent;
+  background: transparent;
+  width: 100%;
+  min-width: 88px;
+}
+
+.book-table input:hover,
+.book-table input:focus,
+.book-table select:hover,
+.book-table select:focus {
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.book-table select.needs-input {
+  border-color: var(--status-warning);
+}
+
+.book-table .col-money input,
+.book-table .col-rate input {
+  text-align: right;
+  min-width: 72px;
+}
+
+.book-table .col-rate input {
+  min-width: 68px;
+}
+
+.book-table select {
+  min-width: 150px;
+}
+
+.book-table .col-num {
+  color: var(--text-muted);
+  width: 34px;
+  min-width: 34px;
+}
+
+.book-table td.computed {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.book-table td.computed.strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.book-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.book-totals div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.book-totals span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.book-totals strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.book-totals strong.net {
+  color: var(--accent);
+}
+
 /* NADP tier section */
 .tier-section {
   border-top: 1px solid var(--gridline);

@@ -5,8 +5,8 @@ import { newId, readJson, today } from "./storage";
 /* Shapes written by the first version of the dashboard. */
 interface LegacyLine {
   id: string;
-  policyCount?: number;
-  premium?: number;
+  policyGoal?: number;
+  premiumGoal?: number;
 }
 
 interface LegacyLead {
@@ -20,15 +20,16 @@ interface LegacyLead {
   createdAt?: string;
 }
 
-const LEGACY_LINES_KEY = "fb-dashboard:lines";
+const LEGACY_LINES_KEY = "fb-dashboard:lines:v2";
 const LEGACY_LEADS_KEY = "fb-dashboard:leads";
 
-export const LINES_KEY = "fb-dashboard:lines:v2";
+export const LINES_KEY = "fb-dashboard:lines:v3";
 export const PROSPECTS_KEY = "fb-dashboard:prospects";
+export const ENTRIES_KEY = "fb-dashboard:policies";
 
 /**
- * Carry counts forward from the first version while taking names and goals
- * from the current defaults. Lines that no longer exist are dropped.
+ * Policy counts now come from the book of business, so only the goals carry
+ * forward from the previous shape.
  */
 export function migratedLines(): PolicyLine[] {
   const legacy = readJson<LegacyLine[]>(LEGACY_LINES_KEY);
@@ -39,8 +40,8 @@ export function migratedLines(): PolicyLine[] {
     if (!old) return line;
     return {
       ...line,
-      policyCount: Number(old.policyCount) || 0,
-      premium: Number(old.premium) || 0,
+      policyGoal: Number(old.policyGoal) || line.policyGoal,
+      premiumGoal: Number(old.premiumGoal) || line.premiumGoal,
     };
   });
 }

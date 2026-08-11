@@ -1,12 +1,31 @@
 export type LineId = "property" | "casualty" | "life";
 
+/** Which book a policy is written in — mirrors the workbook's sheet split. */
+export type Book = "personal" | "life" | "commercial";
+
 export interface PolicyLine {
   id: LineId;
   name: string;
-  policyCount: number;
   policyGoal: number;
-  premium: number;
   premiumGoal: number;
+}
+
+/** One row of the book of business. Gross and net are always derived. */
+export interface PolicyEntry {
+  id: string;
+  book: Book;
+  effectiveDate: string; // ISO yyyy-mm-dd
+  firstName: string;
+  lastName: string;
+  companyName: string; // commercial book
+  deathBenefit: number; // life book
+  lineOfBusiness: string; // id from the line-of-business catalog
+  policyNumber: string;
+  premium: number;
+  percentEarned: number; // decimal — 0.09 is 9%
+  multiplier: number;
+  lastReview: string;
+  notes: string;
 }
 
 export interface Period {

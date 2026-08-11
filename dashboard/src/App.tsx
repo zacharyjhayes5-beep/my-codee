@@ -5,8 +5,8 @@ import { CalendarTab } from "./components/CalendarTab";
 import { ProspectsTab } from "./components/ProspectsTab";
 import { useLocalStorage } from "./lib/storage";
 import { defaultOwnerName, defaultPeriod } from "./lib/defaultData";
-import { LINES_KEY, PROSPECTS_KEY, migratedLines, migratedProspects } from "./lib/migrate";
-import type { CalendarEvent, Period, PolicyLine, Prospect, TodoItem } from "./types";
+import { ENTRIES_KEY, LINES_KEY, PROSPECTS_KEY, migratedLines, migratedProspects } from "./lib/migrate";
+import type { CalendarEvent, Period, PolicyEntry, PolicyLine, Prospect, TodoItem } from "./types";
 
 type Tab = "progress" | "calendar" | "prospects";
 
@@ -20,6 +20,7 @@ function App() {
   const [tab, setTab] = useState<Tab>("progress");
   const [lines, setLines] = useLocalStorage<PolicyLine[]>(LINES_KEY, migratedLines);
   const [period, setPeriod] = useLocalStorage<Period>("fb-dashboard:period", defaultPeriod);
+  const [entries, setEntries] = useLocalStorage<PolicyEntry[]>(ENTRIES_KEY, []);
   const [events, setEvents] = useLocalStorage<CalendarEvent[]>("fb-dashboard:events", []);
   const [todos, setTodos] = useLocalStorage<TodoItem[]>("fb-dashboard:todos", []);
   const [prospects, setProspects] = useLocalStorage<Prospect[]>(PROSPECTS_KEY, migratedProspects);
@@ -43,7 +44,14 @@ function App() {
 
       <main>
         {tab === "progress" && (
-          <ProgressTab lines={lines} onChange={setLines} period={period} onPeriodChange={setPeriod} />
+          <ProgressTab
+            lines={lines}
+            onChange={setLines}
+            period={period}
+            onPeriodChange={setPeriod}
+            entries={entries}
+            onEntriesChange={setEntries}
+          />
         )}
         {tab === "calendar" && (
           <CalendarTab events={events} onEventsChange={setEvents} todos={todos} onTodosChange={setTodos} />
