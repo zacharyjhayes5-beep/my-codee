@@ -1,18 +1,28 @@
 import { useState } from "react";
 import "./App.css";
 import { ProgressTab } from "./components/ProgressTab";
-import { CalendarTab } from "./components/CalendarTab";
+import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
 import { useLocalStorage } from "./lib/storage";
 import { defaultOwnerName, defaultPeriod } from "./lib/defaultData";
-import { ENTRIES_KEY, LINES_KEY, PROSPECTS_KEY, migratedLines, migratedProspects } from "./lib/migrate";
-import type { CalendarEvent, Period, PolicyEntry, PolicyLine, Prospect, TodoItem } from "./types";
+import {
+  DISMISSED_KEY,
+  ENTRIES_KEY,
+  LINES_KEY,
+  PROSPECTS_KEY,
+  SUGGESTIONS_KEY,
+  TASKS_KEY,
+  migratedLines,
+  migratedProspects,
+  migratedTasks,
+} from "./lib/migrate";
+import type { Period, PolicyEntry, PolicyLine, Prospect, Suggestion, Task } from "./types";
 
-type Tab = "progress" | "calendar" | "prospects";
+type Tab = "progress" | "todo" | "prospects";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "progress", label: "Progress" },
-  { id: "calendar", label: "Calendar & To-Do" },
+  { id: "todo", label: "To-Do" },
   { id: "prospects", label: "Prospects" },
 ];
 
@@ -21,8 +31,9 @@ function App() {
   const [lines, setLines] = useLocalStorage<PolicyLine[]>(LINES_KEY, migratedLines);
   const [period, setPeriod] = useLocalStorage<Period>("fb-dashboard:period", defaultPeriod);
   const [entries, setEntries] = useLocalStorage<PolicyEntry[]>(ENTRIES_KEY, []);
-  const [events, setEvents] = useLocalStorage<CalendarEvent[]>("fb-dashboard:events", []);
-  const [todos, setTodos] = useLocalStorage<TodoItem[]>("fb-dashboard:todos", []);
+  const [tasks, setTasks] = useLocalStorage<Task[]>(TASKS_KEY, migratedTasks);
+  const [suggestions, setSuggestions] = useLocalStorage<Suggestion[]>(SUGGESTIONS_KEY, []);
+  const [dismissed, setDismissed] = useLocalStorage<string[]>(DISMISSED_KEY, []);
   const [prospects, setProspects] = useLocalStorage<Prospect[]>(PROSPECTS_KEY, migratedProspects);
   const [ownerName, setOwnerName] = useLocalStorage<string>("fb-dashboard:owner", defaultOwnerName);
 
@@ -53,8 +64,15 @@ function App() {
             onEntriesChange={setEntries}
           />
         )}
-        {tab === "calendar" && (
-          <CalendarTab events={events} onEventsChange={setEvents} todos={todos} onTodosChange={setTodos} />
+        {tab === "todo" && (
+          <TodoTab
+            tasks={tasks}
+            onTasksChange={setTasks}
+            suggestions={suggestions}
+            onSuggestionsChange={setSuggestions}
+            dismissed={dismissed}
+            onDismissedChange={setDismissed}
+          />
         )}
         {tab === "prospects" && (
           <ProspectsTab
