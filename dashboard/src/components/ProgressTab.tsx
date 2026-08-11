@@ -1,14 +1,12 @@
 import { useMemo } from "react";
 import { differenceInCalendarDays, format } from "date-fns";
-import type { Period, PolicyLine } from "../types";
+import type { Period, PolicyEntry, PolicyLine } from "../types";
 import { seriesColors } from "../lib/defaultData";
+import { countsByCategory, currency, totalsFor } from "../lib/policies";
+import { BookOfBusiness } from "./BookOfBusiness";
 import { Meter } from "./Meter";
 import { StatTile } from "./StatTile";
 import { TierSection } from "./TierSection";
-
-function formatCurrency(n: number) {
-  return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-}
 
 function formatCount(n: number) {
   return n.toLocaleString("en-US");
@@ -23,22 +21,42 @@ interface ProgressTabProps {
   onChange: (lines: PolicyLine[]) => void;
   period: Period;
   onPeriodChange: (period: Period) => void;
+  entries: PolicyEntry[];
+  onEntriesChange: (updater: (prev: PolicyEntry[]) => PolicyEntry[]) => void;
 }
 
-export function ProgressTab({ lines, onChange, period, onPeriodChange }: ProgressTabProps) {
+export function ProgressTab({
+  lines,
+  onChange,
+  period,
+  onPeriodChange,
+  entries,
+  onEntriesChange,
+}: ProgressTabProps) {
+  const inPeriod = useMemo(
+    () =>
+      entries.filter(
+        (e) => e.effectiveDate >= period.start && e.effectiveDate < period.end
+      ),
+    [entries, period.start, period.end]
+  );
+
+  const earnings = useMemo(() => totalsFor(inPeriod), [inPeriod]);
+  const derived = useMemo(() => countsByCategory(inPeriod), [inPeriod]);
+
   const totals = useMemo(
     () =>
       lines.reduce(
         (acc, l) => {
-          acc.policyCount += l.policyCount;
+          acc.policyCount += derived.counts[l.id];
           acc.policyGoal += l.policyGoal;
-          acc.premium += l.premium;
+          acc.premium += derived.premium[l.id];
           acc.premiumGoal += l.premiumGoal;
           return acc;
         },
         { policyCount: 0, policyGoal: 0, premium: 0, premiumGoal: 0 }
       ),
-    [lines]
+    [lines, derived]
   );
 
   const pace = useMemo(() => {
@@ -52,7 +70,6 @@ export function ProgressTab({ lines, onChange, period, onPeriodChange }: Progres
     const weeksLeft = daysLeft / 7;
     const remaining = Math.max(0, totals.policyGoal - totals.policyCount);
     return {
-      totalDays,
       daysLeft,
       elapsedPct,
       expectedTotal: (totals.policyGoal * elapsedPct) / 100,
@@ -102,106 +119,95 @@ export function ProgressTab({ lines, onChange, period, onPeriodChange }: Progres
         )}
       </div>
 
-      <div className="stat-row">
+      <div className="stat-row earnings-row">
         <StatTile
-          label="Total policies"
-          value={formatCount(totals.policyCount)}
-          sub={`of ${formatCount(totals.policyGoal)} goal`}
+          label="Net commission"
+          value={currency(earnings.net, 0)}
+          sub="premium × rate, plus multiplier"
+          accent
         />
+        <StatTile label="Gross commission" value={currency(earnings.gross, 0)} sub="before multiplier" />
+        <StatTile label="Total premium" value={currency(earnings.premium, 0)} sub={`${earnings.count} policies in period`} />
         <StatTile
           label="Pace"
           value={paceLabel}
-          sub={`On pace today: ${formatCount(Math.round(pace.expectedTotal))}`}
+          sub={`${formatCount(totals.policyCount)} of ${formatCount(totals.policyGoal)} · on pace today ${Math.round(pace.expectedTotal)}`}
         />
         <StatTile
           label="Needed per week"
           value={pace.daysLeft > 0 ? pace.perWeek.toFixed(1) : "—"}
-          sub={`to close the remaining ${formatCount(
-            Math.max(0, totals.policyGoal - totals.policyCount)
-          )}`}
-        />
-        <StatTile
-          label="Total premium"
-          value={formatCurrency(totals.premium)}
-          sub={totals.premiumGoal > 0 ? `of ${formatCurrency(totals.premiumGoal)} goal` : "No premium goal set"}
+          sub={`${formatCount(Math.max(0, totals.policyGoal - totals.policyCount))} policies to go`}
         />
       </div>
 
-      <div className="line-grid">
-        {lines.map((line) => {
-          const expected = (line.policyGoal * pace.elapsedPct) / 100;
-          const delta = line.policyCount - expected;
-          return (
-            <div className="line-card" key={line.id}>
-              <h3>
-                <span className="meter-dot" style={{ background: seriesColors[line.id] }} />
-                {line.name}
-                <span className={`pace-pill ${delta >= -0.5 ? "good" : "behind"}`}>
-                  {Math.abs(delta) < 0.5
-                    ? "on pace"
-                    : `${Math.abs(Math.round(delta))} ${delta > 0 ? "ahead" : "behind"}`}
-                </span>
-              </h3>
+      <BookOfBusiness entries={entries} onChange={onEntriesChange} />
 
-              <Meter
-                label="Policy count"
-                value={line.policyCount}
-                goal={line.policyGoal}
-                format={formatCount}
-                pacePct={pace.elapsedPct}
-              />
-              <Meter
-                label="Premium"
-                value={line.premium}
-                goal={line.premiumGoal}
-                format={formatCurrency}
-                pacePct={pace.elapsedPct}
-              />
+      <section className="goals-section">
+        <div className="section-head">
+          <h2>Goals</h2>
+          <p>Counts come straight from the book of business — set the targets here.</p>
+        </div>
 
-              <div className="line-inputs">
-                <label>
-                  Policies
-                  <input
-                    type="number"
-                    min={0}
-                    value={line.policyCount}
-                    onChange={(e) => updateLine(line.id, { policyCount: Number(e.target.value) })}
-                  />
-                </label>
-                <label>
-                  Policy goal
-                  <input
-                    type="number"
-                    min={0}
-                    value={line.policyGoal}
-                    onChange={(e) => updateLine(line.id, { policyGoal: Number(e.target.value) })}
-                  />
-                </label>
-                <label>
-                  Premium ($)
-                  <input
-                    type="number"
-                    min={0}
-                    value={line.premium}
-                    onChange={(e) => updateLine(line.id, { premium: Number(e.target.value) })}
-                  />
-                </label>
-                <label>
-                  Premium goal ($)
-                  <input
-                    type="number"
-                    min={0}
-                    value={line.premiumGoal}
-                    onChange={(e) => updateLine(line.id, { premiumGoal: Number(e.target.value) })}
-                  />
-                </label>
+        <div className="line-grid">
+          {lines.map((line) => {
+            const count = derived.counts[line.id];
+            const premium = derived.premium[line.id];
+            const expected = (line.policyGoal * pace.elapsedPct) / 100;
+            const delta = count - expected;
+            return (
+              <div className="line-card" key={line.id}>
+                <h3>
+                  <span className="meter-dot" style={{ background: seriesColors[line.id] }} />
+                  {line.name}
+                  <span className={`pace-pill ${delta >= -0.5 ? "good" : "behind"}`}>
+                    {Math.abs(delta) < 0.5
+                      ? "on pace"
+                      : `${Math.abs(Math.round(delta))} ${delta > 0 ? "ahead" : "behind"}`}
+                  </span>
+                </h3>
+
+                <Meter
+                  label="Policy count"
+                  value={count}
+                  goal={line.policyGoal}
+                  format={formatCount}
+                  pacePct={pace.elapsedPct}
+                />
+                <Meter
+                  label="Premium"
+                  value={premium}
+                  goal={line.premiumGoal}
+                  format={(n) => currency(n, 0)}
+                  pacePct={pace.elapsedPct}
+                />
+
+                <div className="line-inputs">
+                  <label>
+                    Policy goal
+                    <input
+                      type="number"
+                      min={0}
+                      value={line.policyGoal}
+                      onChange={(e) => updateLine(line.id, { policyGoal: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label>
+                    Premium goal ($)
+                    <input
+                      type="number"
+                      min={0}
+                      value={line.premiumGoal}
+                      onChange={(e) => updateLine(line.id, { premiumGoal: Number(e.target.value) })}
+                    />
+                  </label>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </section>
 
-      <TierSection lines={lines} />
+      <TierSection counts={derived.counts} />
     </div>
   );
 }

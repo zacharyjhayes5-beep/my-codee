@@ -1,9 +1,9 @@
 import type { LineId, Period, PolicyLine, ProspectStatus } from "../types";
 
 export const defaultPolicyLines: PolicyLine[] = [
-  { id: "property", name: "Property", policyCount: 0, policyGoal: 40, premium: 0, premiumGoal: 0 },
-  { id: "casualty", name: "Casualty", policyCount: 0, policyGoal: 40, premium: 0, premiumGoal: 0 },
-  { id: "life", name: "Life", policyCount: 0, policyGoal: 25, premium: 0, premiumGoal: 0 },
+  { id: "property", name: "Property", policyGoal: 40, premiumGoal: 0 },
+  { id: "casualty", name: "Casualty", policyGoal: 40, premiumGoal: 0 },
+  { id: "life", name: "Life", policyGoal: 25, premiumGoal: 0 },
 ];
 
 // End of period is fixed by the goal; the start is editable on the Progress tab.

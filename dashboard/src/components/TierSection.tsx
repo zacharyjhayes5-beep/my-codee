@@ -1,17 +1,17 @@
 import { useMemo } from "react";
-import type { PolicyLine } from "../types";
+import type { LineId } from "../types";
 import { monthSixTiers } from "../lib/defaultData";
 import { GasTank } from "./GasTank";
 
 interface TierSectionProps {
-  lines: PolicyLine[];
+  counts: Record<LineId, number>;
 }
 
-export function TierSection({ lines }: TierSectionProps) {
-  const counts = useMemo(() => {
-    const get = (id: string) => lines.find((l) => l.id === id)?.policyCount ?? 0;
-    return { pc: get("property") + get("casualty"), life: get("life") };
-  }, [lines]);
+export function TierSection({ counts: byCategory }: TierSectionProps) {
+  const counts = useMemo(
+    () => ({ pc: byCategory.property + byCategory.casualty, life: byCategory.life }),
+    [byCategory]
+  );
 
   // The tier you're actually sitting in — the highest one where both counts land.
   const currentIndex = monthSixTiers.reduce(
