@@ -35,9 +35,56 @@ premium are never typed in twice:
   set only the targets. The tick on each meter is the on-pace point.
 - *Pace* — days left, ahead/behind, and policies needed per week.
 
-**Calendar & To-Do** — month view with events per day, plus a running task list.
+**To-Do** — the task list. See below.
 
 **Prospects** — profiles built from Granola call notes. See below.
+
+## To-Do
+
+One list, split into four sections by how soon something needs doing:
+
+| Section | What lands there |
+| --- | --- |
+| Now | Due today, already overdue, or worded as urgent |
+| This week | Has a day on it inside the next week |
+| Soon | Matters, but no date yet |
+| Someday | When there's room |
+
+The row of counters at the top is open tasks, due today, overdue, and how many
+suggestions are waiting. Below the add-a-task box, **This week** lays out the next
+seven days with whatever is due on each, and anything overdue sits above it in red.
+
+Type into the box at the top to add a task by hand. Picking a due date sets the
+urgency to match; the dropdown next to it overrides that. Clicking a task's text
+opens it for editing — wording, due date, and a notes field that keeps whatever
+context came with it.
+
+### Suggestions from Obsidian and Gmail
+
+The dashboard is a static page with no server, so it doesn't reach into the vault
+or the mailbox on its own. Feed it the text instead: drop `.md`/`.txt` notes or
+saved `.eml` messages on the import box, or paste either straight in. Which parser
+runs is worked out from the text (a Gmail message has `From:`/`Subject:` headers at
+the top); the Auto/Obsidian/Gmail toggle forces it when pasting something unusual.
+
+Everything found lands in the **Suggestions** panel and stays there until it's
+approved or rejected — nothing is added to the list on its own. Each card shows
+where it came from and why it was flagged, and the wording, urgency and due date
+can be corrected before approving.
+
+| Source | What counts as a task |
+| --- | --- |
+| Obsidian | Unchecked `- [ ]` boxes (ticked ones are skipped), `TODO:`/`Action item:`/`Next step:` lines, `#todo`-style tags, and bullets under an "Action items"/"Next steps"/"Follow-ups" heading |
+| Gmail | Replying to the message, plus any sentence that asks something of you — "can you…", "please…", "let me know", "waiting on you", a deadline. Quoted reply chains and signatures are ignored |
+
+Due dates are read from ISO dates (`2026-08-14`), `Aug 14`, `8/14`, and everyday
+phrasing — "tomorrow", "by Friday", "next week", "in 3 days". Urgency comes from
+whichever is stronger, the wording ("urgent", "ASAP", "someday") or the date.
+Indented lines under an Obsidian task, and the body of an email, are kept on the
+task as notes.
+
+Rejecting a suggestion is remembered, so re-importing the same note doesn't put it
+back. Tasks already on the list are skipped on import the same way.
 
 ## Importing Granola notes
 

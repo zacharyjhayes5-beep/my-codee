@@ -1,18 +1,18 @@
 import { useMemo } from "react";
 import { differenceInCalendarDays, format } from "date-fns";
-import type { CalendarEvent, Period, PolicyEntry, PolicyLine, Prospect, TodoItem } from "../types";
+import type { Period, PolicyEntry, PolicyLine, Prospect, Suggestion, Task } from "../types";
 import { countsByCategory, currency, totalsFor } from "../lib/policies";
 import { ProgressOrb } from "./ProgressOrb";
 
-export type CommandTarget = "progress" | "calendar" | "prospects";
+export type CommandTarget = "progress" | "todo" | "prospects";
 
 interface OperatorTabProps {
   entries: PolicyEntry[];
   lines: PolicyLine[];
   period: Period;
   prospects: Prospect[];
-  todos: TodoItem[];
-  events: CalendarEvent[];
+  tasks: Task[];
+  suggestions: Suggestion[];
   onCommand: (target: CommandTarget) => void;
 }
 
@@ -38,8 +38,9 @@ function compact(n: number) {
 const commands: { id: CommandTarget; label: string; hint: string }[] = [
   { id: "progress", label: "LOG POLICY", hint: "add to the book" },
   { id: "prospects", label: "IMPORT NOTES", hint: "granola → profile" },
-  { id: "calendar", label: "PLAN TODAY", hint: "events & tasks" },
+  { id: "todo", label: "PLAN TODAY", hint: "what's due" },
   { id: "prospects", label: "PIPELINE", hint: "who's open" },
+  { id: "todo", label: "REVIEW INBOX", hint: "approve suggestions" },
   { id: "progress", label: "WK REVIEW", hint: "pace & tiers" },
 ];
 
@@ -48,8 +49,8 @@ export function OperatorTab({
   lines,
   period,
   prospects,
-  todos,
-  events,
+  tasks,
+  suggestions,
   onCommand,
 }: OperatorTabProps) {
   const stats = useMemo(() => {
@@ -75,9 +76,10 @@ export function OperatorTab({
     const openProspects = prospects.filter(
       (p) => p.status !== "Closed" && p.status !== "Lost"
     ).length;
-    const openTodos = todos.filter((t) => !t.done).length;
     const iso = todayIso();
-    const todayEvents = events.filter((e) => e.date === iso).length;
+    const openTodos = tasks.filter((t) => !t.done).length;
+    const dueToday = tasks.filter((t) => !t.done && t.dueDate === iso).length;
+    const overdue = tasks.filter((t) => !t.done && t.dueDate && t.dueDate < iso).length;
 
     return {
       net: earnings.net,
@@ -90,9 +92,11 @@ export function OperatorTab({
       delta,
       openProspects,
       openTodos,
-      todayEvents,
+      dueToday,
+      overdue,
+      waiting: suggestions.length,
     };
-  }, [entries, lines, period, prospects, todos, events]);
+  }, [entries, lines, period, prospects, tasks, suggestions]);
 
   const onPace = stats.delta >= -0.5;
 
@@ -175,10 +179,16 @@ export function OperatorTab({
         <header className="op-panel-head">Today</header>
         <div className="op-ticker-body">
           <span>
-            <em>{stats.todayEvents}</em> event{stats.todayEvents === 1 ? "" : "s"} scheduled
+            <em>{stats.dueToday}</em> due today
+          </span>
+          <span className={stats.overdue > 0 ? "op-overdue" : ""}>
+            <em>{stats.overdue}</em> overdue
           </span>
           <span>
             <em>{stats.openTodos}</em> open task{stats.openTodos === 1 ? "" : "s"}
+          </span>
+          <span>
+            <em>{stats.waiting}</em> suggestion{stats.waiting === 1 ? "" : "s"} waiting
           </span>
           <span>
             <em>{stats.openProspects}</em> prospect{stats.openProspects === 1 ? "" : "s"} in play
