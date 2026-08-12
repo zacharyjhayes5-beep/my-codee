@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import { OperatorTab, type CommandTarget } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
 import { CalendarTab } from "./components/CalendarTab";
 import { ProspectsTab } from "./components/ProspectsTab";
@@ -8,16 +9,17 @@ import { defaultOwnerName, defaultPeriod } from "./lib/defaultData";
 import { ENTRIES_KEY, LINES_KEY, PROSPECTS_KEY, migratedLines, migratedProspects } from "./lib/migrate";
 import type { CalendarEvent, Period, PolicyEntry, PolicyLine, Prospect, TodoItem } from "./types";
 
-type Tab = "progress" | "calendar" | "prospects";
+type Tab = "operator" | "progress" | "calendar" | "prospects";
 
 const tabs: { id: Tab; label: string }[] = [
+  { id: "operator", label: "Operator" },
   { id: "progress", label: "Progress" },
   { id: "calendar", label: "Calendar & To-Do" },
   { id: "prospects", label: "Prospects" },
 ];
 
 function App() {
-  const [tab, setTab] = useState<Tab>("progress");
+  const [tab, setTab] = useState<Tab>("operator");
   const [lines, setLines] = useLocalStorage<PolicyLine[]>(LINES_KEY, migratedLines);
   const [period, setPeriod] = useLocalStorage<Period>("fb-dashboard:period", defaultPeriod);
   const [entries, setEntries] = useLocalStorage<PolicyEntry[]>(ENTRIES_KEY, []);
@@ -43,6 +45,17 @@ function App() {
       </header>
 
       <main>
+        {tab === "operator" && (
+          <OperatorTab
+            entries={entries}
+            lines={lines}
+            period={period}
+            prospects={prospects}
+            todos={todos}
+            events={events}
+            onCommand={(target: CommandTarget) => setTab(target)}
+          />
+        )}
         {tab === "progress" && (
           <ProgressTab
             lines={lines}

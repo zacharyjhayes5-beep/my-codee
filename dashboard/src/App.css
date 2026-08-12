@@ -1421,3 +1421,352 @@
 .crm-table tbody tr:hover {
   background: rgba(0, 229, 255, 0.04);
 }
+
+/* ============================================================
+   OPERATOR DECK
+   Terminal-console styling: mono type, bracketed panels,
+   labelled headers, one hero readout.
+   ============================================================ */
+
+:root {
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+}
+
+.operator {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.op-grid {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.8fr) minmax(320px, 1.5fr) minmax(210px, 0.9fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.op-panel {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(0, 229, 255, 0.03), transparent 42%),
+    var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px 16px;
+}
+
+/* Corner brackets */
+.op-panel::before,
+.op-panel::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.op-panel::before {
+  top: 5px;
+  left: 5px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.op-panel::after {
+  bottom: 5px;
+  right: 5px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+.op-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--gridline);
+}
+
+.op-flag {
+  margin-left: auto;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+
+.op-flag.ok {
+  color: var(--status-good);
+}
+
+.op-flag.alert {
+  color: var(--neon-red);
+  animation: pulse-red 2.2s ease-in-out infinite;
+}
+
+/* System vitals */
+.op-vitals {
+  display: flex;
+  flex-direction: column;
+}
+
+.op-vital {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--gridline);
+}
+
+.op-vital:last-child {
+  border-bottom: none;
+}
+
+.op-vital-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--text-muted);
+}
+
+.op-vital-value {
+  font-family: var(--mono);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.op-vital-value em {
+  font-style: normal;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* Hero orb */
+.op-core {
+  display: flex;
+  flex-direction: column;
+}
+
+.orb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 250px;
+}
+
+.orb-svg {
+  width: 100%;
+  max-width: 290px;
+  height: auto;
+}
+
+.orb-core {
+  animation: orb-breathe 4.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.orb-halo {
+  animation: orb-breathe 6s ease-in-out infinite reverse;
+  transform-origin: center;
+}
+
+.orb-ring {
+  filter: drop-shadow(0 0 6px var(--accent));
+  transition: stroke-dasharray 0.5s ease;
+}
+
+.orb-ticks line {
+  stroke: var(--baseline);
+  stroke-width: 1.5;
+}
+
+.orb-readout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.orb-pct {
+  font-family: var(--mono);
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 22px rgba(0, 229, 255, 0.75);
+  font-variant-numeric: tabular-nums;
+}
+
+.orb-label {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-secondary);
+}
+
+.orb-caption {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.94;
+  }
+  50% {
+    transform: scale(1.045);
+    opacity: 1;
+  }
+}
+
+/* Command deck */
+.op-commands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.op-commands button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  background: var(--surface-2);
+  border: 1px solid var(--gridline);
+  border-left: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.op-commands button:hover {
+  background: rgba(0, 229, 255, 0.08);
+  box-shadow: var(--glow-blue);
+  transform: translateX(2px);
+}
+
+.op-cmd-label {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+}
+
+.op-cmd-hint {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* Big goal banner */
+.op-bhag-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.op-bhag-text {
+  font-family: var(--mono);
+  font-size: clamp(1.3rem, 4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  text-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
+}
+
+.op-bhag-track {
+  height: 6px;
+  background: var(--gridline);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.op-bhag-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-red), var(--accent));
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
+  transition: width 0.5s ease;
+}
+
+.op-bhag-meta,
+.op-ticker-body {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.op-ticker-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+
+.op-ticker-body em {
+  font-style: normal;
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .op-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Header picks up the console treatment so the whole app reads as one system */
+.app-header h1 {
+  font-family: var(--mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.app-header p {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tab-bar button {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
