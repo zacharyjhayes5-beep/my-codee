@@ -2147,3 +2147,152 @@
 .op-ticker-body .op-overdue em {
   color: var(--neon-red);
 }
+
+/* ---------- lead map ---------- */
+
+.map-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-legend {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.map-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.map-legend i.ring {
+  border: 1.5px solid var(--text-secondary);
+  background: transparent;
+}
+
+.map-hint {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.map-svg {
+  width: 100%;
+  height: auto;
+  max-height: 72vh;
+  touch-action: none;
+  background:
+    radial-gradient(620px 420px at 50% 45%, rgba(0, 229, 255, 0.05), transparent 70%),
+    var(--page);
+  border: 1px solid var(--gridline);
+  border-radius: 3px;
+}
+
+.map-edge {
+  stroke: #3d5a7a;
+  stroke-width: 1.3;
+  opacity: 0.9;
+  transition: opacity 0.2s ease, stroke 0.2s ease;
+}
+
+.map-edge.active {
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 1;
+  filter: drop-shadow(0 0 5px var(--accent));
+}
+
+.map-edge.dim {
+  opacity: 0.14;
+}
+
+.map-node {
+  cursor: grab;
+}
+
+.map-node:active {
+  cursor: grabbing;
+}
+
+.map-node-halo {
+  opacity: 0.12;
+  transition: opacity 0.2s ease;
+}
+
+.map-node:hover .map-node-halo,
+.map-node.selected .map-node-halo {
+  opacity: 0.32;
+}
+
+.map-node.dim {
+  opacity: 0.28;
+}
+
+.map-node.kind-line text {
+  font-size: 13px;
+  fill: var(--text-primary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.map-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  fill: var(--text-secondary);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.map-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  border-radius: 3px;
+  background: var(--surface-2);
+  padding: 10px 14px;
+}
+
+.map-detail > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.map-detail strong {
+  font-size: 0.98rem;
+}
+
+.status-chip {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  padding: 1px 7px;
+}
+
+.map-detail-meta {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}

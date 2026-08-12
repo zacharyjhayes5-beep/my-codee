@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import { LeadMap } from "./components/LeadMap";
 import { OperatorTab, type CommandTarget } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
 import { TodoTab } from "./components/TodoTab";
@@ -19,13 +20,14 @@ import {
 } from "./lib/migrate";
 import type { Period, PolicyEntry, PolicyLine, Prospect, Suggestion, Task } from "./types";
 
-type Tab = "operator" | "progress" | "todo" | "prospects";
+type Tab = "operator" | "progress" | "todo" | "prospects" | "map";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "operator", label: "Operator" },
   { id: "progress", label: "Progress" },
   { id: "todo", label: "To-Do" },
   { id: "prospects", label: "Prospects" },
+  { id: "map", label: "Lead Map" },
 ];
 
 function App() {
@@ -86,6 +88,9 @@ function App() {
             dismissed={dismissed}
             onDismissedChange={setDismissed}
           />
+        )}
+        {tab === "map" && (
+          <LeadMap prospects={prospects} onOpenProspect={() => setTab("prospects")} />
         )}
         {tab === "prospects" && (
           <ProspectsTab
