@@ -4,7 +4,7 @@ import type { Period, PolicyEntry, PolicyLine, Prospect, Suggestion, Task } from
 import { countsByCategory, currency, totalsFor } from "../lib/policies";
 import { ProgressOrb } from "./ProgressOrb";
 
-export type CommandTarget = "progress" | "todo" | "prospects";
+export type CommandTarget = "progress" | "todo" | "prospects" | "map";
 
 interface OperatorTabProps {
   entries: PolicyEntry[];
@@ -39,7 +39,7 @@ const commands: { id: CommandTarget; label: string; hint: string }[] = [
   { id: "progress", label: "LOG POLICY", hint: "add to the book" },
   { id: "prospects", label: "IMPORT NOTES", hint: "granola → profile" },
   { id: "todo", label: "PLAN TODAY", hint: "what's due" },
-  { id: "prospects", label: "PIPELINE", hint: "who's open" },
+  { id: "map", label: "LEAD MAP", hint: "see the web" },
   { id: "todo", label: "REVIEW INBOX", hint: "approve suggestions" },
   { id: "progress", label: "WK REVIEW", hint: "pace & tiers" },
 ];
