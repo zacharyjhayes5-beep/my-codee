@@ -3,6 +3,7 @@ import { differenceInCalendarDays, format } from "date-fns";
 import type { Period, PolicyEntry, PolicyLine } from "../types";
 import { seriesColors } from "../lib/defaultData";
 import { countsByCategory, currency, totalsFor } from "../lib/policies";
+import { AllAmericanSection } from "./AllAmericanSection";
 import { BookOfBusiness } from "./BookOfBusiness";
 import { Meter } from "./Meter";
 import { StatTile } from "./StatTile";
@@ -208,6 +209,8 @@ export function ProgressTab({
       </section>
 
       <TierSection counts={derived.counts} />
+
+      <AllAmericanSection entries={inPeriod} />
     </div>
   );
 }

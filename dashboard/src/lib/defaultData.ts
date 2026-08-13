@@ -76,6 +76,32 @@ export const monthSixTiers: Tier[] = [
   { id: "tier-3", name: "Tier 3", multiplier: "1.00", pc: 77, life: 24 },
 ];
 
+/**
+ * All-American qualifications, 2026, for agents contracted 2022 or after.
+ * Two alternative paths — meeting either one qualifies. Both also require the
+ * persistency and annuity minimums below, which is why those are separate.
+ */
+export interface AllAmericanPath {
+  id: string;
+  name: string;
+  blurb: string;
+  /** New life commission, gross — before the NADP multiplier. */
+  commission: number;
+  /** New inforce and retained life policies, annuities not counted. */
+  policies: number;
+}
+
+export const allAmericanPaths: AllAmericanPath[] = [
+  { id: "path-a", name: "Path A", blurb: "Higher commission, fewer policies", commission: 11000, policies: 35 },
+  { id: "path-b", name: "Path B", blurb: "Lower commission, more policies", commission: 9000, policies: 50 },
+];
+
+/** 36-month life persistency, required on both paths. */
+export const allAmericanPersistency = 85;
+
+/** New annuities, required on both paths. */
+export const allAmericanAnnuities = 1;
+
 export const seriesColors: Record<LineId, string> = {
   property: "var(--series-1)",
   casualty: "var(--series-2)",

@@ -79,6 +79,19 @@ Property and Casualty are counted **together** because the guide's P/C table
 is one combined policy count. Targets live in `monthSixTiers` in
 `lib/defaultData.ts`; other month rows from the same table drop in there.
 
+**All-American.** 2026 qualifications for agents contracted 2022 or after,
+shown on the Progress tab below the tiers. Two alternative paths — $11,000 new
+life commission + 35 life policies, or $9,000 + 50 — and both additionally need
+85% 36-month life persistency and 1 new annuity, so those two are rendered once
+above the path cards rather than repeated in each.
+
+He confirmed the commission threshold is measured on **gross** commission, not
+net — the multiplier bonus does not count toward it. Annuities are excluded
+from the All-American life policy count because the guide lists them as their
+own requirement; `annuity: true` in `lib/policies.ts` marks them, and
+`lifeBreakdown()` does the split. This is deliberately *not* how the goal
+meters and tier gauges count life, which keep annuities in.
+
 **Theme.** Single dark theme, neon blue (`--accent`) and neon red
 (`--neon-red`). No light mode. Console styling on the Operator tab: monospace
 labels, bracketed panel corners, uppercase headers. Pulsing animation is
@@ -91,8 +104,8 @@ graph, the gas tanks and the progress orb are all hand-rolled SVG.
 ## Local storage keys
 
 `fb-dashboard:` prefixed — `lines:v3`, `policies`, `tasks`, `suggestions`,
-`dismissed`, `prospects`, `period`, `owner`. `lib/migrate.ts` carries old
-shapes forward; add a migration rather than orphaning his data.
+`dismissed`, `prospects`, `period`, `owner`, `persistency`. `lib/migrate.ts`
+carries old shapes forward; add a migration rather than orphaning his data.
 
 **Storage is per origin, and this has already confused him once.** The live
 site and a local dev server are two unconnected sets of data — work entered on
@@ -116,17 +129,19 @@ something as working without having actually run it.
    replacement, but the PDF was byte-identical to the previous one and the
    photo was the All-American qualifications page, not a tier table. Still
    waiting on a straight-on photo of the pages with the new numbers.
-2. **All-American tracking.** Not built. The 2026 qualifications for agents
-   contracted 2022 or after are two alternative paths: $11,000 new life
-   commission + 85% 36-month life persistency + 35 new inforce and retained
-   life policies + 1 new annuity, **or** $9,000 + 85% + 50 policies + 1
-   annuity. Would make a natural second set of gauges.
-3. **Premium goals.** Per-line premium goals are unset (0), so those meters
+2. **Premium goals.** Per-line premium goals are unset (0), so those meters
    read "no goal set" until he enters targets.
-4. **Backup is manual.** Back up / Restore now exist in the header, but he has
+3. **Backup is manual.** Back up / Restore now exist in the header, but he has
    to remember to press the button. Nothing warns him when the last backup is
    old, and nothing carries data between the live site and a local copy on its
    own.
+4. **Persistency is typed in.** All-American needs a 36-month life persistency
+   figure the book of business cannot produce. It is a manual field on the
+   Progress tab (`fb-dashboard:persistency`), so it is only as current as the
+   last time he read it off a Farm Bureau report.
+5. **"Inforce and retained" is approximated.** The All-American policy count is
+   every life policy written in the period. Nothing tracks lapses, so a policy
+   that lapses still counts — the real figure could be lower.
 
 ## Things he's asked about
 

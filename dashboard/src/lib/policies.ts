@@ -10,6 +10,12 @@ export interface LineOfBusiness {
   name: string;
   category: LineId;
   books: Book[];
+  /**
+   * Annuities sit in the `life` category for goals and tiers, because that is
+   * how the compensation guide groups them. All-American counts them as their
+   * own requirement, separate from life policies, so it needs them flagged.
+   */
+  annuity?: boolean;
 }
 
 export const linesOfBusiness: LineOfBusiness[] = [
@@ -45,9 +51,9 @@ export const linesOfBusiness: LineOfBusiness[] = [
   { id: "whole-life", name: "FB Select Whole Life", category: "life", books: ["life"] },
   { id: "premier-whole", name: "Premier Whole Life", category: "life", books: ["life"] },
   { id: "single-premium", name: "Single Premium Whole Life", category: "life", books: ["life"] },
-  { id: "myga", name: "Multi-Year Guaranteed Annuity", category: "life", books: ["life"] },
-  { id: "deferred-annuity", name: "Deferred Annuity", category: "life", books: ["life"] },
-  { id: "payout-annuity", name: "Payout Annuity", category: "life", books: ["life"] },
+  { id: "myga", name: "Multi-Year Guaranteed Annuity", category: "life", books: ["life"], annuity: true },
+  { id: "deferred-annuity", name: "Deferred Annuity", category: "life", books: ["life"], annuity: true },
+  { id: "payout-annuity", name: "Payout Annuity", category: "life", books: ["life"], annuity: true },
 ];
 
 export const lineById = new Map(linesOfBusiness.map((l) => [l.id, l]));
@@ -125,6 +131,40 @@ export function countsByCategory(entries: PolicyEntry[]) {
     premium[category] += e.premium;
   }
   return { counts, premium };
+}
+
+export interface LifeBreakdown {
+  /** Life policies excluding annuities — what All-American counts. */
+  policies: number;
+  /** Gross commission on those same policies, annuities excluded. */
+  gross: number;
+  annuities: number;
+}
+
+/**
+ * Splits the life category the way All-American reads it: annuities are their
+ * own requirement, so they are counted apart from life policies rather than
+ * inside them. This deliberately differs from the life figure on the goal
+ * meters and tier gauges, which follow the compensation guide and keep
+ * annuities in.
+ */
+export function lifeBreakdown(entries: PolicyEntry[]): LifeBreakdown {
+  let policies = 0;
+  let gross = 0;
+  let annuities = 0;
+
+  for (const e of entries) {
+    const line = lineById.get(e.lineOfBusiness);
+    if (line?.category !== "life") continue;
+    if (line.annuity) {
+      annuities += 1;
+    } else {
+      policies += 1;
+      gross += grossCommission(e);
+    }
+  }
+
+  return { policies, gross, annuities };
 }
 
 /* ---------------- formatting ---------------- */

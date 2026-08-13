@@ -1128,6 +1128,132 @@
   font-weight: 500;
 }
 
+/* All-American qualifications */
+.aa-section {
+  border-top: 1px solid var(--gridline);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aa-shared {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.aa-req {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--status-critical);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aa-req.met {
+  border-left-color: var(--status-good);
+}
+
+.aa-req-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.aa-req-value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.aa-req-goal {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.aa-persistency {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.aa-persistency input {
+  width: 5.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0 0 2px;
+}
+
+.aa-persistency input:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.aa-unit {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.aa-req-note {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.aa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.aa-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.aa-card.qualified {
+  border-color: var(--status-good);
+}
+
+.aa-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.aa-card-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.aa-blurb {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.aa-foot {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--gridline);
+  padding-top: 10px;
+}
+
 /* Gas tank gauge */
 .gas-tank {
   display: flex;
