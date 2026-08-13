@@ -51,6 +51,45 @@
   box-shadow: var(--glow-blue);
 }
 
+.header-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.backup-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.backup-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.backup-buttons button {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+}
+
+.backup-status {
+  margin: 0;
+  font-size: 0.76rem;
+  max-width: 320px;
+  text-align: right;
+}
+
+.backup-status.good {
+  color: var(--accent);
+}
+
+.backup-status.bad {
+  color: var(--status-critical);
+}
+
 .tab-panel {
   display: flex;
   flex-direction: column;

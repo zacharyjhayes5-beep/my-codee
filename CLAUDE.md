@@ -94,6 +94,15 @@ graph, the gas tanks and the progress orb are all hand-rolled SVG.
 `dismissed`, `prospects`, `period`, `owner`. `lib/migrate.ts` carries old
 shapes forward; add a migration rather than orphaning his data.
 
+**Storage is per origin, and this has already confused him once.** The live
+site and a local dev server are two unconnected sets of data — work entered on
+one is invisible on the other, and looks to him like the dashboard "lost" it.
+Before treating missing data as a bug, ask which address he entered it on.
+`components/BackupPanel.tsx` is the bridge: it exports every `fb-dashboard:`
+key to a JSON file and restores it anywhere. It reads the prefix rather than a
+fixed list, so a new key is included automatically — but a key that does *not*
+carry the prefix will be silently left out of backups.
+
 ## How to verify work
 
 There are no unit tests. Verify by driving the real app in a browser and
@@ -114,8 +123,10 @@ something as working without having actually run it.
    annuity. Would make a natural second set of gauges.
 3. **Premium goals.** Per-line premium goals are unset (0), so those meters
    read "no goal set" until he enters targets.
-4. **Backup/restore.** Local storage is one "clear browsing data" away from
-   gone. An export-to-file and import button has been suggested and not built.
+4. **Backup is manual.** Back up / Restore now exist in the header, but he has
+   to remember to press the button. Nothing warns him when the last backup is
+   old, and nothing carries data between the live site and a local copy on its
+   own.
 
 ## Things he's asked about
 

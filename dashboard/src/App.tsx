@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import { BackupPanel } from "./components/BackupPanel";
 import { LeadMap } from "./components/LeadMap";
 import { OperatorTab, type CommandTarget } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
@@ -48,13 +49,16 @@ function App() {
           <h1>Agency Dashboard</h1>
           <p>Farm Bureau Michigan — book of business tracker</p>
         </div>
-        <nav className="tab-bar">
-          {tabs.map((t) => (
-            <button key={t.id} className={t.id === tab ? "active" : ""} onClick={() => setTab(t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <div className="header-controls">
+          <nav className="tab-bar">
+            {tabs.map((t) => (
+              <button key={t.id} className={t.id === tab ? "active" : ""} onClick={() => setTab(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </nav>
+          <BackupPanel />
+        </div>
       </header>
 
       <main>
