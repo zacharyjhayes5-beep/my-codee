@@ -6,16 +6,15 @@ import {
   allAmericanPersistency,
 } from "../lib/defaultData";
 import { currency, lifeBreakdown } from "../lib/policies";
-import { useLocalStorage } from "../lib/storage";
+import { useStored } from "../lib/repository";
 import { Meter } from "./Meter";
 
 /**
  * Persistency is the one figure the book of business cannot produce — it comes
- * off a Farm Bureau report — so it is typed in and kept here rather than
- * threaded through App. The key carries the `fb-dashboard:` prefix so the
- * backup file picks it up with everything else.
+ * off a Farm Bureau report — so it is typed in. It is small configuration
+ * rather than a record, so the repository keeps it in localStorage, and the
+ * backup file picks it up with the rest of the settings.
  */
-const PERSISTENCY_KEY = "fb-dashboard:persistency";
 
 interface AllAmericanSectionProps {
   /** Entries already filtered to the goal period. */
@@ -23,7 +22,7 @@ interface AllAmericanSectionProps {
 }
 
 export function AllAmericanSection({ entries }: AllAmericanSectionProps) {
-  const [persistency, setPersistency] = useLocalStorage<number>(PERSISTENCY_KEY, 0);
+  const [persistency, setPersistency] = useStored("persistency");
   const life = useMemo(() => lifeBreakdown(entries), [entries]);
 
   // 0 means "never entered" rather than an actual zero — nobody has 0%.

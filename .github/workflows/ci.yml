@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - run: npm ci
+        working-directory: dashboard
+
+      - name: Lint
+        run: npm run lint
+        working-directory: dashboard
+
+      - name: Test
+        run: npm run test
+        working-directory: dashboard
+
+      - name: Build
+        run: npm run build
+        working-directory: dashboard

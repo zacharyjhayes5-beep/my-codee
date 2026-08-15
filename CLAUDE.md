@@ -103,11 +103,31 @@ rationed to things worth looking at and must stay behind
 **No new dependencies** unless there's a real reason. The force-directed
 graph, the gas tanks and the progress orb are all hand-rolled SVG.
 
-## Local storage keys
+## Storage
 
-`fb-dashboard:` prefixed — `lines:v3`, `policies`, `tasks`, `suggestions`,
-`dismissed`, `prospects`, `period`, `owner`, `persistency`. `lib/migrate.ts`
-carries old shapes forward; add a migration rather than orphaning his data.
+**Everything goes through `lib/repository.ts`. No component may touch
+`localStorage` or `indexedDB` directly** — that seam is the whole point of
+phase 1, and the backup depends on it being the only door.
+
+- **IndexedDB** (`fb-dashboard`, v1) holds records: `prospects`, `policies`,
+  `tasks`, `suggestions` as one row per record keyed by `id`, plus a `meta`
+  store for `dismissed` and the migration flag. `lib/db.ts` has the primitives.
+- **localStorage** holds small settings only: `fb-dashboard:period`, `:owner`,
+  `:persistency`, `:lines:v3`.
+- The cache is filled by `initRepository()` in `main.tsx` *before* the first
+  render, which is why `useStored` can stay synchronous and no component had to
+  become async. Don't move storage reads into components.
+- Writes are queued (`whenPersisted()` awaits them) so two fast edits to one
+  collection can't race on the store-wide rewrite.
+
+**Legacy localStorage record keys are still there on purpose.** Migration
+copied them into IndexedDB and left the originals as a frozen rollback point —
+frozen, not mirrored, so they stop reflecting reality the moment he edits
+anything. Removing them is a later phase, and the honest prerequisite is that
+he has a v2 backup he trusts.
+
+`lib/migrate.ts` still carries the pre-v3 shapes forward and runs as part of
+the migration; add a step there rather than orphaning his data.
 
 **Storage is per origin, and this has already confused him once.** The live
 site and a local dev server are two unconnected sets of data — work entered on
@@ -120,8 +140,12 @@ carry the prefix will be silently left out of backups.
 
 ## How to verify work
 
-`src/lib/policies.test.ts` covers the commission and policy calculations under
-vitest — every expected value in it was worked out by hand off his workbook.
+`npm test` runs vitest over `src/lib/*.test.ts` — the commission and policy
+calculations, the localStorage→IndexedDB migration, and the backup formats.
+Tests run in Node against `fake-indexeddb`, so the repository's real database
+code is exercised rather than a stand-in; `src/test/setup.ts` installs that and
+a localStorage shim. Every expected value was worked out by hand off his
+workbook.
 **If a change makes one of those fail, the change is wrong until proven
 otherwise, not the test.** Everything else is still verified by driving the
 real app in a browser and checking figures against hand calculation. Playwright
@@ -175,7 +199,11 @@ that would be expensive to lose:
 3. **Backup is manual.** Back up / Restore now exist in the header, but he has
    to remember to press the button. Nothing warns him when the last backup is
    old, and nothing carries data between the live site and a local copy on its
-   own.
+   own. The file is format v2; v1 files still restore.
+6. **Legacy localStorage records are stale weight.** They were retained as a
+   phase 1 rollback point and stop matching reality as soon as he edits
+   anything. Decide when to drop them — the prerequisite is a v2 backup he
+   trusts, not a code change.
 4. **Persistency is typed in.** All-American needs a 36-month life persistency
    figure the book of business cannot produce. It is a manual field on the
    Progress tab (`fb-dashboard:persistency`), so it is only as current as the

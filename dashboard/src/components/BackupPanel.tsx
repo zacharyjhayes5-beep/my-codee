@@ -1,113 +1,87 @@
 import { useRef, useState } from "react";
+import { BackupError, backupFilename, buildBackup, countsOf, parseBackup } from "../lib/backup";
+import { replaceAll } from "../lib/repository";
 
 /**
- * Everything the dashboard owns lives under this prefix, so a backup is just
- * "every key that starts with it". Reading the prefix rather than a hard-coded
- * list means a new key added later is picked up without touching this file.
+ * Back up writes everything the app has saved — the records now in IndexedDB
+ * and the settings still in localStorage — to one file. Restore reads a file
+ * of either format back in.
  */
-const PREFIX = "fb-dashboard:";
-
-const FILE_VERSION = 1;
-const FILE_MARKER = "agency-dashboard-backup";
-
-interface BackupFile {
-  app: string;
-  version: number;
-  exportedAt: string;
-  data: Record<string, unknown>;
-}
-
-function prefixedKeys(): string[] {
-  return Object.keys(localStorage).filter((k) => k.startsWith(PREFIX));
-}
-
 export function BackupPanel() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  function exportBackup() {
+  async function exportBackup() {
+    setBusy(true);
     try {
-      const data: Record<string, unknown> = {};
-      for (const key of prefixedKeys()) {
-        const raw = localStorage.getItem(key);
-        if (raw === null) continue;
-        // Store the parsed value so the file is readable, but keep the raw
-        // string if it was never JSON to begin with.
-        try {
-          data[key] = JSON.parse(raw);
-        } catch {
-          data[key] = raw;
-        }
-      }
+      const file = await buildBackup();
+      const total =
+        file.records.prospects.length +
+        file.records.policies.length +
+        file.records.tasks.length +
+        file.records.suggestions.length;
 
-      const file: BackupFile = {
-        app: FILE_MARKER,
-        version: FILE_VERSION,
-        exportedAt: new Date().toISOString(),
-        data,
-      };
-
-      const stamp = new Date().toISOString().slice(0, 10);
       const blob = new Blob([JSON.stringify(file, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `agency-dashboard-backup-${stamp}.json`;
+      link.download = backupFilename();
       link.click();
       URL.revokeObjectURL(url);
 
-      const count = Object.keys(data).length;
-      setStatus({ tone: "good", text: `Saved a backup of ${count} sections to your Downloads folder.` });
+      setStatus({
+        tone: "good",
+        text: `Saved ${total} record${total === 1 ? "" : "s"} and your settings to your Downloads folder.`,
+      });
     } catch {
       setStatus({ tone: "bad", text: "Could not save the backup file." });
+    } finally {
+      setBusy(false);
     }
   }
 
   async function importBackup(file: File) {
+    setBusy(true);
     try {
-      const parsed = JSON.parse(await file.text()) as BackupFile;
+      const parsed = parseBackup(await file.text());
 
-      if (parsed?.app !== FILE_MARKER || typeof parsed.data !== "object" || parsed.data === null) {
-        setStatus({ tone: "bad", text: "That file isn't a dashboard backup. Look for one named agency-dashboard-backup-….json" });
-        return;
-      }
+      const when = parsed.exportedAt
+        ? new Date(parsed.exportedAt).toLocaleString()
+        : "an unknown date";
+      const counts = countsOf(parsed.snapshot);
+      const summary = `${counts.prospects} prospects · ${counts.policies} policies · ${counts.tasks} tasks`;
 
-      const incoming = Object.entries(parsed.data).filter(([key]) => key.startsWith(PREFIX));
-      if (incoming.length === 0) {
-        setStatus({ tone: "bad", text: "That backup file is empty — nothing to restore." });
-        return;
-      }
-
-      const when = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleString() : "an unknown date";
       const ok = window.confirm(
-        `Restore the backup from ${when}?\n\n` +
-          `This replaces everything currently on this dashboard — policies, prospects, tasks and goals — ` +
-          `with what's in the file. It cannot be undone.`,
+        `Restore the backup from ${when}?\n\n${summary}\n\n` +
+          `This replaces everything currently on this dashboard. It cannot be undone.`,
       );
-      if (!ok) return;
-
-      // Clear first so the restore is an exact copy, not a merge with whatever
-      // happened to be here already.
-      for (const key of prefixedKeys()) localStorage.removeItem(key);
-
-      for (const [key, value] of incoming) {
-        localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+      if (!ok) {
+        setBusy(false);
+        return;
       }
 
-      // Reload so every tab re-reads storage instead of showing stale state.
+      await replaceAll(parsed.snapshot);
       window.location.reload();
-    } catch {
-      setStatus({ tone: "bad", text: "Could not read that file — it may be damaged." });
+    } catch (error) {
+      setStatus({
+        tone: "bad",
+        text:
+          error instanceof BackupError
+            ? error.message
+            : "Could not read that file — it may be damaged.",
+      });
+      setBusy(false);
     }
   }
 
   return (
     <div className="backup-panel">
       <div className="backup-buttons">
-        <button className="ghost-btn" onClick={exportBackup}>
+        <button className="ghost-btn" onClick={() => void exportBackup()} disabled={busy}>
           Back up
         </button>
-        <button className="ghost-btn" onClick={() => fileInput.current?.click()}>
+        <button className="ghost-btn" onClick={() => fileInput.current?.click()} disabled={busy}>
           Restore
         </button>
         <input

@@ -1,22 +1,11 @@
-import { useEffect, useState } from "react";
-
-export function useLocalStorage<T>(key: string, initial: T | (() => T)) {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) return JSON.parse(stored) as T;
-    } catch {
-      /* fall through to the initial value */
-    }
-    return typeof initial === "function" ? (initial as () => T)() : initial;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(value));
-  }, [key, value]);
-
-  return [value, setValue] as const;
-}
+/**
+ * Small shared helpers. The `useLocalStorage` hook that used to live here is
+ * gone — components go through `repository.ts` now, which is the only place
+ * that decides whether something belongs in IndexedDB or localStorage.
+ *
+ * `readJson` stays because the legacy migration in `migrate.ts` still has to
+ * read the old localStorage keys.
+ */
 
 export function readJson<T>(key: string): T | null {
   try {

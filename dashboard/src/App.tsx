@@ -6,20 +6,7 @@ import { OperatorTab, type CommandTarget } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
 import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
-import { useLocalStorage } from "./lib/storage";
-import { defaultOwnerName, defaultPeriod } from "./lib/defaultData";
-import {
-  DISMISSED_KEY,
-  ENTRIES_KEY,
-  LINES_KEY,
-  PROSPECTS_KEY,
-  SUGGESTIONS_KEY,
-  TASKS_KEY,
-  migratedLines,
-  migratedProspects,
-  migratedTasks,
-} from "./lib/migrate";
-import type { Period, PolicyEntry, PolicyLine, Prospect, Suggestion, Task } from "./types";
+import { useStored } from "./lib/repository";
 
 type Tab = "operator" | "progress" | "todo" | "prospects" | "map";
 
@@ -33,14 +20,14 @@ const tabs: { id: Tab; label: string }[] = [
 
 function App() {
   const [tab, setTab] = useState<Tab>("operator");
-  const [lines, setLines] = useLocalStorage<PolicyLine[]>(LINES_KEY, migratedLines);
-  const [period, setPeriod] = useLocalStorage<Period>("fb-dashboard:period", defaultPeriod);
-  const [entries, setEntries] = useLocalStorage<PolicyEntry[]>(ENTRIES_KEY, []);
-  const [tasks, setTasks] = useLocalStorage<Task[]>(TASKS_KEY, migratedTasks);
-  const [suggestions, setSuggestions] = useLocalStorage<Suggestion[]>(SUGGESTIONS_KEY, []);
-  const [dismissed, setDismissed] = useLocalStorage<string[]>(DISMISSED_KEY, []);
-  const [prospects, setProspects] = useLocalStorage<Prospect[]>(PROSPECTS_KEY, migratedProspects);
-  const [ownerName, setOwnerName] = useLocalStorage<string>("fb-dashboard:owner", defaultOwnerName);
+  const [lines, setLines] = useStored("lines");
+  const [period, setPeriod] = useStored("period");
+  const [entries, setEntries] = useStored("policies");
+  const [tasks, setTasks] = useStored("tasks");
+  const [suggestions, setSuggestions] = useStored("suggestions");
+  const [dismissed, setDismissed] = useStored("dismissed");
+  const [prospects, setProspects] = useStored("prospects");
+  const [ownerName, setOwnerName] = useStored("owner");
 
   return (
     <div className="app">
