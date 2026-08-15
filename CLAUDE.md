@@ -267,8 +267,11 @@ having actually run it.
 ## v1 direction — locked, don't relitigate
 
 The dashboard is becoming a Farm Bureau sales operating system, evolved in
-place. Full spec lives in an artifact outside the repo; these are the decisions
-that would be expensive to lose:
+place. **Full spec, phase plan and progress:**
+https://claude.ai/code/artifact/1489d196-30d3-4e8f-ae45-d282856a0575 — it lives
+outside the repo and is his to open, so read it at the start of a session
+rather than re-deriving the plan. These are the decisions that would be
+expensive to lose:
 
 - **Local-first stays.** No backend, no cloud database, no browser-side AI key,
   no automatic Granola integration. Granola remains the system of record for
@@ -299,6 +302,28 @@ that would be expensive to lose:
   Won status" proposal; he decides.
 - **Callback cadence (2 days after no-voicemail, 3 days after a voicemail) is
   an editable rule constant**, not a hard-coded fact. Same for the caps.
+
+## Where the build got to
+
+Phases 0–5 are done, committed and deployed. `v0-prototype` tags the state
+before any of it.
+
+| Phase | What landed |
+| --- | --- |
+| 0 | Vitest, tests over the commission maths |
+| 1 | IndexedDB, the repository seam, backup v2, CI |
+| 2 | Prospect schema v4 — `status` split into stage and its siblings |
+| 3 | Call records, the logger, call history |
+| 4 | Outcome rules, caps, automatic follow-up tasks |
+| 5 | Review inbox, conflict handling, append-only audit |
+
+**Next is phase 6** — a documented JSON proposal format an external AI session
+can produce, and an import path for it. Still no key in the browser, still no
+network call from the page. Phase 7 is activity metrics.
+
+**Before starting phase 6:** he should open the live site and take a fresh
+backup. Every phase so far has been additive and reversible, but the file is
+the only copy of his book that lives outside one browser.
 
 ## Open questions
 
