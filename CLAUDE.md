@@ -28,9 +28,11 @@ storage on whatever machine he opens it on.
 ```sh
 cd dashboard
 npm install
-npm run dev      # local dev server
-npm run build    # tsc -b && vite build — run before every commit
-npm run lint     # oxlint
+npm run dev        # local dev server
+npm run build      # tsc -b && vite build — run before every commit
+npm run test       # vitest run — must pass before every commit
+npm run test:watch # vitest, re-running as files change
+npm run lint       # oxlint
 ```
 
 ## Tabs
@@ -118,10 +120,49 @@ carry the prefix will be silently left out of backups.
 
 ## How to verify work
 
-There are no unit tests. Verify by driving the real app in a browser and
-checking computed figures against hand calculation — that's how every feature
-so far was checked. Playwright with the system Chromium works. Don't report
-something as working without having actually run it.
+`src/lib/policies.test.ts` covers the commission and policy calculations under
+vitest — every expected value in it was worked out by hand off his workbook.
+**If a change makes one of those fail, the change is wrong until proven
+otherwise, not the test.** Everything else is still verified by driving the
+real app in a browser and checking figures against hand calculation. Playwright
+with the system Chromium works. Don't report something as working without
+having actually run it.
+
+## v1 direction — locked, don't relitigate
+
+The dashboard is becoming a Farm Bureau sales operating system, evolved in
+place. Full spec lives in an artifact outside the repo; these are the decisions
+that would be expensive to lose:
+
+- **Local-first stays.** No backend, no cloud database, no browser-side AI key,
+  no automatic Granola integration. Granola remains the system of record for
+  raw transcripts — the dashboard stores structured reviews, summaries and a
+  source reference, not transcript bodies.
+- **AI never writes directly.** External review produces a proposal that lands
+  in the review inbox. Nothing touches a prospect until he approves or edits it.
+- **IndexedDB before call history.** Records (prospects, calls, tasks, reviews,
+  policies, audit) move to IndexedDB; small config stays in localStorage. The
+  backup file must be extended to span both stores *in the same phase* — an
+  un-extended backup would silently export an almost-empty file.
+- **Household is the core record**, with contacts underneath it carrying DOB,
+  phone, email and quote-readiness per person.
+- **Six separate prospect dimensions**: pipeline stage, quality, conversion
+  score, most recent call outcome, next action, next-action date. Plus
+  last-contacted. The single `status` field is being split into these.
+- **Quality is an editable A–D priority grade** — A strategic, B strong fit,
+  C callable but unproven, D lower priority. It is for prioritisation, *not* an
+  estimate of likelihood to buy. Conversion score (1–10) is the separate
+  likelihood read. Never merge the two.
+- **Call attempt caps are combined**: 7 total dials per prospect, of which at
+  most 3 may leave a voicemail.
+- **"Not at This Time"** follows up at +1 month, then +2 months. After the
+  second completed follow-up the household goes to Closed — Dormant/Nurture.
+  No indefinite automatic timer. Reopened manually on a real trigger: renewal
+  timing, referral, new asset or life event, updated contact information.
+- **A linked policy never auto-marks a household Won.** It may raise a "Review
+  Won status" proposal; he decides.
+- **Callback cadence (2 days after no-voicemail, 3 days after a voicemail) is
+  an editable rule constant**, not a hard-coded fact. Same for the caps.
 
 ## Open questions
 
