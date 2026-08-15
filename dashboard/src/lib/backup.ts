@@ -1,31 +1,52 @@
-import type { PolicyEntry, Prospect, Suggestion, Task } from "../types";
+import type { AuditEntry, Call, PolicyEntry, Prospect, ReviewProposal, Suggestion, Task } from "../types";
+import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import { LEGACY_RECORD_KEYS, SETTING_KEYS, type RepositorySnapshot, snapshot } from "./repository";
 
 /**
  * Backup file format.
  *
- * v1 was a flat dump of every `fb-dashboard:` localStorage key. v2 separates
- * the three things that now live in different places — records in IndexedDB,
- * a small meta store, and settings still in localStorage — so a restore can
- * put each back where it belongs.
+ * - **v1** — a flat dump of every `fb-dashboard:` localStorage key.
+ * - **v2** — records, meta and settings separated, once records moved to
+ *   IndexedDB.
+ * - **v3** — adds the calls, reviews and audit stores, and prospects in the
+ *   v4 schema.
  *
- * v1 files still restore. They are the only copy of the book that exists for
- * anyone who exported before this phase, so reading them is not optional.
+ * Every older version still restores. For anyone who exported before a given
+ * phase, that file is the only copy of the book that exists, so reading it is
+ * not optional. Old prospects are run through the same v4 conversion the
+ * database upgrade uses, so a restore lands already migrated.
  */
 
 export const FILE_MARKER = "agency-dashboard-backup";
-export const CURRENT_VERSION = 2;
+export const CURRENT_VERSION = 3;
 
-export interface BackupV2 {
+export interface BackupRecords {
+  prospects: Prospect[];
+  policies: PolicyEntry[];
+  tasks: Task[];
+  suggestions: Suggestion[];
+  calls: Call[];
+  reviews: ReviewProposal[];
+  audit: AuditEntry[];
+}
+
+export interface BackupV3 {
+  app: typeof FILE_MARKER;
+  version: 3;
+  exportedAt: string;
+  /** Schema of the prospect records inside, so a reader never has to guess. */
+  prospectSchema: number;
+  records: BackupRecords;
+  meta: { dismissed: string[] };
+  settings: Record<string, unknown>;
+}
+
+/** The shape v2 files carry — four record collections, no schema stamp. */
+interface BackupV2 {
   app: typeof FILE_MARKER;
   version: 2;
   exportedAt: string;
-  records: {
-    prospects: Prospect[];
-    policies: PolicyEntry[];
-    tasks: Task[];
-    suggestions: Suggestion[];
-  };
+  records: Partial<BackupRecords>;
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
 }
@@ -51,12 +72,13 @@ function asArray<T>(value: unknown): T[] {
 }
 
 /** Builds the file contents from what is actually in storage right now. */
-export async function buildBackup(): Promise<BackupV2> {
+export async function buildBackup(): Promise<BackupV3> {
   const snap = await snapshot();
   return {
     app: FILE_MARKER,
     version: CURRENT_VERSION,
     exportedAt: new Date().toISOString(),
+    prospectSchema: PROSPECT_SCHEMA_VERSION,
     records: snap.records,
     meta: snap.meta,
     settings: snap.settings,
@@ -69,18 +91,28 @@ export function countsOf(snap: RepositorySnapshot): Record<string, number> {
     policies: snap.records.policies.length,
     tasks: snap.records.tasks.length,
     suggestions: snap.records.suggestions.length,
+    calls: snap.records.calls.length,
+    reviews: snap.records.reviews.length,
+    audit: snap.records.audit.length,
     dismissed: snap.meta.dismissed.length,
     settings: Object.keys(snap.settings).length,
   };
 }
 
-function parseV2(file: BackupV2): RepositorySnapshot {
+/**
+ * v2 and v3 share a shape; v2 simply has no calls, reviews or audit rows, and
+ * its prospects are pre-v4. Both gaps are filled the same way.
+ */
+function parseRecordSections(file: BackupV2 | BackupV3): RepositorySnapshot {
   return {
     records: {
-      prospects: asArray<Prospect>(file.records?.prospects),
+      prospects: normalizeProspects(file.records?.prospects),
       policies: asArray<PolicyEntry>(file.records?.policies),
       tasks: asArray<Task>(file.records?.tasks),
       suggestions: asArray<Suggestion>(file.records?.suggestions),
+      calls: asArray<Call>(file.records?.calls),
+      reviews: asArray<ReviewProposal>(file.records?.reviews),
+      audit: asArray<AuditEntry>(file.records?.audit),
     },
     meta: { dismissed: asArray<string>(file.meta?.dismissed) },
     settings: file.settings && typeof file.settings === "object" ? { ...file.settings } : {},
@@ -98,10 +130,13 @@ function parseV1(file: BackupV1): RepositorySnapshot {
 
   return {
     records: {
-      prospects: asArray<Prospect>(data[LEGACY_RECORD_KEYS.prospects]),
+      prospects: normalizeProspects(data[LEGACY_RECORD_KEYS.prospects]),
       policies: asArray<PolicyEntry>(data[LEGACY_RECORD_KEYS.policies]),
       tasks: asArray<Task>(data[LEGACY_RECORD_KEYS.tasks]),
       suggestions: asArray<Suggestion>(data[LEGACY_RECORD_KEYS.suggestions]),
+      calls: [],
+      reviews: [],
+      audit: [],
     },
     meta: { dismissed: asArray<string>(data[LEGACY_RECORD_KEYS.dismissed]) },
     settings,
@@ -147,7 +182,9 @@ export function parseBackup(text: string): ParsedBackup {
   }
 
   const snap =
-    version === 1 ? parseV1(file as BackupV1) : parseV2(file as BackupV2);
+    version === 1
+      ? parseV1(file as BackupV1)
+      : parseRecordSections(file as BackupV2 | BackupV3);
 
   const counts = countsOf(snap);
   const hasAnything =

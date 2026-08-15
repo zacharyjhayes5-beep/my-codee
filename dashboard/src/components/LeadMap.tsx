@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LineId, Prospect } from "../types";
-import { seriesColors, statusClass } from "../lib/defaultData";
+import { seriesColors, stageClass } from "../lib/defaultData";
 import {
   HEIGHT,
   WIDTH,
@@ -16,13 +16,17 @@ interface LeadMapProps {
   onOpenProspect: () => void;
 }
 
-const statusColor: Record<string, string> = {
+const stageColor: Record<string, string> = {
   New: "var(--text-muted)",
+  Attempting: "var(--text-secondary)",
   Contacted: "var(--accent)",
-  "Meeting Scheduled": "var(--status-warning)",
-  "Open to Quote": "var(--status-serious)",
-  Closed: "var(--status-good)",
-  Lost: "var(--neon-red)",
+  Qualifying: "var(--accent)",
+  Quoting: "var(--status-serious)",
+  "Review Scheduled": "var(--status-warning)",
+  Opportunity: "var(--status-warning)",
+  Won: "var(--status-good)",
+  Nurture: "var(--text-muted)",
+  Closed: "var(--neon-red)",
 };
 
 function nodeColor(node: GraphNode): string {
@@ -31,7 +35,7 @@ function nodeColor(node: GraphNode): string {
     return seriesColors[id];
   }
   if (node.kind === "area") return "var(--text-secondary)";
-  return statusColor[node.status ?? "New"] ?? "var(--accent)";
+  return stageColor[node.stage ?? "New"] ?? "var(--accent)";
 }
 
 export function LeadMap({ prospects, onOpenProspect }: LeadMapProps) {
@@ -217,8 +221,8 @@ export function LeadMap({ prospects, onOpenProspect }: LeadMapProps) {
               <div className="map-detail">
                 <div>
                   <strong>{selectedProspect.name}</strong>
-                  <span className={`status-chip ${statusClass[selectedProspect.status]}`}>
-                    {selectedProspect.status}
+                  <span className={`status-chip ${stageClass[selectedProspect.stage]}`}>
+                    {selectedProspect.stage}
                   </span>
                 </div>
                 <span className="map-detail-meta">
@@ -228,8 +232,8 @@ export function LeadMap({ prospects, onOpenProspect }: LeadMapProps) {
                   {selectedProspect.notes.length} note
                   {selectedProspect.notes.length === 1 ? "" : "s"}
                 </span>
-                {selectedProspect.nextStep && (
-                  <span className="map-detail-meta">Next: {selectedProspect.nextStep}</span>
+                {selectedProspect.nextAction && (
+                  <span className="map-detail-meta">Next: {selectedProspect.nextAction}</span>
                 )}
                 <button className="link-btn" onClick={onOpenProspect}>
                   Open in Prospects →

@@ -1,5 +1,6 @@
-import type { LineId, PolicyLine, Prospect, ProspectStatus, Task } from "../types";
+import type { LineId, PolicyLine, Prospect, Task } from "../types";
 import { defaultPolicyLines } from "./defaultData";
+import { normalizeProspect } from "./prospectSchema";
 import { newId, readJson, today } from "./storage";
 
 /* Shapes written by the first version of the dashboard. */
@@ -83,7 +84,9 @@ export function migratedTasks(): Task[] {
     })) as Task[];
 }
 
-const legacyStatusMap: Record<string, ProspectStatus> = {
+/** v1 lead statuses, expressed in the v3 vocabulary that `normalizeProspect`
+ *  then carries the rest of the way to a v4 stage. */
+const legacyStatusMap: Record<string, string> = {
   New: "New",
   Contacted: "Contacted",
   Quoted: "Open to Quote",
@@ -98,7 +101,9 @@ export function migratedProspects(): Prospect[] {
   return legacy.map((lead) => {
     const created = lead.createdAt || today();
     const line = lead.line as LineId | undefined;
-    return {
+    // Built in the old shape, then handed to the v4 conversion so there is
+    // only one place that decides what a status becomes.
+    return normalizeProspect({
       id: lead.id || newId(),
       name: lead.name || "Untitled",
       status: legacyStatusMap[lead.status ?? ""] ?? "New",
@@ -120,6 +125,6 @@ export function migratedProspects(): Prospect[] {
         : [],
       createdAt: created,
       updatedAt: created,
-    };
+    });
   });
 }

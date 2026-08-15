@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import type { LineId, Prospect, ProspectNote, ProspectStatus } from "../types";
-import { lineOptions, prospectStatuses } from "../lib/defaultData";
+import type { LineId, Prospect, ProspectNote, Stage } from "../types";
+import { lineOptions, prospectStages } from "../lib/defaultData";
 import { nameKey, parseGranolaNote, type ParsedNote } from "../lib/granola";
+import { blankProspect } from "../lib/prospectSchema";
 import { newId, today } from "../lib/storage";
 
 interface Draft {
@@ -12,7 +13,7 @@ interface Draft {
   phone: string;
   email: string;
   lines: LineId[];
-  status: ProspectStatus;
+  stage: Stage;
   matchId: string | null;
   mode: "create" | "append";
   showNote: boolean;
@@ -42,7 +43,7 @@ function draftFromParsed(parsed: ParsedNote, prospects: Prospect[]): Draft {
     email: parsed.email,
     lines: parsed.lines,
     // A Granola note means the call already happened.
-    status: match ? match.status : "Contacted",
+    stage: match ? match.stage : "Contacted",
     matchId: match ? match.id : null,
     mode: match ? "append" : "create",
     showNote: false,
@@ -115,26 +116,27 @@ export function ImportPanel({
       // The parent merges these into whatever the profile holds right now, so
       // saving several notes at once can't clobber earlier ones.
       onAppend(draft.matchId, note, {
-        status: draft.status,
+        stage: draft.stage,
         lines: draft.lines,
         area: draft.area,
         phone: draft.phone,
         email: draft.email,
       });
     } else {
-      onCreate({
-        id: newId(),
-        name: draft.name.trim() || "Untitled prospect",
-        status: draft.status,
-        lines: draft.lines,
-        area: draft.area,
-        phone: draft.phone,
-        email: draft.email,
-        nextStep: "",
-        notes: [note],
-        createdAt: draft.parsed.date,
-        updatedAt: today(),
-      });
+      onCreate(
+        blankProspect({
+          name: draft.name.trim() || "Untitled prospect",
+          stage: draft.stage,
+          lines: draft.lines,
+          area: draft.area,
+          phone: draft.phone,
+          email: draft.email,
+          source: "granola",
+          notes: [note],
+          createdAt: draft.parsed.date,
+          updatedAt: today(),
+        }),
+      );
     }
     discard(draft.id);
   }
@@ -278,14 +280,12 @@ export function ImportPanel({
                   />
                 </label>
                 <label>
-                  Status
+                  Stage
                   <select
-                    value={draft.status}
-                    onChange={(e) =>
-                      updateDraft(draft.id, { status: e.target.value as ProspectStatus })
-                    }
+                    value={draft.stage}
+                    onChange={(e) => updateDraft(draft.id, { stage: e.target.value as Stage })}
                   >
-                    {prospectStatuses.map((s) => (
+                    {prospectStages.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>

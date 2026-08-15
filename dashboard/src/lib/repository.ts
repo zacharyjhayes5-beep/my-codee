@@ -11,9 +11,25 @@ import {
   writeAll,
   writeMeta,
 } from "./db";
+import { RESERVED_STORES, type ReservedStore } from "./db";
 import { defaultOwnerName, defaultPeriod } from "./defaultData";
 import { migratedLines, migratedProspects, migratedTasks } from "./migrate";
-import type { Period, PolicyEntry, PolicyLine, Prospect, Suggestion, Task } from "../types";
+import {
+  PROSPECT_SCHEMA_VERSION,
+  needsProspectMigration,
+  normalizeProspects,
+} from "./prospectSchema";
+import type {
+  AuditEntry,
+  Call,
+  Period,
+  PolicyEntry,
+  PolicyLine,
+  Prospect,
+  ReviewProposal,
+  Suggestion,
+  Task,
+} from "../types";
 
 /**
  * The single door to stored data. Components never touch localStorage or
@@ -43,8 +59,15 @@ export const SETTING_KEYS = {
 
 export type SettingKey = keyof typeof SETTING_KEYS;
 
-/** Legacy localStorage keys for the collections that moved to IndexedDB. */
-export const LEGACY_RECORD_KEYS: Record<RecordStore | "dismissed", string> = {
+/**
+ * Legacy localStorage keys for the collections that moved to IndexedDB. Only
+ * the four that ever lived there — calls, reviews and audit were born in the
+ * database and have no legacy key.
+ */
+export const LEGACY_RECORD_KEYS: Record<
+  "prospects" | "policies" | "tasks" | "suggestions" | "dismissed",
+  string
+> = {
   prospects: "fb-dashboard:prospects",
   policies: "fb-dashboard:policies",
   tasks: "fb-dashboard:tasks",
@@ -53,6 +76,7 @@ export const LEGACY_RECORD_KEYS: Record<RecordStore | "dismissed", string> = {
 };
 
 const MIGRATION_FLAG = "migratedFromLocalStorage";
+const SCHEMA_FLAG = "prospectSchemaVersion";
 const DISMISSED_KEY = "dismissed";
 
 /* ------------------------------------------------------------------ */
@@ -118,7 +142,10 @@ function writeLocal(key: string, value: unknown) {
  */
 function collectionsFromLegacy() {
   return {
-    prospects: readLocal<Prospect[]>(LEGACY_RECORD_KEYS.prospects) ?? migratedProspects(),
+    // Whatever shape the old key holds, it comes out as v4.
+    prospects: normalizeProspects(
+      readLocal<unknown[]>(LEGACY_RECORD_KEYS.prospects) ?? migratedProspects(),
+    ),
     policies: readLocal<PolicyEntry[]>(LEGACY_RECORD_KEYS.policies) ?? [],
     tasks: readLocal<Task[]>(LEGACY_RECORD_KEYS.tasks) ?? migratedTasks(),
     suggestions: readLocal<Suggestion[]>(LEGACY_RECORD_KEYS.suggestions) ?? [],
@@ -171,9 +198,48 @@ async function migrateIfNeeded(): Promise<MigrationReport> {
 /* Boot                                                                */
 /* ------------------------------------------------------------------ */
 
+export interface SchemaReport {
+  ran: boolean;
+  from: number | null;
+  to: number;
+  prospectsRewritten: number;
+}
+
 export interface BootResult {
   usingIndexedDb: boolean;
   migration: MigrationReport | null;
+  schema: SchemaReport | null;
+}
+
+/**
+ * Brings stored prospects up to the current schema. Separate from the
+ * localStorage migration above because it has to run for books that already
+ * moved to IndexedDB in phase 1 — those are sitting in the old v3 shape.
+ */
+async function upgradeProspectSchema(): Promise<SchemaReport> {
+  const storedVersion = (await readMeta<number>(SCHEMA_FLAG)) ?? null;
+
+  if (storedVersion === PROSPECT_SCHEMA_VERSION) {
+    return { ran: false, from: storedVersion, to: PROSPECT_SCHEMA_VERSION, prospectsRewritten: 0 };
+  }
+
+  const rows = await readAll<unknown>("prospects");
+  const stale = needsProspectMigration(rows);
+
+  if (stale || rows.length === 0) {
+    const upgraded = normalizeProspects(rows);
+    if (upgraded.length > 0) await writeAll("prospects", upgraded);
+    await writeMeta(SCHEMA_FLAG, PROSPECT_SCHEMA_VERSION);
+    return {
+      ran: stale,
+      from: storedVersion,
+      to: PROSPECT_SCHEMA_VERSION,
+      prospectsRewritten: stale ? upgraded.length : 0,
+    };
+  }
+
+  await writeMeta(SCHEMA_FLAG, PROSPECT_SCHEMA_VERSION);
+  return { ran: false, from: storedVersion, to: PROSPECT_SCHEMA_VERSION, prospectsRewritten: 0 };
 }
 
 /**
@@ -189,10 +255,11 @@ export async function initRepository(): Promise<BootResult> {
     cache = { ...legacy, ...loadSettings() };
     ready = true;
     emit();
-    return { usingIndexedDb: false, migration: null };
+    return { usingIndexedDb: false, migration: null, schema: null };
   }
 
   const migration = await migrateIfNeeded();
+  const schema = await upgradeProspectSchema();
 
   cache = {
     prospects: await readAll<Prospect>("prospects"),
@@ -204,7 +271,7 @@ export async function initRepository(): Promise<BootResult> {
   };
   ready = true;
   emit();
-  return { usingIndexedDb: true, migration };
+  return { usingIndexedDb: true, migration, schema };
 }
 
 function loadSettings() {
@@ -293,6 +360,10 @@ export interface RepositorySnapshot {
     policies: PolicyEntry[];
     tasks: Task[];
     suggestions: Suggestion[];
+    /** Empty until later phases, but carried so a backup is never partial. */
+    calls: Call[];
+    reviews: ReviewProposal[];
+    audit: AuditEntry[];
   };
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
@@ -311,12 +382,18 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         policies: await readAll<PolicyEntry>("policies"),
         tasks: await readAll<Task>("tasks"),
         suggestions: await readAll<Suggestion>("suggestions"),
+        calls: await readAll<Call>("calls"),
+        reviews: await readAll<ReviewProposal>("reviews"),
+        audit: await readAll<AuditEntry>("audit"),
       }
     : {
         prospects: get("prospects"),
         policies: get("policies"),
         tasks: get("tasks"),
         suggestions: get("suggestions"),
+        calls: [],
+        reviews: [],
+        audit: [],
       };
 
   const dismissed = usable ? ((await readMeta<string[]>(DISMISSED_KEY)) ?? []) : get("dismissed");
@@ -336,10 +413,17 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
 
   if (usable) {
     await openDb();
-    await writeAll("prospects", next.records.prospects);
+    // Prospects from a v1 or v2 file arrive in the old shape; normalising here
+    // means a restore lands already migrated rather than relying on the next
+    // boot to fix it.
+    await writeAll("prospects", normalizeProspects(next.records.prospects));
     await writeAll("policies", next.records.policies);
     await writeAll("tasks", next.records.tasks);
     await writeAll("suggestions", next.records.suggestions);
+    for (const store of RESERVED_STORES) {
+      const rows = (next.records[store as ReservedStore] ?? []) as { id: string }[];
+      await writeAll(store, rows);
+    }
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -349,6 +433,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
       legacyRetained: true,
       at: new Date().toISOString(),
     } satisfies MigrationReport);
+    await writeMeta(SCHEMA_FLAG, PROSPECT_SCHEMA_VERSION);
   }
 
   for (const [key, value] of Object.entries(next.settings)) {
@@ -356,7 +441,10 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
   }
 
   cache = {
-    ...next.records,
+    prospects: normalizeProspects(next.records.prospects),
+    policies: next.records.policies,
+    tasks: next.records.tasks,
+    suggestions: next.records.suggestions,
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

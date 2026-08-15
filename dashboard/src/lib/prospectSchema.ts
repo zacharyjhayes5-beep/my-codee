@@ -1,0 +1,211 @@
+import type { Address, ClosedReason, Contact, Prospect, ProspectNote, Stage } from "../types";
+import { newId } from "./storage";
+
+/**
+ * Prospect schema v4.
+ *
+ * The old six-value `status` was doing three jobs — pipeline position, call
+ * outcome and terminal result. v4 splits those apart. This file holds the one
+ * conversion used everywhere: the database upgrade on boot, and restoring a
+ * v1 or v2 backup that still contains the old shape.
+ *
+ * The rule throughout is that nothing is invented. A field we cannot know from
+ * the old record comes out blank, because a guessed conversion score or a
+ * made-up follow-up date is worse than an empty one — it looks like fact.
+ */
+
+export const PROSPECT_SCHEMA_VERSION = 4;
+
+/** The six statuses v3 could hold, and where each one lands. */
+export const STATUS_TO_STAGE: Record<string, Stage> = {
+  New: "New",
+  Contacted: "Contacted",
+  "Meeting Scheduled": "Review Scheduled",
+  "Open to Quote": "Quoting",
+  Closed: "Closed",
+  Lost: "Closed",
+};
+
+/** Only the two terminal statuses carry a reason across. */
+export const STATUS_TO_CLOSED_REASON: Record<string, ClosedReason | null> = {
+  Closed: "legacy-unknown",
+  Lost: "lost",
+};
+
+export function blankAddress(): Address {
+  return { line1: "", city: "", state: "", zip: "" };
+}
+
+export function blankContact(): Contact {
+  return {
+    id: newId(),
+    firstName: "",
+    lastName: "",
+    dob: "",
+    phone: "",
+    email: "",
+    isPrimary: true,
+    quoteReadyNote: "",
+  };
+}
+
+/** A household record with every v4 field present and nothing assumed. */
+export function blankProspect(overrides: Partial<Prospect> = {}): Prospect {
+  const now = new Date().toISOString().slice(0, 10);
+  return {
+    id: newId(),
+    name: "",
+    contacts: [],
+    address: blankAddress(),
+    area: "",
+    stage: "New",
+    closedReason: null,
+    priorityGrade: "",
+    conversionScore: null,
+    lastOutcome: null,
+    lastOutcomeAt: "",
+    lastContactedAt: "",
+    nextAction: "",
+    nextActionDate: "",
+    doNotContact: false,
+    source: "",
+    lines: [],
+    phone: "",
+    email: "",
+    notes: [],
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
+/** The v3 shape, as far as we need to read it. */
+interface LegacyProspect {
+  id?: string;
+  name?: string;
+  status?: string;
+  lines?: unknown;
+  area?: string;
+  phone?: string;
+  email?: string;
+  nextStep?: string;
+  notes?: unknown;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+function isStage(value: unknown): value is Stage {
+  return (
+    typeof value === "string" &&
+    [
+      "New",
+      "Attempting",
+      "Contacted",
+      "Qualifying",
+      "Quoting",
+      "Review Scheduled",
+      "Opportunity",
+      "Won",
+      "Nurture",
+      "Closed",
+    ].includes(value)
+  );
+}
+
+function asNotes(value: unknown): ProspectNote[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((n): n is ProspectNote => Boolean(n) && typeof n === "object");
+}
+
+function asContacts(value: unknown): Contact[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((c): c is Partial<Contact> => Boolean(c) && typeof c === "object")
+    .map((c) => ({
+      id: typeof c.id === "string" && c.id ? c.id : newId(),
+      firstName: c.firstName ?? "",
+      lastName: c.lastName ?? "",
+      dob: c.dob ?? "",
+      phone: c.phone ?? "",
+      email: c.email ?? "",
+      isPrimary: Boolean(c.isPrimary),
+      quoteReadyNote: c.quoteReadyNote ?? "",
+    }));
+}
+
+function asAddress(value: unknown): Address {
+  if (!value || typeof value !== "object") return blankAddress();
+  const a = value as Partial<Address>;
+  return {
+    line1: a.line1 ?? "",
+    city: a.city ?? "",
+    state: a.state ?? "",
+    zip: a.zip ?? "",
+  };
+}
+
+/**
+ * Brings one prospect up to v4. Safe to run on a record that is already v4 —
+ * a restore of a current backup passes through here unchanged, so there is
+ * only ever one code path to reason about.
+ */
+export function normalizeProspect(input: unknown): Prospect {
+  const raw = (input ?? {}) as LegacyProspect & Partial<Prospect>;
+
+  // Already v4 if it carries a recognised stage.
+  const alreadyMigrated = isStage(raw.stage);
+
+  const stage: Stage = alreadyMigrated
+    ? (raw.stage as Stage)
+    : (STATUS_TO_STAGE[raw.status ?? ""] ?? "New");
+
+  const closedReason: ClosedReason | null = alreadyMigrated
+    ? (raw.closedReason ?? null)
+    : (STATUS_TO_CLOSED_REASON[raw.status ?? ""] ?? null);
+
+  const lines = Array.isArray(raw.lines)
+    ? raw.lines.filter((l): l is Prospect["lines"][number] =>
+        l === "property" || l === "casualty" || l === "life",
+      )
+    : [];
+
+  const createdAt = raw.createdAt ?? new Date().toISOString().slice(0, 10);
+
+  return {
+    id: raw.id ?? newId(),
+    name: raw.name ?? "",
+    contacts: asContacts(raw.contacts),
+    address: asAddress(raw.address),
+    area: raw.area ?? "",
+    stage,
+    closedReason,
+    priorityGrade: raw.priorityGrade ?? "",
+    conversionScore:
+      typeof raw.conversionScore === "number" ? raw.conversionScore : null,
+    lastOutcome: raw.lastOutcome ?? null,
+    lastOutcomeAt: raw.lastOutcomeAt ?? "",
+    lastContactedAt: raw.lastContactedAt ?? "",
+    // The old free-text next step carries over verbatim. It never had a date
+    // attached and does not get given one here.
+    nextAction: raw.nextAction ?? raw.nextStep ?? "",
+    nextActionDate: raw.nextActionDate ?? "",
+    doNotContact: Boolean(raw.doNotContact),
+    source: raw.source ?? "",
+    lines,
+    phone: raw.phone ?? "",
+    email: raw.email ?? "",
+    notes: asNotes(raw.notes),
+    createdAt,
+    updatedAt: raw.updatedAt ?? createdAt,
+  };
+}
+
+export function normalizeProspects(input: unknown): Prospect[] {
+  if (!Array.isArray(input)) return [];
+  return input.map(normalizeProspect);
+}
+
+/** True when a stored list still has at least one pre-v4 record in it. */
+export function needsProspectMigration(rows: unknown[]): boolean {
+  return rows.some((row) => !isStage((row as { stage?: unknown })?.stage));
+}

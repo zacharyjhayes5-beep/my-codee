@@ -42,7 +42,7 @@ npm run lint       # oxlint
 | Operator | `OperatorTab.tsx` | Console-style home: vitals, progress orb, command deck, big goal |
 | Progress | `ProgressTab.tsx` | Book of business, earnings, goals, pace, NADP tiers |
 | To-Do | `TodoTab.tsx` | Tasks in four urgency buckets, with Obsidian/Gmail import |
-| Prospects | `ProspectsTab.tsx` | Profiles built from Granola call notes |
+| Prospects | `ProspectsTab.tsx` | Household profiles built from Granola call notes |
 | Lead Map | `LeadMap.tsx` | Force-directed graph of prospects, lines and areas |
 
 ## Decisions already made — don't relitigate these
@@ -109,9 +109,11 @@ graph, the gas tanks and the progress orb are all hand-rolled SVG.
 `localStorage` or `indexedDB` directly** — that seam is the whole point of
 phase 1, and the backup depends on it being the only door.
 
-- **IndexedDB** (`fb-dashboard`, v1) holds records: `prospects`, `policies`,
-  `tasks`, `suggestions` as one row per record keyed by `id`, plus a `meta`
-  store for `dismissed` and the migration flag. `lib/db.ts` has the primitives.
+- **IndexedDB** (`fb-dashboard`, v2) holds records: `prospects`, `policies`,
+  `tasks`, `suggestions` as one row per record keyed by `id`, plus `calls`,
+  `reviews` and `audit` — created empty in phase 2 and **not read or written by
+  anything yet** — and a `meta` store for `dismissed`, the migration flag and
+  the prospect schema version. `lib/db.ts` has the primitives.
 - **localStorage** holds small settings only: `fb-dashboard:period`, `:owner`,
   `:persistency`, `:lines:v3`.
 - The cache is filled by `initRepository()` in `main.tsx` *before* the first
@@ -128,6 +130,35 @@ he has a v2 backup he trusts.
 
 `lib/migrate.ts` still carries the pre-v3 shapes forward and runs as part of
 the migration; add a step there rather than orphaning his data.
+
+## Prospect schema v4
+
+`lib/prospectSchema.ts` holds `normalizeProspect()` — **the only place that
+decides what an old record becomes**. It runs from three directions: the
+database upgrade on boot, a v1/v2 backup restore, and the v1-leads migration in
+`migrate.ts`. It is idempotent, so a current record passes through untouched.
+Never write a second conversion; extend that one.
+
+The old six-value `status` is gone, split into `stage` (10 values),
+`closedReason`, `priorityGrade`, `conversionScore`, `lastOutcome`,
+`lastOutcomeAt`, `lastContactedAt`, `nextAction`, `nextActionDate`.
+`nextStep` became `nextAction`.
+
+| Old status | Stage | Closed reason |
+| --- | --- | --- |
+| New | New | — |
+| Contacted | Contacted | — |
+| Meeting Scheduled | Review Scheduled | — |
+| Open to Quote | Quoting | — |
+| Closed | Closed | `legacy-unknown` |
+| Lost | Closed | `lost` |
+
+**Migration invents nothing.** Contacts start empty, the structured `address`
+starts blank, and `conversionScore`, `priorityGrade`, `lastOutcome`,
+`lastContactedAt` and `nextActionDate` all come out empty. `area` is untouched
+because the Lead Map clusters on it — the structured address sits alongside it,
+not instead of it. A guessed score or an invented follow-up date reads as fact
+and is worse than a blank.
 
 **Storage is per origin, and this has already confused him once.** The live
 site and a local dev server are two unconnected sets of data — work entered on
@@ -199,7 +230,8 @@ that would be expensive to lose:
 3. **Backup is manual.** Back up / Restore now exist in the header, but he has
    to remember to press the button. Nothing warns him when the last backup is
    old, and nothing carries data between the live site and a local copy on its
-   own. The file is format v2; v1 files still restore.
+   own. The file is format v3; v1 and v2 files still restore, and their
+   prospects are migrated to v4 on the way in.
 6. **Legacy localStorage records are stale weight.** They were retained as a
    phase 1 rollback point and stop matching reality as soon as he edits
    anything. Decide when to drop them — the prerequisite is a v2 backup he

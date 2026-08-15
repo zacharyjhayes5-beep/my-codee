@@ -1,4 +1,4 @@
-import type { LineId, Prospect, ProspectStatus } from "../types";
+import type { LineId, Prospect, Stage } from "../types";
 
 export type NodeKind = "prospect" | "line" | "area";
 
@@ -7,7 +7,7 @@ export interface GraphNode {
   kind: NodeKind;
   label: string;
   /** Prospect nodes only. */
-  status?: ProspectStatus;
+  stage?: Stage;
   prospectId?: string;
   r: number;
   x: number;
@@ -101,7 +101,7 @@ export function buildGraph(prospects: Prospect[]): Graph {
       id: `prospect:${p.id}`,
       kind: "prospect",
       label: p.name || "Untitled",
-      status: p.status,
+      stage: p.stage,
       prospectId: p.id,
       r: 11 + Math.min(7, p.notes.length * 2),
       x: point.x,

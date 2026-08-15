@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import type { Prospect, ProspectNote, ProspectStatus } from "../types";
-import { prospectStatuses } from "../lib/defaultData";
-import { newId, today } from "../lib/storage";
+import type { Prospect, ProspectNote, Stage } from "../types";
+import { prospectStages } from "../lib/defaultData";
+import { blankProspect } from "../lib/prospectSchema";
+import { today } from "../lib/storage";
 import { ImportPanel } from "./ImportPanel";
 import { ProspectCard } from "./ProspectCard";
 
@@ -19,19 +20,19 @@ export function ProspectsTab({
   onOwnerNameChange,
 }: ProspectsTabProps) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProspectStatus | "All">("All");
+  const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const counts = useMemo(() => {
-    const map = new Map<ProspectStatus, number>();
-    for (const p of prospects) map.set(p.status, (map.get(p.status) ?? 0) + 1);
+    const map = new Map<Stage, number>();
+    for (const p of prospects) map.set(p.stage, (map.get(p.stage) ?? 0) + 1);
     return map;
   }, [prospects]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return prospects
-      .filter((p) => statusFilter === "All" || p.status === statusFilter)
+      .filter((p) => stageFilter === "All" || p.stage === stageFilter)
       .filter((p) => {
         if (!q) return true;
         return (
@@ -39,12 +40,12 @@ export function ProspectsTab({
           p.area.toLowerCase().includes(q) ||
           p.email.toLowerCase().includes(q) ||
           p.phone.includes(q) ||
-          p.nextStep.toLowerCase().includes(q) ||
+          p.nextAction.toLowerCase().includes(q) ||
           p.notes.some((n) => n.body.toLowerCase().includes(q))
         );
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.name.localeCompare(b.name));
-  }, [prospects, search, statusFilter]);
+  }, [prospects, search, stageFilter]);
 
   function patchProspect(id: string, patch: Partial<Prospect>) {
     onChange((prev) =>
@@ -62,7 +63,7 @@ export function ProspectsTab({
         if (p.id !== id) return p;
         return {
           ...p,
-          status: patch.status ?? p.status,
+          stage: patch.stage ?? p.stage,
           lines: Array.from(new Set([...p.lines, ...(patch.lines ?? [])])),
           area: p.area || patch.area || "",
           phone: p.phone || patch.phone || "",
@@ -75,19 +76,7 @@ export function ProspectsTab({
   }
 
   function addBlank() {
-    const prospect: Prospect = {
-      id: newId(),
-      name: "",
-      status: "New",
-      lines: [],
-      area: "",
-      phone: "",
-      email: "",
-      nextStep: "",
-      notes: [],
-      createdAt: today(),
-      updatedAt: today(),
-    };
+    const prospect = blankProspect({ createdAt: today(), updatedAt: today() });
     createProspect(prospect);
     setExpandedId(prospect.id);
   }
@@ -105,16 +94,16 @@ export function ProspectsTab({
       <div className="prospect-toolbar">
         <div className="filter-chips">
           <button
-            className={`filter-chip${statusFilter === "All" ? " on" : ""}`}
-            onClick={() => setStatusFilter("All")}
+            className={`filter-chip${stageFilter === "All" ? " on" : ""}`}
+            onClick={() => setStageFilter("All")}
           >
             All <span>{prospects.length}</span>
           </button>
-          {prospectStatuses.map((s) => (
+          {prospectStages.map((s) => (
             <button
               key={s}
-              className={`filter-chip${statusFilter === s ? " on" : ""}`}
-              onClick={() => setStatusFilter(s)}
+              className={`filter-chip${stageFilter === s ? " on" : ""}`}
+              onClick={() => setStageFilter(s)}
             >
               {s} <span>{counts.get(s) ?? 0}</span>
             </button>

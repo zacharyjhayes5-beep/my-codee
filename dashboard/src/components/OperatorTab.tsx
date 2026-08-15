@@ -74,7 +74,8 @@ export function OperatorTab({
     const delta = policyCount - expected;
 
     const openProspects = prospects.filter(
-      (p) => p.status !== "Closed" && p.status !== "Lost"
+      // "Lost" folded into Closed in schema v4; Won is the other terminal.
+      (p) => p.stage !== "Closed" && p.stage !== "Won"
     ).length;
     const iso = todayIso();
     const openTodos = tasks.filter((t) => !t.done).length;

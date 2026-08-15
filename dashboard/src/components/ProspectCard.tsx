@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import type { LineId, Prospect, ProspectStatus } from "../types";
-import { lineOptions, prospectStatuses, statusClass } from "../lib/defaultData";
+import type { LineId, Prospect, Stage } from "../types";
+import { lineOptions, prospectStages, stageClass } from "../lib/defaultData";
 import { newId, today } from "../lib/storage";
 
 interface ProspectCardProps {
@@ -65,12 +65,12 @@ export function ProspectCard({
           aria-label="Prospect name"
         />
         <select
-          className={`status-select ${statusClass[prospect.status]}`}
-          value={prospect.status}
-          onChange={(e) => onChange({ status: e.target.value as ProspectStatus })}
-          aria-label="Status"
+          className={`status-select ${stageClass[prospect.stage]}`}
+          value={prospect.stage}
+          onChange={(e) => onChange({ stage: e.target.value as Stage })}
+          aria-label="Stage"
         >
-          {prospectStatuses.map((s) => (
+          {prospectStages.map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
@@ -106,8 +106,8 @@ export function ProspectCard({
         <label className="inline-field">
           <span>Next step</span>
           <input
-            value={prospect.nextStep}
-            onChange={(e) => onChange({ nextStep: e.target.value })}
+            value={prospect.nextAction}
+            onChange={(e) => onChange({ nextAction: e.target.value })}
             placeholder="e.g. send home + auto quote"
           />
         </label>

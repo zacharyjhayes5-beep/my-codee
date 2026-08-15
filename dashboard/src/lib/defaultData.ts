@@ -1,4 +1,4 @@
-import type { LineId, Period, PolicyLine, ProspectStatus, Urgency } from "../types";
+import type { LineId, Period, PolicyLine, Stage, Urgency } from "../types";
 
 export const defaultPolicyLines: PolicyLine[] = [
   { id: "property", name: "Property", policyGoal: 40, premiumGoal: 0 },
@@ -17,13 +17,19 @@ export const lineOptions: { id: LineId; name: string }[] = [
   { id: "life", name: "Life" },
 ];
 
-export const prospectStatuses: ProspectStatus[] = [
+/** Pipeline order — the board reads left to right, with the two off-track
+ *  stages last. */
+export const prospectStages: Stage[] = [
   "New",
+  "Attempting",
   "Contacted",
-  "Meeting Scheduled",
-  "Open to Quote",
+  "Qualifying",
+  "Quoting",
+  "Review Scheduled",
+  "Opportunity",
+  "Won",
+  "Nurture",
   "Closed",
-  "Lost",
 ];
 
 /** The four sections of the To-Do tab, in the order they're shown. */
@@ -48,13 +54,17 @@ export const urgencyName: Record<Urgency, string> = {
   someday: "Someday",
 };
 
-export const statusClass: Record<ProspectStatus, string> = {
+export const stageClass: Record<Stage, string> = {
   New: "badge-muted",
+  Attempting: "badge-muted",
   Contacted: "badge-info",
-  "Meeting Scheduled": "badge-warning",
-  "Open to Quote": "badge-serious",
-  Closed: "badge-good",
-  Lost: "badge-critical",
+  Qualifying: "badge-info",
+  Quoting: "badge-serious",
+  "Review Scheduled": "badge-warning",
+  Opportunity: "badge-warning",
+  Won: "badge-good",
+  Nurture: "badge-muted",
+  Closed: "badge-critical",
 };
 
 /**

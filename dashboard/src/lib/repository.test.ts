@@ -1,6 +1,7 @@
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
 import { readAll, readMeta } from "./db";
+import { blankProspect } from "./prospectSchema";
 import {
   LEGACY_RECORD_KEYS,
   SETTING_KEYS,
@@ -27,19 +28,19 @@ function freshEnvironment() {
 }
 
 function prospect(id: string, name: string): Prospect {
-  return {
+  return blankProspect({
     id,
     name,
-    status: "Contacted",
+    stage: "Contacted",
     lines: ["property"],
     area: "Howell, MI",
     phone: "(517) 555-0100",
     email: `${id}@example.com`,
-    nextStep: "send quote",
+    nextAction: "send quote",
     notes: [{ id: `${id}-n1`, date: "2026-05-02", title: "Call", body: "Talked roof.", source: "granola" }],
     createdAt: "2026-05-01",
     updatedAt: "2026-05-02",
-  };
+  });
 }
 
 function policy(id: string): PolicyEntry {
@@ -191,7 +192,8 @@ describe("first-load migration", () => {
     const prospects = get("prospects");
     expect(prospects).toHaveLength(1);
     expect(prospects[0].name).toBe("Pat Gray");
-    expect(prospects[0].status).toBe("Open to Quote");
+    // v1 "Quoted" -> v3 "Open to Quote" -> v4 "Quoting", in one hop.
+    expect(prospects[0].stage).toBe("Quoting");
     expect(prospects[0].lines).toEqual(["life"]);
 
     const tasks = get("tasks");

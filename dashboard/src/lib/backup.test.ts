@@ -2,6 +2,7 @@ import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
 import { BackupError, buildBackup, parseBackup } from "./backup";
 import { readAll } from "./db";
+import { blankProspect } from "./prospectSchema";
 import {
   LEGACY_RECORD_KEYS,
   SETTING_KEYS,
@@ -21,18 +22,35 @@ function freshEnvironment() {
 }
 
 function prospect(id: string, name: string): Prospect {
-  return {
+  return blankProspect({
     id,
     name,
-    status: "Open to Quote",
+    stage: "Quoting",
     lines: ["property", "casualty"],
     area: "Fenton, MI",
     phone: "(810) 555-0177",
     email: `${id}@example.com`,
-    nextStep: "bundle quote",
+    nextAction: "bundle quote",
     notes: [{ id: `${id}-n`, date: "2026-06-01", title: "Discovery", body: "Two cars, one home.", source: "granola" }],
     createdAt: "2026-05-20",
     updatedAt: "2026-06-01",
+  });
+}
+
+/** A prospect exactly as v1 and v2 backups stored it, before the split. */
+function legacyProspect(id: string, name: string, status: string) {
+  return {
+    id,
+    name,
+    status,
+    lines: ["casualty"],
+    area: "Brighton, MI",
+    phone: "(810) 555-0122",
+    email: `${id}@example.com`,
+    nextStep: "first call",
+    notes: [{ id: `${id}-n`, date: "2026-07-02", title: "Cold call", body: "Asked about auto.", source: "granola" }],
+    createdAt: "2026-07-01",
+    updatedAt: "2026-07-02",
   };
 }
 
@@ -84,7 +102,7 @@ beforeEach(() => {
   freshEnvironment();
 });
 
-describe("v2 export", () => {
+describe("current-format export", () => {
   it("includes records that exist only in IndexedDB", async () => {
     await seedThroughRepository();
 
@@ -94,7 +112,7 @@ describe("v2 export", () => {
 
     const file = await buildBackup();
 
-    expect(file.version).toBe(2);
+    expect(file.version).toBe(3);
     expect(file.records.prospects).toHaveLength(2);
     expect(file.records.policies).toHaveLength(2);
     expect(file.records.tasks).toHaveLength(1);
@@ -122,7 +140,7 @@ describe("v2 export", () => {
   });
 });
 
-describe("v2 round trip", () => {
+describe("current-format round trip", () => {
   it("restores every record and setting exactly", async () => {
     await seedThroughRepository();
     const exported = JSON.stringify(await buildBackup());
@@ -136,7 +154,7 @@ describe("v2 round trip", () => {
     const parsed = parseBackup(exported);
     await replaceAll(parsed.snapshot);
 
-    expect(parsed.version).toBe(2);
+    expect(parsed.version).toBe(3);
     expect(get("prospects")).toHaveLength(2);
     expect(get("policies")).toHaveLength(2);
     expect(get("dismissed")).toEqual(["already rejected"]);
@@ -190,7 +208,7 @@ describe("v1 backups still restore", () => {
     version: 1,
     exportedAt: "2026-08-13T12:35:34.918Z",
     data: {
-      "fb-dashboard:prospects": [prospect("legacy1", "Marcus Webb")],
+      "fb-dashboard:prospects": [legacyProspect("legacy1", "Marcus Webb", "Meeting Scheduled")],
       "fb-dashboard:policies": [policy("legacy-a", 780)],
       "fb-dashboard:tasks": [task("legacy-t")],
       "fb-dashboard:suggestions": [],
@@ -232,14 +250,82 @@ describe("v1 backups still restore", () => {
     expect(await readAll<Prospect>("prospects")).toHaveLength(1);
   });
 
-  it("upgrades to a v2 file on the next export", async () => {
+  it("upgrades to the current format on the next export", async () => {
     await initRepository();
     await replaceAll(parseBackup(JSON.stringify(v1File)).snapshot);
 
     const upgraded = await buildBackup();
-    expect(upgraded.version).toBe(2);
+    expect(upgraded.version).toBe(3);
+    expect(upgraded.prospectSchema).toBe(4);
     expect(upgraded.records.prospects).toHaveLength(1);
+    expect(upgraded.records.prospects[0].stage).toBe("Review Scheduled");
     expect(upgraded.settings[SETTING_KEYS.persistency]).toBe(84);
+  });
+
+  it("converts the old status to a stage on the way in", async () => {
+    await initRepository();
+    await replaceAll(parseBackup(JSON.stringify(v1File)).snapshot);
+
+    const restored = get("prospects")[0];
+    expect(restored.stage).toBe("Review Scheduled");
+    expect(restored.nextAction).toBe("first call");
+    expect(restored.nextActionDate).toBe("");
+    expect(restored.notes[0].body).toBe("Asked about auto.");
+  });
+});
+
+describe("v2 backups still restore", () => {
+  /** What phase 1 wrote: separated sections, but pre-v4 prospects. */
+  const v2File = {
+    app: "agency-dashboard-backup",
+    version: 2,
+    exportedAt: "2026-08-15T18:00:00.000Z",
+    records: {
+      prospects: [legacyProspect("v2a", "Rita Nolan", "Lost"), legacyProspect("v2b", "Ken Ames", "New")],
+      policies: [policy("v2p", 640)],
+      tasks: [task("v2t")],
+      suggestions: [],
+    },
+    meta: { dismissed: ["v2 rejection"] },
+    settings: {
+      "fb-dashboard:owner": "Zach Hayes",
+      "fb-dashboard:persistency": 86,
+    },
+  };
+
+  it("is recognised as version 2", () => {
+    expect(parseBackup(JSON.stringify(v2File)).version).toBe(2);
+  });
+
+  it("migrates its prospects to v4 on the way in", () => {
+    const { snapshot } = parseBackup(JSON.stringify(v2File));
+    const [rita, ken] = snapshot.records.prospects;
+
+    expect(rita.stage).toBe("Closed");
+    expect(rita.closedReason).toBe("lost");
+    expect(ken.stage).toBe("New");
+    expect(ken.closedReason).toBeNull();
+  });
+
+  it("fills the stores it predates with empty arrays, not undefined", () => {
+    const { snapshot } = parseBackup(JSON.stringify(v2File));
+    expect(snapshot.records.calls).toEqual([]);
+    expect(snapshot.records.reviews).toEqual([]);
+    expect(snapshot.records.audit).toEqual([]);
+  });
+
+  it("restores into the app and keeps every original field", async () => {
+    await initRepository();
+    await replaceAll(parseBackup(JSON.stringify(v2File)).snapshot);
+
+    const rita = get("prospects").find((p) => p.id === "v2a")!;
+    expect(rita.name).toBe("Rita Nolan");
+    expect(rita.phone).toBe("(810) 555-0122");
+    expect(rita.area).toBe("Brighton, MI");
+    expect(rita.lines).toEqual(["casualty"]);
+    expect(rita.notes).toHaveLength(1);
+    expect(rita.createdAt).toBe("2026-07-01");
+    expect(get("persistency")).toBe(86);
   });
 });
 
