@@ -202,6 +202,92 @@ describe("current-format round trip", () => {
   });
 });
 
+describe("call records", () => {
+  function call(id: string, prospectId: string, at: string) {
+    return {
+      id,
+      prospectId,
+      at,
+      direction: "outbound" as const,
+      outcome: "No Answer — Voicemail Left" as const,
+      durationMin: null,
+      summary: "Left a message about the renewal",
+      notes: "Try evenings",
+      sourceRef: { system: "granola" as const, title: "Reed follow-up" },
+      createdBy: "manual" as const,
+      createdAt: at,
+    };
+  }
+
+  it("persists to IndexedDB, not localStorage", async () => {
+    await initRepository();
+    set("calls", [call("c1", "p1", "2026-08-14T09:00:00.000Z")]);
+    await whenPersisted();
+
+    expect(await readAll("calls")).toHaveLength(1);
+    expect(localStorage.getItem("fb-dashboard:calls")).toBeNull();
+  });
+
+  it("is included in the backup file", async () => {
+    await initRepository();
+    set("calls", [
+      call("c1", "p1", "2026-08-14T09:00:00.000Z"),
+      call("c2", "p2", "2026-08-15T09:00:00.000Z"),
+    ]);
+    await whenPersisted();
+
+    const file = await buildBackup();
+    expect(file.records.calls).toHaveLength(2);
+    expect(file.records.calls[0].summary).toBe("Left a message about the renewal");
+  });
+
+  it("round-trips through a full wipe with its source reference intact", async () => {
+    await initRepository();
+    set("prospects", [prospect("p1", "Dana Reed")]);
+    set("calls", [call("c1", "p1", "2026-08-14T09:00:00.000Z")]);
+    await whenPersisted();
+    const exported = JSON.stringify(await buildBackup());
+
+    freshEnvironment();
+    await initRepository();
+    expect(get("calls")).toEqual([]);
+
+    await replaceAll(parseBackup(exported).snapshot);
+
+    const restored = get("calls");
+    expect(restored).toHaveLength(1);
+    expect(restored[0].outcome).toBe("No Answer — Voicemail Left");
+    expect(restored[0].sourceRef?.title).toBe("Reed follow-up");
+    expect(restored[0].notes).toBe("Try evenings");
+    expect(restored[0].prospectId).toBe("p1");
+  });
+
+  it("stores no transcript body", async () => {
+    await initRepository();
+    set("calls", [call("c1", "p1", "2026-08-14T09:00:00.000Z")]);
+    await whenPersisted();
+
+    const file = await buildBackup();
+    expect(file.records.calls[0].transcriptExcerpt).toBeUndefined();
+  });
+
+  it("is dropped when the household it belongs to is deleted", async () => {
+    await initRepository();
+    set("prospects", [prospect("p1", "Dana Reed"), prospect("p2", "Ana Fields")]);
+    set("calls", [call("c1", "p1", "2026-08-14T09:00:00.000Z"), call("c2", "p2", "2026-08-15T09:00:00.000Z")]);
+    await whenPersisted();
+
+    // What the card's delete does: remove the household and its calls.
+    set("calls", get("calls").filter((c) => c.prospectId !== "p1"));
+    set("prospects", get("prospects").filter((p) => p.id !== "p1"));
+    await whenPersisted();
+
+    const remaining = await readAll<{ prospectId: string }>("calls");
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].prospectId).toBe("p2");
+  });
+});
+
 describe("v1 backups still restore", () => {
   const v1File = {
     app: "agency-dashboard-backup",

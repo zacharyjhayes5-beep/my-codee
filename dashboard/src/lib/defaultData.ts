@@ -1,4 +1,4 @@
-import type { LineId, Period, PolicyLine, Stage, Urgency } from "../types";
+import type { CallOutcome, LineId, Period, PolicyLine, Stage, Urgency } from "../types";
 
 export const defaultPolicyLines: PolicyLine[] = [
   { id: "property", name: "Property", policyGoal: 40, premiumGoal: 0 },
@@ -52,6 +52,30 @@ export const urgencyName: Record<Urgency, string> = {
   week: "This week",
   soon: "Soon",
   someday: "Someday",
+};
+
+/** The eight approved outcomes, in the order they appear in the logger. */
+export const callOutcomes: CallOutcome[] = [
+  "No Answer — No Voicemail",
+  "No Answer — Voicemail Left",
+  "Bad Phone Number",
+  "Definitely Not Interested",
+  "Not at This Time",
+  "Somewhat Interested",
+  "Hot Lead — Very Interested",
+  "Insurance Review Scheduled",
+];
+
+/** Colour band per outcome — cold at the top, hot at the bottom. */
+export const outcomeClass: Record<CallOutcome, string> = {
+  "No Answer — No Voicemail": "badge-muted",
+  "No Answer — Voicemail Left": "badge-muted",
+  "Bad Phone Number": "badge-critical",
+  "Definitely Not Interested": "badge-critical",
+  "Not at This Time": "badge-info",
+  "Somewhat Interested": "badge-serious",
+  "Hot Lead — Very Interested": "badge-warning",
+  "Insurance Review Scheduled": "badge-good",
 };
 
 export const stageClass: Record<Stage, string> = {

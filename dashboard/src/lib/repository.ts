@@ -88,6 +88,7 @@ interface Cache {
   policies: PolicyEntry[];
   tasks: Task[];
   suggestions: Suggestion[];
+  calls: Call[];
   dismissed: string[];
   period: Period;
   owner: string;
@@ -252,7 +253,8 @@ export async function initRepository(): Promise<BootResult> {
 
   if (!usable) {
     const legacy = collectionsFromLegacy();
-    cache = { ...legacy, ...loadSettings() };
+    // Calls were born in IndexedDB — there is no localStorage fallback for them.
+    cache = { ...legacy, calls: [], ...loadSettings() };
     ready = true;
     emit();
     return { usingIndexedDb: false, migration: null, schema: null };
@@ -266,6 +268,7 @@ export async function initRepository(): Promise<BootResult> {
     policies: await readAll<PolicyEntry>("policies"),
     tasks: await readAll<Task>("tasks"),
     suggestions: await readAll<Suggestion>("suggestions"),
+    calls: await readAll<Call>("calls"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
@@ -420,6 +423,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     await writeAll("policies", next.records.policies);
     await writeAll("tasks", next.records.tasks);
     await writeAll("suggestions", next.records.suggestions);
+    await writeAll("calls", next.records.calls ?? []);
     for (const store of RESERVED_STORES) {
       const rows = (next.records[store as ReservedStore] ?? []) as { id: string }[];
       await writeAll(store, rows);
@@ -445,6 +449,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     policies: next.records.policies,
     tasks: next.records.tasks,
     suggestions: next.records.suggestions,
+    calls: next.records.calls ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

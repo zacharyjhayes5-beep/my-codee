@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import type { LineId, Prospect, Stage } from "../types";
+import type { Call, LineId, Prospect, Stage } from "../types";
 import { lineOptions, prospectStages, stageClass } from "../lib/defaultData";
+import { blankCall } from "../lib/calls";
 import { newId, today } from "../lib/storage";
+import { CallHistory } from "./CallHistory";
+import { CallLogger } from "./CallLogger";
 
 interface ProspectCardProps {
   prospect: Prospect;
+  /** This household's calls, newest first. */
+  calls: Call[];
   expanded: boolean;
   onToggle: () => void;
   onChange: (patch: Partial<Prospect>) => void;
   onRemove: () => void;
+  onSaveCall: (call: Call) => void;
+  onDeleteCall: (callId: string) => void;
 }
 
 function formatDay(iso: string) {
@@ -22,13 +29,27 @@ function formatDay(iso: string) {
 
 export function ProspectCard({
   prospect,
+  calls,
   expanded,
   onToggle,
   onChange,
   onRemove,
+  onSaveCall,
+  onDeleteCall,
 }: ProspectCardProps) {
   const [newNote, setNewNote] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
+  /** The call being written or corrected — null when the form is closed. */
+  const [callDraft, setCallDraft] = useState<{ call: Call; mode: "new" | "edit" } | null>(null);
+
+  function startCall() {
+    setCallDraft({ call: blankCall(prospect.id), mode: "new" });
+  }
+
+  function saveCall(call: Call) {
+    onSaveCall(call);
+    setCallDraft(null);
+  }
 
   const notes = [...prospect.notes].sort((a, b) => b.date.localeCompare(a.date));
   const lastTouch = notes[0]?.date ?? prospect.updatedAt;
@@ -115,11 +136,24 @@ export function ProspectCard({
 
       <footer className="prospect-foot">
         <span className="muted-note">
-          {notes.length} note{notes.length === 1 ? "" : "s"} · last {formatDay(lastTouch)}
+          {calls.length > 0
+            ? `${calls.length} call${calls.length === 1 ? "" : "s"} · ${notes.length} note${notes.length === 1 ? "" : "s"}`
+            : `${notes.length} note${notes.length === 1 ? "" : "s"} · last ${formatDay(lastTouch)}`}
         </span>
-        <button className="link-btn" onClick={onToggle}>
-          {expanded ? "Close" : "Open profile"}
-        </button>
+        <div className="prospect-foot-actions">
+          <button
+            className="primary-btn log-call-btn"
+            onClick={() => {
+              if (!expanded) onToggle();
+              startCall();
+            }}
+          >
+            Log call
+          </button>
+          <button className="link-btn" onClick={onToggle}>
+            {expanded ? "Close" : "Open profile"}
+          </button>
+        </div>
       </footer>
 
       {expanded && (
@@ -135,7 +169,28 @@ export function ProspectCard({
             </label>
           </div>
 
-          <h4>Call notes</h4>
+          <h4>Calls</h4>
+          {callDraft ? (
+            <CallLogger
+              householdName={prospect.name}
+              call={callDraft.call}
+              mode={callDraft.mode}
+              onSave={saveCall}
+              onCancel={() => setCallDraft(null)}
+            />
+          ) : (
+            <button className="ghost-btn add-call-btn" onClick={startCall}>
+              Log a call
+            </button>
+          )}
+
+          <CallHistory
+            calls={calls}
+            onEdit={(call) => setCallDraft({ call, mode: "edit" })}
+            onDelete={onDeleteCall}
+          />
+
+          <h4>Notes</h4>
           {notes.length === 0 && <p className="empty">No notes yet.</p>}
           {notes.map((note) => (
             <div className="note-block" key={note.id}>

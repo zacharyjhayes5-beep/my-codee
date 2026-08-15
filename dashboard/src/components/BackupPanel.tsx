@@ -16,11 +16,7 @@ export function BackupPanel() {
     setBusy(true);
     try {
       const file = await buildBackup();
-      const total =
-        file.records.prospects.length +
-        file.records.policies.length +
-        file.records.tasks.length +
-        file.records.suggestions.length;
+      const total = Object.values(file.records).reduce((sum, rows) => sum + rows.length, 0);
 
       const blob = new Blob([JSON.stringify(file, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -50,7 +46,7 @@ export function BackupPanel() {
         ? new Date(parsed.exportedAt).toLocaleString()
         : "an unknown date";
       const counts = countsOf(parsed.snapshot);
-      const summary = `${counts.prospects} prospects · ${counts.policies} policies · ${counts.tasks} tasks`;
+      const summary = `${counts.prospects} prospects · ${counts.calls} calls · ${counts.policies} policies · ${counts.tasks} tasks`;
 
       const ok = window.confirm(
         `Restore the backup from ${when}?\n\n${summary}\n\n` +

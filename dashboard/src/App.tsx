@@ -27,6 +27,7 @@ function App() {
   const [suggestions, setSuggestions] = useStored("suggestions");
   const [dismissed, setDismissed] = useStored("dismissed");
   const [prospects, setProspects] = useStored("prospects");
+  const [calls, setCalls] = useStored("calls");
   const [ownerName, setOwnerName] = useStored("owner");
 
   return (
@@ -87,6 +88,8 @@ function App() {
           <ProspectsTab
             prospects={prospects}
             onChange={setProspects}
+            calls={calls}
+            onCallsChange={setCalls}
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
           />

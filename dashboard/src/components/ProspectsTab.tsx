@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import type { Prospect, ProspectNote, Stage } from "../types";
+import type { Call, Prospect, ProspectNote, Stage } from "../types";
 import { prospectStages } from "../lib/defaultData";
+import { callsFor, withLatestCallFields } from "../lib/calls";
 import { blankProspect } from "../lib/prospectSchema";
 import { today } from "../lib/storage";
 import { ImportPanel } from "./ImportPanel";
@@ -9,6 +10,8 @@ import { ProspectCard } from "./ProspectCard";
 interface ProspectsTabProps {
   prospects: Prospect[];
   onChange: (updater: (prev: Prospect[]) => Prospect[]) => void;
+  calls: Call[];
+  onCallsChange: (updater: (prev: Call[]) => Call[]) => void;
   ownerName: string;
   onOwnerNameChange: (name: string) => void;
 }
@@ -16,6 +19,8 @@ interface ProspectsTabProps {
 export function ProspectsTab({
   prospects,
   onChange,
+  calls,
+  onCallsChange,
   ownerName,
   onOwnerNameChange,
 }: ProspectsTabProps) {
@@ -72,6 +77,40 @@ export function ProspectsTab({
           updatedAt: today(),
         };
       })
+    );
+  }
+
+  /**
+   * Saves a new or corrected call, then rewrites the household's three
+   * latest-call fields from the resulting list. Recomputing rather than
+   * patching is what makes an edit or a delete settle to the right answer —
+   * including clearing the fields when the last call is removed.
+   */
+  function saveCall(call: Call) {
+    onCallsChange((prev) => {
+      const without = prev.filter((c) => c.id !== call.id);
+      const next = [...without, call];
+      syncLatest(call.prospectId, next);
+      return next;
+    });
+  }
+
+  function deleteCall(callId: string) {
+    onCallsChange((prev) => {
+      const removed = prev.find((c) => c.id === callId);
+      const next = prev.filter((c) => c.id !== callId);
+      if (removed) syncLatest(removed.prospectId, next);
+      return next;
+    });
+  }
+
+  /** Stage, grade and score are left alone — phase 4 owns transitions. */
+  function syncLatest(prospectId: string, allCalls: Call[]) {
+    const mine = callsFor(allCalls, prospectId);
+    onChange((prev) =>
+      prev.map((p) =>
+        p.id === prospectId ? { ...withLatestCallFields(p, mine), updatedAt: today() } : p,
+      ),
     );
   }
 
@@ -134,10 +173,16 @@ export function ProspectsTab({
             <ProspectCard
               key={p.id}
               prospect={p}
+              calls={callsFor(calls, p.id)}
               expanded={expandedId === p.id}
               onToggle={() => setExpandedId(expandedId === p.id ? null : p.id)}
               onChange={(patch) => patchProspect(p.id, patch)}
-              onRemove={() => onChange((prev) => prev.filter((x) => x.id !== p.id))}
+              onRemove={() => {
+                onCallsChange((prev) => prev.filter((c) => c.prospectId !== p.id));
+                onChange((prev) => prev.filter((x) => x.id !== p.id));
+              }}
+              onSaveCall={saveCall}
+              onDeleteCall={deleteCall}
             />
           ))}
         </div>

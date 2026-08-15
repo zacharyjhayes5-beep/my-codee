@@ -110,10 +110,10 @@ graph, the gas tanks and the progress orb are all hand-rolled SVG.
 phase 1, and the backup depends on it being the only door.
 
 - **IndexedDB** (`fb-dashboard`, v2) holds records: `prospects`, `policies`,
-  `tasks`, `suggestions` as one row per record keyed by `id`, plus `calls`,
-  `reviews` and `audit` — created empty in phase 2 and **not read or written by
-  anything yet** — and a `meta` store for `dismissed`, the migration flag and
-  the prospect schema version. `lib/db.ts` has the primitives.
+  `tasks`, `suggestions` and `calls` as one row per record keyed by `id`, plus
+  `reviews` and `audit` — created empty and **not read or written by anything
+  yet** — and a `meta` store for `dismissed`, the migration flag and the
+  prospect schema version. `lib/db.ts` has the primitives.
 - **localStorage** holds small settings only: `fb-dashboard:period`, `:owner`,
   `:persistency`, `:lines:v3`.
 - The cache is filled by `initRepository()` in `main.tsx` *before* the first
@@ -130,6 +130,28 @@ he has a v2 backup he trusts.
 
 `lib/migrate.ts` still carries the pre-v3 shapes forward and runs as part of
 the migration; add a step there rather than orphaning his data.
+
+## Calls
+
+`lib/calls.ts` holds everything derived from call records. Two rules matter:
+
+**Counters are never stored on the prospect.** `attemptCounts()` reads them off
+the call list every time, so correcting a mis-logged call corrects the tally
+with no reconciliation step. `attempts` counts only the two no-answer
+outcomes — the dials the seven-attempt cap counts — and `voicemails` is the
+subset that left a message. A connected call is not an attempt.
+
+**The three latest-call fields are recomputed, never patched.**
+`withLatestCallFields()` takes the whole list and rewrites `lastOutcome`,
+`lastOutcomeAt` and `lastContactedAt` from whichever call is newest *by when it
+happened*, not by when it was typed. That is what makes editing or deleting the
+newest call settle to the right answer instead of leaving a stale outcome
+behind, and what clears the fields when the last call goes. `lastContactedAt`
+counts any logged call, answered or not.
+
+Logging a call deliberately does **not** touch stage, priority grade or
+conversion score — phase 4 owns transitions. Deleting a household deletes its
+calls with it.
 
 ## Prospect schema v4
 
