@@ -14,7 +14,11 @@ import { newId } from "./storage";
  * made-up follow-up date is worse than an empty one — it looks like fact.
  */
 
-export const PROSPECT_SCHEMA_VERSION = 4;
+/**
+ * 4 split the old `status`. 5 added `stageSource` / `stageCallId` so a stage
+ * knows whether a rule or a person put it there.
+ */
+export const PROSPECT_SCHEMA_VERSION = 5;
 
 /** The six statuses v3 could hold, and where each one lands. */
 export const STATUS_TO_STAGE: Record<string, Stage> = {
@@ -59,6 +63,8 @@ export function blankProspect(overrides: Partial<Prospect> = {}): Prospect {
     address: blankAddress(),
     area: "",
     stage: "New",
+    stageSource: "manual",
+    stageCallId: null,
     closedReason: null,
     priorityGrade: "",
     conversionScore: null,
@@ -178,6 +184,11 @@ export function normalizeProspect(input: unknown): Prospect {
     address: asAddress(raw.address),
     area: raw.area ?? "",
     stage,
+    // Anything that predates the field was last touched by a person, not a
+    // rule — claiming otherwise would let reconciliation overwrite a stage
+    // nobody asked it to.
+    stageSource: raw.stageSource === "rule" ? "rule" : "manual",
+    stageCallId: raw.stageCallId ?? null,
     closedReason,
     priorityGrade: raw.priorityGrade ?? "",
     conversionScore:

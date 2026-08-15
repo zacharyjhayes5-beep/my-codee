@@ -1349,6 +1349,49 @@
   gap: 8px;
 }
 
+.optional-mark {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.rule-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+.rule-hint.warn {
+  color: var(--status-warning);
+  border-left-color: var(--status-warning);
+}
+
+.blocked-why {
+  font-size: 0.78rem;
+  color: var(--neon-red);
+  align-self: center;
+}
+
+.call-logger-foot button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.task-origin-chip {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+
 .call-history {
   display: flex;
   flex-direction: column;

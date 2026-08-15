@@ -77,6 +77,7 @@ function TaskRow({ task, today, onPatch, onRemove }: TaskRowProps) {
         </button>
 
         <div className="task-tags">
+          {task.ruleId && <span className="task-origin-chip">auto</span>}
           {task.dueDate && <span className="due-badge">{dueLabel(task.dueDate, today)}</span>}
           {task.source !== "manual" && (
             <span className={`src-chip src-${task.source}`}>

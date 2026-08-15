@@ -15,8 +15,9 @@ interface ProspectCardProps {
   onToggle: () => void;
   onChange: (patch: Partial<Prospect>) => void;
   onRemove: () => void;
-  onSaveCall: (call: Call) => void;
+  onSaveCall: (call: Call, isNew: boolean) => void;
   onDeleteCall: (callId: string) => void;
+  onSetScore: (score: number | null) => void;
 }
 
 function formatDay(iso: string) {
@@ -36,6 +37,7 @@ export function ProspectCard({
   onRemove,
   onSaveCall,
   onDeleteCall,
+  onSetScore,
 }: ProspectCardProps) {
   const [newNote, setNewNote] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -46,8 +48,11 @@ export function ProspectCard({
     setCallDraft({ call: blankCall(prospect.id), mode: "new" });
   }
 
-  function saveCall(call: Call) {
-    onSaveCall(call);
+  function saveCall(call: Call, score: number | null) {
+    onSaveCall(call, callDraft?.mode === "new");
+    // The score is prompted alongside a hot lead but never inferred — it only
+    // moves if a number was actually typed.
+    if (score !== null) onSetScore(score);
     setCallDraft(null);
   }
 
@@ -88,7 +93,11 @@ export function ProspectCard({
         <select
           className={`status-select ${stageClass[prospect.stage]}`}
           value={prospect.stage}
-          onChange={(e) => onChange({ stage: e.target.value as Stage })}
+          onChange={(e) =>
+            // Moving it by hand takes ownership — a later correction to an old
+            // call will not quietly move it back.
+            onChange({ stage: e.target.value as Stage, stageSource: "manual", stageCallId: null })
+          }
           aria-label="Stage"
         >
           {prospectStages.map((s) => (
@@ -173,6 +182,8 @@ export function ProspectCard({
           {callDraft ? (
             <CallLogger
               householdName={prospect.name}
+              prospect={prospect}
+              priorCalls={calls}
               call={callDraft.call}
               mode={callDraft.mode}
               onSave={saveCall}

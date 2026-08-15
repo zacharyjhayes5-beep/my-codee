@@ -149,9 +149,38 @@ newest call settle to the right answer instead of leaving a stale outcome
 behind, and what clears the fields when the last call goes. `lastContactedAt`
 counts any logged call, answered or not.
 
-Logging a call deliberately does **not** touch stage, priority grade or
-conversion score — phase 4 owns transitions. Deleting a household deletes its
-calls with it.
+Deleting a household deletes its calls and its rule-made tasks with it; tasks
+he typed by hand survive.
+
+## Outcome rules
+
+`lib/rules.ts` is the engine. **`RULE_CONSTANTS` at the top is the only place
+any cap or cadence may live** — 7 attempts, 3 voicemails, 2/3-day callbacks,
+1-then-2-month nurture. Never hard-code one of those numbers anywhere else.
+
+**The engine is a replay, not an incremental patch.** `replayCalls()` sorts a
+household's calls oldest-first and walks them; whatever state it ends on is the
+truth. That is what makes correcting or deleting a call in the middle of a run
+come out right — there is no accumulated state to unwind, only the same walk
+over a shorter list. Counters, the caps and the nurture sequence all fall out
+of the walk.
+
+`reconcileProspect()` applies it. Two rules govern what it may touch:
+
+- **Tasks:** only rule-generated (`ruleId` set), still-open tasks for that
+  household are rebuilt. A hand-typed task is never modified. A *completed*
+  rule task is left alone — it records something that actually happened.
+- **Stage:** `applyStage: true` when a call is newly logged, because that is an
+  explicit act and its rule wins even over a hand-moved stage. `false` when a
+  call is edited or deleted, so a deliberate manual override outlives a later
+  correction. `stageSource` / `stageCallId` carry the provenance; when the last
+  call is deleted the stage stays put but stops claiming a rule set it.
+
+Two outcomes block saving until one more field is filled: **Hot Lead** needs a
+next action, **Insurance Review Scheduled** needs the appointment date. The
+rules cannot produce a sensible follow-up without them. The conversion score is
+prompted beside a hot lead and applied only if a number is typed — never
+inferred.
 
 ## Prospect schema v4
 

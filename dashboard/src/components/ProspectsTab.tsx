@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import type { Call, Prospect, ProspectNote, Stage } from "../types";
+import type { Call, Prospect, ProspectNote, Stage, Task } from "../types";
 import { prospectStages } from "../lib/defaultData";
 import { callsFor, withLatestCallFields } from "../lib/calls";
 import { blankProspect } from "../lib/prospectSchema";
+import { reconcileProspect } from "../lib/rules";
 import { today } from "../lib/storage";
 import { ImportPanel } from "./ImportPanel";
 import { ProspectCard } from "./ProspectCard";
@@ -12,6 +13,8 @@ interface ProspectsTabProps {
   onChange: (updater: (prev: Prospect[]) => Prospect[]) => void;
   calls: Call[];
   onCallsChange: (updater: (prev: Call[]) => Call[]) => void;
+  tasks: Task[];
+  onTasksChange: (tasks: Task[]) => void;
   ownerName: string;
   onOwnerNameChange: (name: string) => void;
 }
@@ -21,6 +24,8 @@ export function ProspectsTab({
   onChange,
   calls,
   onCallsChange,
+  tasks,
+  onTasksChange,
   ownerName,
   onOwnerNameChange,
 }: ProspectsTabProps) {
@@ -86,11 +91,12 @@ export function ProspectsTab({
    * patching is what makes an edit or a delete settle to the right answer —
    * including clearing the fields when the last call is removed.
    */
-  function saveCall(call: Call) {
+  function saveCall(call: Call, isNew: boolean) {
     onCallsChange((prev) => {
-      const without = prev.filter((c) => c.id !== call.id);
-      const next = [...without, call];
-      syncLatest(call.prospectId, next);
+      const next = [...prev.filter((c) => c.id !== call.id), call];
+      // A newly logged call is an explicit action, so its rule wins even over
+      // a stage that was moved by hand. A correction to an old call is not.
+      syncProspect(call.prospectId, next, isNew);
       return next;
     });
   }
@@ -99,19 +105,38 @@ export function ProspectsTab({
     onCallsChange((prev) => {
       const removed = prev.find((c) => c.id === callId);
       const next = prev.filter((c) => c.id !== callId);
-      if (removed) syncLatest(removed.prospectId, next);
+      if (removed) syncProspect(removed.prospectId, next, false);
       return next;
     });
   }
 
-  /** Stage, grade and score are left alone — phase 4 owns transitions. */
-  function syncLatest(prospectId: string, allCalls: Call[]) {
+  /**
+   * Rewrites the household's latest-call fields, replays the outcome rules,
+   * and brings its rule-generated tasks into line. Hand-typed tasks and
+   * completed ones are never touched.
+   */
+  function syncProspect(prospectId: string, allCalls: Call[], applyStage: boolean) {
     const mine = callsFor(allCalls, prospectId);
+
     onChange((prev) =>
-      prev.map((p) =>
-        p.id === prospectId ? { ...withLatestCallFields(p, mine), updatedAt: today() } : p,
-      ),
+      prev.map((p) => {
+        if (p.id !== prospectId) return p;
+        const withCallFields = withLatestCallFields(p, mine);
+        const { prospect } = reconcileProspect(withCallFields, allCalls, tasks, {
+          applyStage,
+          today: today(),
+        });
+        return { ...prospect, updatedAt: today() };
+      }),
     );
+
+    const target = prospects.find((p) => p.id === prospectId);
+    if (!target) return;
+    const { tasks: nextTasks } = reconcileProspect(target, allCalls, tasks, {
+      applyStage,
+      today: today(),
+    });
+    onTasksChange(nextTasks);
   }
 
   function addBlank() {
@@ -179,10 +204,13 @@ export function ProspectsTab({
               onChange={(patch) => patchProspect(p.id, patch)}
               onRemove={() => {
                 onCallsChange((prev) => prev.filter((c) => c.prospectId !== p.id));
+                // Rule-made tasks go with the household; hand-typed ones stay.
+                onTasksChange(tasks.filter((t) => !(t.prospectId === p.id && t.ruleId)));
                 onChange((prev) => prev.filter((x) => x.id !== p.id));
               }}
               onSaveCall={saveCall}
               onDeleteCall={deleteCall}
+              onSetScore={(score) => patchProspect(p.id, { conversionScore: score })}
             />
           ))}
         </div>

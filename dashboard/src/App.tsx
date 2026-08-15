@@ -90,6 +90,8 @@ function App() {
             onChange={setProspects}
             calls={calls}
             onCallsChange={setCalls}
+            tasks={tasks}
+            onTasksChange={setTasks}
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
           />

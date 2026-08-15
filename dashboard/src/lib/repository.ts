@@ -14,11 +14,7 @@ import {
 import { RESERVED_STORES, type ReservedStore } from "./db";
 import { defaultOwnerName, defaultPeriod } from "./defaultData";
 import { migratedLines, migratedProspects, migratedTasks } from "./migrate";
-import {
-  PROSPECT_SCHEMA_VERSION,
-  needsProspectMigration,
-  normalizeProspects,
-} from "./prospectSchema";
+import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import type {
   AuditEntry,
   Call,
@@ -224,23 +220,21 @@ async function upgradeProspectSchema(): Promise<SchemaReport> {
     return { ran: false, from: storedVersion, to: PROSPECT_SCHEMA_VERSION, prospectsRewritten: 0 };
   }
 
+  // The stored version is behind, so every record is rewritten through the
+  // conversion — not only the ones missing a `stage`. A later version can add
+  // a field that older records simply lack, and checking for one specific
+  // field would silently skip them.
   const rows = await readAll<unknown>("prospects");
-  const stale = needsProspectMigration(rows);
-
-  if (stale || rows.length === 0) {
-    const upgraded = normalizeProspects(rows);
-    if (upgraded.length > 0) await writeAll("prospects", upgraded);
-    await writeMeta(SCHEMA_FLAG, PROSPECT_SCHEMA_VERSION);
-    return {
-      ran: stale,
-      from: storedVersion,
-      to: PROSPECT_SCHEMA_VERSION,
-      prospectsRewritten: stale ? upgraded.length : 0,
-    };
-  }
-
+  const upgraded = normalizeProspects(rows);
+  if (upgraded.length > 0) await writeAll("prospects", upgraded);
   await writeMeta(SCHEMA_FLAG, PROSPECT_SCHEMA_VERSION);
-  return { ran: false, from: storedVersion, to: PROSPECT_SCHEMA_VERSION, prospectsRewritten: 0 };
+
+  return {
+    ran: upgraded.length > 0,
+    from: storedVersion,
+    to: PROSPECT_SCHEMA_VERSION,
+    prospectsRewritten: upgraded.length,
+  };
 }
 
 /**

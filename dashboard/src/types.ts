@@ -57,7 +57,7 @@ export interface Task {
   /** Links added in phase 2, unused until follow-up rules land. */
   prospectId?: string;
   callId?: string;
-  kind?: "manual" | "followup" | "appointment" | "quote";
+  kind?: "manual" | "followup" | "appointment" | "quote" | "admin";
   ruleId?: string;
 }
 
@@ -171,6 +171,14 @@ export interface Prospect {
   /** Free-text "City, ST" the Lead Map clusters on. Unchanged from v3. */
   area: string;
   stage: Stage;
+  /**
+   * Whether the current stage was set by an outcome rule or moved by hand.
+   * A manual move is respected on later reconciliation; a rule-set stage is
+   * recomputed, so correcting or deleting a call cannot leave a stale one.
+   */
+  stageSource: "manual" | "rule";
+  /** The call whose rule produced the current stage, when it came from a rule. */
+  stageCallId: string | null;
   closedReason: ClosedReason | null;
   priorityGrade: PriorityGrade;
   /** 1–10, or null when ungraded. Never guessed. */
@@ -216,6 +224,13 @@ export interface Call {
   reviewId?: string;
   createdBy: "manual" | "review";
   createdAt: string;
+  /**
+   * Required by the Hot Lead rule. Lives on the call rather than the household
+   * so that editing or deleting the call reconciles the task it produced.
+   */
+  nextAction?: string;
+  /** Required by the Insurance Review rule — when the appointment is. */
+  appointmentAt?: string;
 }
 
 /** Phase 5. A proposed change set awaiting approval. */
