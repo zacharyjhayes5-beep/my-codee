@@ -11,8 +11,8 @@ import {
   writeAll,
   writeMeta,
 } from "./db";
-import { RESERVED_STORES, type ReservedStore } from "./db";
 import { defaultOwnerName, defaultPeriod } from "./defaultData";
+import { normalizeProposals, reviewsFromSuggestions } from "./reviews";
 import { migratedLines, migratedProspects, migratedTasks } from "./migrate";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import type {
@@ -73,6 +73,7 @@ export const LEGACY_RECORD_KEYS: Record<
 
 const MIGRATION_FLAG = "migratedFromLocalStorage";
 const SCHEMA_FLAG = "prospectSchemaVersion";
+const REVIEWS_FLAG = "suggestionsMovedToReviews";
 const DISMISSED_KEY = "dismissed";
 
 /* ------------------------------------------------------------------ */
@@ -85,6 +86,8 @@ interface Cache {
   tasks: Task[];
   suggestions: Suggestion[];
   calls: Call[];
+  reviews: ReviewProposal[];
+  audit: AuditEntry[];
   dismissed: string[];
   period: Period;
   owner: string;
@@ -202,10 +205,40 @@ export interface SchemaReport {
   prospectsRewritten: number;
 }
 
+export interface ReviewMigrationReport {
+  ran: boolean;
+  suggestionsConverted: number;
+}
+
 export interface BootResult {
   usingIndexedDb: boolean;
   migration: MigrationReport | null;
   schema: SchemaReport | null;
+  reviews: ReviewMigrationReport | null;
+}
+
+/**
+ * Moves the old to-do suggestions into the review inbox. The `suggestions`
+ * store is left in place untouched, the same way the legacy localStorage keys
+ * were — a rollback point that stops being live the moment anything changes.
+ */
+async function migrateSuggestionsToReviews(): Promise<ReviewMigrationReport> {
+  const already = await readMeta<ReviewMigrationReport>(REVIEWS_FLAG);
+  if (already) return already;
+
+  const suggestions = await readAll<Suggestion>("suggestions");
+  const existing = await readAll<ReviewProposal>("reviews");
+
+  const seen = new Set(existing.map((r) => r.id));
+  const converted = reviewsFromSuggestions(suggestions).filter((r) => !seen.has(r.id));
+
+  if (converted.length > 0) {
+    await writeAll("reviews", [...existing, ...converted]);
+  }
+
+  const report: ReviewMigrationReport = { ran: true, suggestionsConverted: converted.length };
+  await writeMeta(REVIEWS_FLAG, report);
+  return report;
 }
 
 /**
@@ -248,14 +281,15 @@ export async function initRepository(): Promise<BootResult> {
   if (!usable) {
     const legacy = collectionsFromLegacy();
     // Calls were born in IndexedDB — there is no localStorage fallback for them.
-    cache = { ...legacy, calls: [], ...loadSettings() };
+    cache = { ...legacy, calls: [], reviews: [], audit: [], ...loadSettings() };
     ready = true;
     emit();
-    return { usingIndexedDb: false, migration: null, schema: null };
+    return { usingIndexedDb: false, migration: null, schema: null, reviews: null };
   }
 
   const migration = await migrateIfNeeded();
   const schema = await upgradeProspectSchema();
+  const reviewMigration = await migrateSuggestionsToReviews();
 
   cache = {
     prospects: await readAll<Prospect>("prospects"),
@@ -263,12 +297,14 @@ export async function initRepository(): Promise<BootResult> {
     tasks: await readAll<Task>("tasks"),
     suggestions: await readAll<Suggestion>("suggestions"),
     calls: await readAll<Call>("calls"),
+    reviews: await readAll<ReviewProposal>("reviews"),
+    audit: await readAll<AuditEntry>("audit"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
   ready = true;
   emit();
-  return { usingIndexedDb: true, migration, schema };
+  return { usingIndexedDb: true, migration, schema, reviews: reviewMigration };
 }
 
 function loadSettings() {
@@ -418,10 +454,10 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     await writeAll("tasks", next.records.tasks);
     await writeAll("suggestions", next.records.suggestions);
     await writeAll("calls", next.records.calls ?? []);
-    for (const store of RESERVED_STORES) {
-      const rows = (next.records[store as ReservedStore] ?? []) as { id: string }[];
-      await writeAll(store, rows);
-    }
+    // Proposals from an older file arrive without the review shape; normalising
+    // here means a restore lands already current.
+    await writeAll("reviews", normalizeProposals(next.records.reviews));
+    await writeAll("audit", next.records.audit ?? []);
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -432,6 +468,11 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
       at: new Date().toISOString(),
     } satisfies MigrationReport);
     await writeMeta(SCHEMA_FLAG, PROSPECT_SCHEMA_VERSION);
+    // A restore brings its own reviews; don't re-convert suggestions over them.
+    await writeMeta(REVIEWS_FLAG, {
+      ran: true,
+      suggestionsConverted: 0,
+    } satisfies ReviewMigrationReport);
   }
 
   for (const [key, value] of Object.entries(next.settings)) {
@@ -444,6 +485,8 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     tasks: next.records.tasks,
     suggestions: next.records.suggestions,
     calls: next.records.calls ?? [],
+    reviews: normalizeProposals(next.records.reviews),
+    audit: next.records.audit ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

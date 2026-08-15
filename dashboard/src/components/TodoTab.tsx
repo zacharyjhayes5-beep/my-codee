@@ -1,26 +1,28 @@
 import { useMemo, useState } from "react";
-import type { Suggestion, Task, Urgency } from "../types";
+import type { Prospect, ReviewProposal, Task, Urgency } from "../types";
 import { urgencyColor, urgencyLevels } from "../lib/defaultData";
 import { newId, today as todayIso } from "../lib/storage";
 import { daysUntil, dedupeKey, inferUrgency, parseSuggestions, type SuggestionSource } from "../lib/suggest";
-import { SuggestionInbox } from "./SuggestionInbox";
+import { reviewFromSuggestion } from "../lib/reviews";
+import type { Conflict } from "../lib/reviews";
+import { ReviewInbox } from "./ReviewInbox";
 import { WeekAgenda } from "./WeekAgenda";
 
 interface TodoTabProps {
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
-  suggestions: Suggestion[];
-  onSuggestionsChange: (suggestions: Suggestion[]) => void;
-  /** Keys of suggestions turned down before, so they don't come back. */
+  reviews: ReviewProposal[];
+  onReviewsChange: (reviews: ReviewProposal[]) => void;
+  prospects: Prospect[];
+  /** Returns any conflicts that stopped the proposal being applied. */
+  onApprove: (proposal: ReviewProposal) => Conflict[];
+  onReject: (proposal: ReviewProposal) => void;
+  /** Dedupe keys turned down before, so the same proposal doesn't come back. */
   dismissed: string[];
-  onDismissedChange: (keys: string[]) => void;
 }
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/** How many rejected suggestions are remembered before the oldest drop off. */
-const DISMISSED_LIMIT = 300;
 
 function shiftIso(iso: string, days: number): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -139,10 +141,12 @@ function TaskRow({ task, today, onPatch, onRemove }: TaskRowProps) {
 export function TodoTab({
   tasks,
   onTasksChange,
-  suggestions,
-  onSuggestionsChange,
+  reviews,
+  onReviewsChange,
+  prospects,
+  onApprove,
+  onReject,
   dismissed,
-  onDismissedChange,
 }: TodoTabProps) {
   const today = useMemo(() => todayIso(), []);
   const week = useMemo(() => Array.from({ length: 7 }, (_, i) => shiftIso(today, i)), [today]);
@@ -186,66 +190,37 @@ export function TodoTab({
     onTasksChange(tasks.filter((t) => t.id !== id));
   }
 
-  /** Reads raw text into the inbox, skipping anything already seen. */
+  const pending = useMemo(() => reviews.filter((r) => r.status !== "approved" && r.status !== "rejected"), [reviews]);
+
+  /** Reads raw text into the inbox as proposals, skipping anything already seen. */
   function importItems(items: { text: string; filename?: string }[], source?: SuggestionSource) {
     const seen = new Set<string>([
       ...tasks.map((t) => dedupeKey(t.text)),
-      ...suggestions.map((s) => dedupeKey(s.text)),
+      ...reviews.map((r) => r.dedupeKey),
       ...dismissed,
     ]);
 
-    const fresh: Suggestion[] = [];
+    const fresh: ReviewProposal[] = [];
     for (const item of items) {
       for (const s of parseSuggestions(item.text, { filename: item.filename, today, source })) {
         const key = dedupeKey(s.text);
         if (seen.has(key)) continue;
         seen.add(key);
-        fresh.push(s);
+        fresh.push(reviewFromSuggestion(s));
       }
     }
 
-    if (fresh.length > 0) onSuggestionsChange([...suggestions, ...fresh]);
+    if (fresh.length > 0) onReviewsChange([...reviews, ...fresh]);
     return fresh.length;
   }
 
-  function taskFromSuggestion(s: Suggestion): Task {
-    return {
-      id: newId(),
-      text: s.text.trim() || "Untitled task",
-      detail: s.detail,
-      urgency: s.urgency,
-      done: false,
-      dueDate: s.dueDate,
-      source: s.source,
-      sourceRef: s.sourceRef,
-      createdAt: today,
-    };
-  }
-
-  function approve(id: string) {
-    const s = suggestions.find((x) => x.id === id);
-    if (!s) return;
-    onTasksChange([...tasks, taskFromSuggestion(s)]);
-    onSuggestionsChange(suggestions.filter((x) => x.id !== id));
-  }
-
-  function reject(id: string) {
-    const s = suggestions.find((x) => x.id === id);
-    if (!s) return;
-    onSuggestionsChange(suggestions.filter((x) => x.id !== id));
-    onDismissedChange([...dismissed, dedupeKey(s.text)].slice(-DISMISSED_LIMIT));
-  }
-
   function approveAll() {
-    if (suggestions.length === 0) return;
-    onTasksChange([...tasks, ...suggestions.map(taskFromSuggestion)]);
-    onSuggestionsChange([]);
+    // One at a time, so a conflict on one proposal cannot take the rest with it.
+    for (const proposal of pending) onApprove(proposal);
   }
 
   function rejectAll() {
-    if (suggestions.length === 0) return;
-    onDismissedChange([...dismissed, ...suggestions.map((s) => dedupeKey(s.text))].slice(-DISMISSED_LIMIT));
-    onSuggestionsChange([]);
+    for (const proposal of pending) onReject(proposal);
   }
 
   return (
@@ -263,9 +238,9 @@ export function TodoTab({
           <span className="todo-stat-value">{overdue}</span>
           <span className="todo-stat-label">Overdue</span>
         </div>
-        <div className={`todo-stat${suggestions.length > 0 ? " accent" : ""}`}>
-          <span className="todo-stat-value">{suggestions.length}</span>
-          <span className="todo-stat-label">To approve</span>
+        <div className={`todo-stat${pending.length > 0 ? " accent" : ""}`}>
+          <span className="todo-stat-value">{pending.length}</span>
+          <span className="todo-stat-label">To review</span>
         </div>
       </div>
 
@@ -304,14 +279,15 @@ export function TodoTab({
 
       <WeekAgenda tasks={tasks} today={today} days={week} />
 
-      <SuggestionInbox
-        suggestions={suggestions}
+      <ReviewInbox
+        proposals={pending}
+        prospects={prospects}
         onImport={importItems}
         onUpdate={(id, patch) =>
-          onSuggestionsChange(suggestions.map((s) => (s.id === id ? { ...s, ...patch } : s)))
+          onReviewsChange(reviews.map((r) => (r.id === id ? { ...r, ...patch } : r)))
         }
-        onApprove={approve}
-        onReject={reject}
+        onApprove={onApprove}
+        onReject={onReject}
         onApproveAll={approveAll}
         onRejectAll={rejectAll}
       />

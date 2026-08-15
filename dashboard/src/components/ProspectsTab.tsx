@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import type { Call, Prospect, ProspectNote, Stage, Task } from "../types";
+import type { AuditEntry, Call, Prospect, ProspectNote, Stage, Task } from "../types";
 import { prospectStages } from "../lib/defaultData";
+import { appendAudit, auditEntry, diffEntries } from "../lib/audit";
 import { callsFor, withLatestCallFields } from "../lib/calls";
 import { blankProspect } from "../lib/prospectSchema";
 import { reconcileProspect } from "../lib/rules";
@@ -15,6 +16,8 @@ interface ProspectsTabProps {
   onCallsChange: (updater: (prev: Call[]) => Call[]) => void;
   tasks: Task[];
   onTasksChange: (tasks: Task[]) => void;
+  audit: AuditEntry[];
+  onAuditChange: (entries: AuditEntry[]) => void;
   ownerName: string;
   onOwnerNameChange: (name: string) => void;
 }
@@ -26,6 +29,8 @@ export function ProspectsTab({
   onCallsChange,
   tasks,
   onTasksChange,
+  audit,
+  onAuditChange,
   ownerName,
   onOwnerNameChange,
 }: ProspectsTabProps) {
@@ -58,9 +63,22 @@ export function ProspectsTab({
   }, [prospects, search, stageFilter]);
 
   function patchProspect(id: string, patch: Partial<Prospect>) {
+    const before = prospects.find((p) => p.id === id);
+
     onChange((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: today() } : p))
     );
+
+    // Only the decisions worth a record — not every keystroke in a text field.
+    if (before) {
+      const entries = diffEntries(
+        before as unknown as Record<string, unknown>,
+        { ...before, ...patch } as unknown as Record<string, unknown>,
+        ["stage", "priorityGrade", "conversionScore", "closedReason"],
+        { entity: "prospect", entityId: id, actor: "user", label: "Changed" },
+      );
+      if (entries.length > 0) onAuditChange(appendAudit(audit, entries));
+    }
   }
 
   function createProspect(prospect: Prospect) {
@@ -92,6 +110,7 @@ export function ProspectsTab({
    * including clearing the fields when the last call is removed.
    */
   function saveCall(call: Call, isNew: boolean) {
+    const previous = calls.find((c) => c.id === call.id);
     onCallsChange((prev) => {
       const next = [...prev.filter((c) => c.id !== call.id), call];
       // A newly logged call is an explicit action, so its rule wins even over
@@ -99,15 +118,47 @@ export function ProspectsTab({
       syncProspect(call.prospectId, next, isNew);
       return next;
     });
+
+    onAuditChange(
+      appendAudit(audit, [
+        auditEntry({
+          entity: "call",
+          entityId: call.id,
+          field: isNew ? "created" : "outcome",
+          from: previous?.outcome ?? null,
+          to: call.outcome,
+          actor: "user",
+          summary: isNew
+            ? `Logged a call: ${call.outcome}`
+            : `Corrected a call: ${previous?.outcome ?? "unknown"} → ${call.outcome}`,
+        }),
+      ]),
+    );
   }
 
   function deleteCall(callId: string) {
+    const removed = calls.find((c) => c.id === callId);
     onCallsChange((prev) => {
-      const removed = prev.find((c) => c.id === callId);
       const next = prev.filter((c) => c.id !== callId);
       if (removed) syncProspect(removed.prospectId, next, false);
       return next;
     });
+
+    if (removed) {
+      onAuditChange(
+        appendAudit(audit, [
+          auditEntry({
+            entity: "call",
+            entityId: callId,
+            field: "deleted",
+            from: removed.outcome,
+            to: null,
+            actor: "user",
+            summary: `Deleted a call: ${removed.outcome}`,
+          }),
+        ]),
+      );
+    }
   }
 
   /**
@@ -117,6 +168,7 @@ export function ProspectsTab({
    */
   function syncProspect(prospectId: string, allCalls: Call[], applyStage: boolean) {
     const mine = callsFor(allCalls, prospectId);
+    const before = prospects.find((p) => p.id === prospectId);
 
     onChange((prev) =>
       prev.map((p) => {
@@ -130,13 +182,21 @@ export function ProspectsTab({
       }),
     );
 
-    const target = prospects.find((p) => p.id === prospectId);
-    if (!target) return;
-    const { tasks: nextTasks } = reconcileProspect(target, allCalls, tasks, {
+    if (!before) return;
+    const { prospect: after, tasks: nextTasks } = reconcileProspect(before, allCalls, tasks, {
       applyStage,
       today: today(),
     });
     onTasksChange(nextTasks);
+
+    // A stage the rules moved is logged as the rules' doing, not the user's.
+    const entries = diffEntries(
+      before as unknown as Record<string, unknown>,
+      after as unknown as Record<string, unknown>,
+      ["stage", "closedReason", "doNotContact"],
+      { entity: "prospect", entityId: prospectId, actor: "rule", label: "Rule set" },
+    );
+    if (entries.length > 0) onAuditChange(appendAudit(audit, entries));
   }
 
   function addBlank() {

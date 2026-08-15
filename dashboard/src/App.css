@@ -1276,6 +1276,147 @@
   padding-top: 10px;
 }
 
+/* Review inbox */
+.review-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.review-what {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.edited-chip {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.suggestion-card.has-conflict {
+  border-color: var(--status-warning);
+}
+
+.conflict-warning {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--status-warning);
+}
+
+.conflict-block {
+  background: rgba(255, 176, 32, 0.08);
+  border: 1px solid rgba(255, 176, 32, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.conflict-block ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.conflict-note {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.review-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px solid var(--gridline);
+  padding-top: 12px;
+}
+
+.review-section h5 {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.review-line {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.diff-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 8px 6px 0;
+  border-bottom: 1px solid var(--gridline);
+}
+
+.diff-table td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--gridline);
+  vertical-align: top;
+  color: var(--text-secondary);
+}
+
+.diff-from {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.diff-why {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.diff-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 7px;
+  color: var(--status-good);
+}
+
+.proposed-task {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+}
+
+.src-granola {
+  background: color-mix(in srgb, var(--series-3) 18%, transparent);
+  color: var(--series-3);
+}
+
+.src-manual {
+  background: var(--surface-2);
+  color: var(--text-secondary);
+}
+
 /* Call logging */
 .prospect-foot-actions {
   display: flex;

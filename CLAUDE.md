@@ -182,6 +182,36 @@ rules cannot produce a sensible follow-up without them. The conversion score is
 prompted beside a hot lead and applied only if a number is typed — never
 inferred.
 
+## Review inbox and audit
+
+`lib/reviews.ts` holds the proposal model. **A proposal is a request, not a
+change.** Nothing reaches a household until Approve is pressed on that card.
+
+`applyProposal()` is all-or-nothing. It assembles the entire next state — call,
+field changes, tasks, audit — before returning anything, so a conflict stops
+the whole proposal rather than leaving half of it applied with no record of
+which half. `EDITABLE_FIELDS` is the allowlist; anything outside it is refused,
+which is how `lastOutcome` and friends stay derived from call records only.
+
+**Conflicts protect newer data.** Each change carries the value it was written
+against. If the record has moved on, the proposal is refused with the expected
+and actual values shown, and nothing is written. Never "resolve" a conflict by
+overwriting — the newer value is the deliberate one.
+
+Rejecting keeps the proposal's `dedupeKey` in the dismissed list, which is what
+stops the same suggestion arriving again on the next import.
+
+The old to-do suggestions were converted into proposals on first boot
+(`suggestionsMovedToReviews` flag). The `suggestions` store is left in place as
+a rollback point, the same way the legacy localStorage keys were.
+
+`lib/audit.ts` is append-only. Nothing in the app edits or deletes an entry.
+Entries are written for review approvals and rejections, manual call
+logging/edits/deletes, manual stage and grade changes, and rule-driven stage
+changes (`actor: "rule"`). **No history was reconstructed for records that
+predate this** — a fabricated "who changed this" is worse than an honest gap.
+`AUDIT_LIMIT` caps the log at 2000 entries.
+
 ## Prospect schema v4
 
 `lib/prospectSchema.ts` holds `normalizeProspect()` — **the only place that

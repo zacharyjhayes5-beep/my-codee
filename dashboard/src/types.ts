@@ -233,30 +233,56 @@ export interface Call {
   appointmentAt?: string;
 }
 
-/** Phase 5. A proposed change set awaiting approval. */
+/** Where a proposal came from. Never the transcript itself. */
+export type ReviewSource = "granola" | "obsidian" | "gmail" | "manual";
+
+export type ReviewStatus = "pending" | "approved" | "edited" | "rejected";
+
+/**
+ * One field the proposal wants to change. `from` is the value the proposal
+ * was written against — if the record has moved on since, that mismatch is a
+ * conflict and the change is refused rather than clobbering newer data.
+ */
+export interface ProposedChange {
+  field: string;
+  /** Expected current value. */
+  from: unknown;
+  /** What the proposal suggests instead. */
+  to: unknown;
+  rationale?: string;
+}
+
+/** A proposed change set awaiting approval. Nothing applies until approved. */
 export interface ReviewProposal {
   id: string;
   kind: "call-review" | "task-suggestion";
   prospectId: string | null;
-  proposedCall: Partial<Call> | null;
-  changes: { field: string; from: unknown; to: unknown; rationale?: string }[];
-  proposedTasks: Partial<Task>[];
+  source: ReviewSource;
+  /** A pointer — note title, sender and subject. Never transcript text. */
   sourceRef: string;
-  status: "pending" | "approved" | "edited" | "rejected";
+  proposedCall: Partial<Call> | null;
+  changes: ProposedChange[];
+  proposedTasks: Partial<Task>[];
+  status: ReviewStatus;
   dedupeKey: string;
   createdAt: string;
   resolvedAt?: string;
+  /** Why the reviewer flagged it — shown on the card. */
+  reason: string;
 }
 
-/** Phase 5. Append-only log of what changed and who changed it. */
+/** Append-only log of what changed and what changed it. */
 export interface AuditEntry {
   id: string;
   at: string;
   entity: "prospect" | "call" | "task" | "policy";
   entityId: string;
+  /** Field name for an edit, or an action like "created" / "deleted". */
   field: string;
   from: unknown;
   to: unknown;
-  actor: "user" | "review";
+  actor: "user" | "rule" | "review";
   reviewId?: string;
+  /** Short human-readable line, so the log reads without decoding. */
+  summary: string;
 }

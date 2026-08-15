@@ -288,6 +288,117 @@ describe("call records", () => {
   });
 });
 
+describe("suggestions become reviews", () => {
+  const suggestion = {
+    id: "s1",
+    text: "Call Mike about the renewal",
+    detail: "From the vault",
+    urgency: "week" as const,
+    dueDate: "2026-08-25",
+    source: "obsidian" as const,
+    sourceRef: "Weekly review",
+    reason: "Unchecked task in the note",
+    createdAt: "2026-08-15",
+  };
+
+  it("converts them on first boot and reports how many", async () => {
+    // Seed the legacy store the way phase 1 left it.
+    localStorage.setItem("fb-dashboard:suggestions", JSON.stringify([suggestion]));
+    const boot = await initRepository();
+
+    expect(boot.reviews?.ran).toBe(true);
+    expect(boot.reviews?.suggestionsConverted).toBe(1);
+    expect(get("reviews")).toHaveLength(1);
+    expect(get("reviews")[0].proposedTasks[0].text).toBe("Call Mike about the renewal");
+  });
+
+  it("leaves the suggestions store in place as a rollback point", async () => {
+    localStorage.setItem("fb-dashboard:suggestions", JSON.stringify([suggestion]));
+    await initRepository();
+    expect(await readAll("suggestions")).toHaveLength(1);
+  });
+
+  it("does not convert them twice across reopens", async () => {
+    localStorage.setItem("fb-dashboard:suggestions", JSON.stringify([suggestion]));
+    await initRepository();
+    resetRepository();
+    await initRepository();
+
+    // Still one proposal, not two — the stored flag stops a second pass.
+    expect(get("reviews")).toHaveLength(1);
+  });
+});
+
+describe("reviews and audit persist", () => {
+  it("stores both in IndexedDB and carries them through a backup", async () => {
+    await initRepository();
+    set("reviews", [
+      {
+        id: "rp1",
+        kind: "call-review" as const,
+        prospectId: "p1",
+        source: "granola" as const,
+        sourceRef: "Reed — discovery",
+        proposedCall: null,
+        changes: [{ field: "stage", from: "Contacted", to: "Quoting" }],
+        proposedTasks: [],
+        status: "pending" as const,
+        dedupeKey: "reed discovery",
+        createdAt: "2026-08-20",
+        reason: "Mentioned a quote",
+      },
+    ]);
+    set("audit", [
+      {
+        id: "a1",
+        at: "2026-08-20T10:00:00.000Z",
+        entity: "prospect" as const,
+        entityId: "p1",
+        field: "stage",
+        from: "New",
+        to: "Contacted",
+        actor: "user" as const,
+        summary: "Changed stage",
+      },
+    ]);
+    await whenPersisted();
+
+    expect(await readAll("reviews")).toHaveLength(1);
+    expect(await readAll("audit")).toHaveLength(1);
+
+    const file = await buildBackup();
+    expect(file.records.reviews).toHaveLength(1);
+    expect(file.records.audit).toHaveLength(1);
+
+    freshEnvironment();
+    await initRepository();
+    await replaceAll(parseBackup(JSON.stringify(file)).snapshot);
+
+    expect(get("reviews")[0].changes[0].to).toBe("Quoting");
+    expect(get("audit")[0].summary).toBe("Changed stage");
+  });
+
+  it("a restore does not re-convert suggestions over the restored reviews", async () => {
+    localStorage.setItem("fb-dashboard:suggestions", JSON.stringify([]));
+    await initRepository();
+    set("prospects", [prospect("p1", "Dana Reed")]);
+    await whenPersisted();
+    const file = await buildBackup();
+
+    freshEnvironment();
+    localStorage.setItem(
+      "fb-dashboard:suggestions",
+      JSON.stringify([{ id: "stale", text: "Old suggestion", detail: "", urgency: "soon", source: "obsidian", sourceRef: "x", reason: "y", createdAt: "2026-08-01" }]),
+    );
+    await initRepository();
+    await replaceAll(parseBackup(JSON.stringify(file)).snapshot);
+
+    resetRepository();
+    await initRepository();
+    expect(get("reviews").some((r) => r.proposedTasks[0]?.text === "Old suggestion")).toBe(false);
+  });
+});
+
 describe("v1 backups still restore", () => {
   const v1File = {
     app: "agency-dashboard-backup",

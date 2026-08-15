@@ -187,8 +187,9 @@ export function parseBackup(text: string): ParsedBackup {
       : parseRecordSections(file as BackupV2 | BackupV3);
 
   const counts = countsOf(snap);
-  const hasAnything =
-    counts.prospects + counts.policies + counts.tasks + counts.suggestions + counts.settings > 0;
+  // Every collection counts, not just the four that existed when this guard was
+  // written — a file holding only calls or only reviews is not an empty file.
+  const hasAnything = Object.values(counts).some((n) => n > 0);
 
   if (!hasAnything) {
     throw new BackupError("That backup file is empty — there's nothing in it to restore.");

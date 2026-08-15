@@ -7,6 +7,9 @@ import { ProgressTab } from "./components/ProgressTab";
 import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
 import { useStored } from "./lib/repository";
+import { appendAudit, auditEntry } from "./lib/audit";
+import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
+import type { ReviewProposal } from "./types";
 
 type Tab = "operator" | "progress" | "todo" | "prospects" | "map";
 
@@ -24,10 +27,48 @@ function App() {
   const [period, setPeriod] = useStored("period");
   const [entries, setEntries] = useStored("policies");
   const [tasks, setTasks] = useStored("tasks");
-  const [suggestions, setSuggestions] = useStored("suggestions");
   const [dismissed, setDismissed] = useStored("dismissed");
   const [prospects, setProspects] = useStored("prospects");
   const [calls, setCalls] = useStored("calls");
+  const [reviews, setReviews] = useStored("reviews");
+  const [audit, setAudit] = useStored("audit");
+
+  /**
+   * Applies a proposal or nothing at all. The whole next state is assembled
+   * first; if a field has moved since the proposal was written, the conflicts
+   * come back and not one of the writes below runs.
+   */
+  function approveProposal(proposal: ReviewProposal): Conflict[] {
+    const result = applyProposal(proposal, { prospects, calls, tasks, audit }, reviews, {});
+    if (!result.ok) return result.conflicts;
+
+    setProspects(result.prospects);
+    setCalls(result.calls);
+    setTasks(result.tasks);
+    setAudit(result.audit);
+    setReviews(result.reviews.map((r) => (r.id === proposal.id ? { ...r, status: "approved" } : r)));
+    return [];
+  }
+
+  function rejectProposalById(proposal: ReviewProposal) {
+    const next = rejectProposal(proposal, reviews, dismissed);
+    setReviews(next.reviews);
+    setDismissed(next.dismissed);
+    setAudit(
+      appendAudit(audit, [
+        auditEntry({
+          entity: "prospect",
+          entityId: proposal.prospectId ?? "—",
+          field: "review",
+          from: "pending",
+          to: "rejected",
+          actor: "user",
+          reviewId: proposal.id,
+          summary: `Rejected a proposal from ${proposal.sourceRef || "an import"}`,
+        }),
+      ]),
+    );
+  }
   const [ownerName, setOwnerName] = useStored("owner");
 
   return (
@@ -57,7 +98,7 @@ function App() {
             period={period}
             prospects={prospects}
             tasks={tasks}
-            suggestions={suggestions}
+            reviews={reviews}
             onCommand={(target: CommandTarget) => setTab(target)}
           />
         )}
@@ -75,10 +116,12 @@ function App() {
           <TodoTab
             tasks={tasks}
             onTasksChange={setTasks}
-            suggestions={suggestions}
-            onSuggestionsChange={setSuggestions}
+            reviews={reviews}
+            onReviewsChange={setReviews}
+            prospects={prospects}
+            onApprove={approveProposal}
+            onReject={rejectProposalById}
             dismissed={dismissed}
-            onDismissedChange={setDismissed}
           />
         )}
         {tab === "map" && (
@@ -92,6 +135,8 @@ function App() {
             onCallsChange={setCalls}
             tasks={tasks}
             onTasksChange={setTasks}
+            audit={audit}
+            onAuditChange={setAudit}
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
           />
