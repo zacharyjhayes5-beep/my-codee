@@ -21,6 +21,7 @@ export type SuppressionReason =
   | "closed"
   | "won"
   | "attempts-exhausted"
+  | "dormant"
   | "scheduled-later";
 
 export interface Eligibility {
@@ -94,6 +95,17 @@ export function eligibilityOf(
   }
 
   const callback = scheduledCallbackFor(tasks, prospect.id);
+
+  /**
+   * A household in Nurture with nothing scheduled has used up its revisits.
+   * Serving it back up would be an automatic re-approach, which is exactly
+   * what stopping the cycle was meant to prevent — it waits to be reactivated
+   * or rescheduled by hand.
+   */
+  if (prospect.stage === "Nurture" && !callback) {
+    return held("dormant", "Dormant — reactivate or reschedule to call again");
+  }
+
   if (callback?.dueDate && callback.dueDate > today) {
     return {
       eligible: false,
@@ -167,6 +179,7 @@ function tierFor(
   prospect: Prospect,
   input: QueueInput,
   attempts: number,
+  totalCalls: number,
 ): { tier: number; why: string } {
   const { opportunities, tasks, today } = input;
 
@@ -200,7 +213,8 @@ function tierFor(
 
   const grade = prospect.priorityGrade;
 
-  if (attempts === 0) {
+  // "Never called" means no call of any kind — not merely no unanswered ones.
+  if (totalCalls === 0) {
     if (grade === "A" || grade === "B") {
       return { tier: TIERS.newQualified, why: `Grade ${grade}, never called` };
     }
@@ -210,7 +224,14 @@ function tierFor(
     return { tier: TIERS.everythingElse, why: "Never called" };
   }
 
-  return { tier: TIERS.priorNoAnswer, why: `${attempts} prior attempt${attempts === 1 ? "" : "s"}` };
+  if (attempts > 0) {
+    return { tier: TIERS.priorNoAnswer, why: `${attempts} prior attempt${attempts === 1 ? "" : "s"}` };
+  }
+
+  return {
+    tier: TIERS.priorNoAnswer,
+    why: `${totalCalls} prior call${totalCalls === 1 ? "" : "s"}`,
+  };
 }
 
 /**
@@ -222,7 +243,7 @@ export function buildQueue(input: QueueInput): QueueEntry[] {
     const mine = callsFor(input.calls, prospect.id);
     const counts = attemptCounts(mine);
     const eligibility = eligibilityOf(prospect, input.calls, input.tasks, input.today);
-    const { tier, why } = tierFor(prospect, input, counts.attempts);
+    const { tier, why } = tierFor(prospect, input, counts.attempts, counts.total);
 
     return {
       prospect,

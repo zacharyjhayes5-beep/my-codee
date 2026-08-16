@@ -267,6 +267,21 @@ qualified (graded, never called) → targeted (has a Why They Fit) → prior
 no-answer → cold list. Ties break on who has waited longest, never on record
 age alone.
 
+**Nothing is ever closed automatically except an outright refusal.** Only
+"Definitely Not Interested" sets Closed, because that is the person's own
+instruction. Everything else leaves an open, recoverable record:
+
+- **Bad Number** sets `needsPhoneNumber` and **leaves the stage exactly where it
+  was**. The household drops out of the calling queue into the research job,
+  not into the bin. `stageSet` on the replay state is what allows an outcome to
+  decline to touch the stage — without it the replay's starting value would be
+  written back over whatever the household had.
+- **Not At This Time**, after both revisits, stops scheduling and leaves the
+  household dormant in **Nurture** — not closed. A Nurture household with no
+  scheduled callback is held out of the queue with reason `dormant`; serving it
+  back up would be the automatic re-approach that stopping the cycle was meant
+  to prevent. It returns the moment a follow-up is rescheduled by hand.
+
 **The seven-attempt cap flags, it does not close.** `needsReview` goes true,
 automatic scheduling stops, and the household appears in Work mode's review
 list with *Keep calling* and *Close as unreachable*. Writing somebody off stays

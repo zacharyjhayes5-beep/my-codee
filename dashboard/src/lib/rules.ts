@@ -166,6 +166,12 @@ export interface DesiredTask {
 
 export interface RuleOutcomeState {
   stage: Stage;
+  /**
+   * Whether any call actually decided a stage. Some outcomes — Bad Number —
+   * deliberately leave it alone, and without this the replay's starting value
+   * would be written back over whatever the household already had.
+   */
+  stageSet: boolean;
   closedReason: ClosedReason | null;
   doNotContact: boolean;
   /** Set only by the Hot Lead rule, which requires one on the call. */
@@ -189,6 +195,7 @@ export interface RuleOutcomeState {
 function emptyState(): RuleOutcomeState {
   return {
     stage: "New",
+    stageSet: false,
     closedReason: null,
     doNotContact: false,
     nextAction: null,
@@ -231,6 +238,7 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       if (leftMessage) state.voicemails += 1;
 
       state.stage = "Attempting";
+      state.stageSet = true;
       state.closedReason = null;
 
       if (state.attempts >= maxAttempts) {
@@ -264,8 +272,9 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
     }
 
     case "Bad Number": {
-      state.stage = "Closed";
-      state.closedReason = "bad-number";
+      // Leaves the calling queue through `needsPhoneNumber`, but stays an open
+      // record. A number that does not work is a research job, not a reason to
+      // write the household off — the stage is left exactly where it was.
       state.needsPhoneNumber = true;
       state.pendingTask = {
         ruleId: "bad-number",
@@ -281,7 +290,9 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
     }
 
     case "Definitely Not Interested": {
+      // The one outcome where closing is the person's own instruction.
       state.stage = "Closed";
+      state.stageSet = true;
       state.closedReason = "not-interested";
       state.doNotContact = true;
       state.pendingTask = null;
@@ -293,15 +304,19 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       const months = RULE_CONSTANTS.nurtureFollowUpMonths;
 
       if (state.notAtThisTimeCount > months.length) {
-        // Third time of asking — closed as dormant, and never on a timer again.
-        state.stage = "Closed";
-        state.closedReason = "dormant";
+        // Both revisits have been used. Automatic scheduling stops here, but
+        // the household is not closed — it sits dormant in Nurture until it is
+        // reactivated, rescheduled, or closed by hand.
+        state.stage = "Nurture";
+        state.stageSet = true;
+        state.closedReason = null;
         state.pendingTask = null;
         return;
       }
 
       const gap = months[state.notAtThisTimeCount - 1];
       state.stage = "Nurture";
+      state.stageSet = true;
       state.closedReason = null;
       state.pendingTask = {
         ruleId: "nurture-follow-up",
@@ -327,6 +342,7 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       if (stated) state.nextAction = stated;
       if (call.nextActionAt) state.nextActionDate = isoDay(dayOf(call.nextActionAt));
 
+      state.stageSet = true;
       if (readiness.ready) {
         state.stage = "Quoting";
         state.pendingTask = {
@@ -361,6 +377,7 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       const action = (call.nextAction ?? "").trim();
       const due = call.nextActionAt ? isoDay(dayOf(call.nextActionAt)) : isoDay(dayOf(call.at));
       state.stage = "Opportunity";
+      state.stageSet = true;
       state.closedReason = null;
       state.nextAction = action || null;
       state.nextActionDate = due;
@@ -379,6 +396,7 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
     case "Insurance Review Scheduled": {
       const when = call.appointmentAt ?? "";
       state.stage = "Review Scheduled";
+      state.stageSet = true;
       state.closedReason = null;
       state.nextAction = "Insurance review";
       state.nextActionDate = when ? isoDay(dayOf(when)) : "";
@@ -481,7 +499,7 @@ export function reconcileProspect(
   const stageIsOurs = options.applyStage || prospect.stageSource === "rule";
 
   if (stageIsOurs) {
-    if (mine.length > 0) {
+    if (mine.length > 0 && state.stageSet) {
       next = {
         ...next,
         stage: state.stage,
@@ -489,6 +507,10 @@ export function reconcileProspect(
         stageSource: "rule",
         stageCallId: state.causedByCallId,
       };
+    } else if (mine.length > 0) {
+      // Calls exist but none of them decided a stage — a run of bad numbers.
+      // The household keeps whatever stage it already had.
+      next = { ...next };
     } else {
       // Every call is gone. There is nothing left to derive a stage from, so
       // the household keeps where it stands but stops claiming a rule put it

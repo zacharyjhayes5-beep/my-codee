@@ -108,6 +108,35 @@ describe("who may not be called", () => {
     expect(eligibilityOf(household("a"), [], [], TODAY).eligible).toBe(true);
   });
 
+  it("does not close a bad number, but holds it for research", () => {
+    const p = household("a", { stage: "Contacted", needsPhoneNumber: true });
+    const e = eligibilityOf(p, [], [], TODAY);
+    expect(e.eligible).toBe(false);
+    expect(e.reason).toBe("bad-number");
+    // Still an open, recoverable record.
+    expect(p.stage).not.toBe("Closed");
+    expect(p.closedReason).toBeNull();
+  });
+
+  it("holds a dormant Nurture household with nothing scheduled", () => {
+    const p = household("a", { stage: "Nurture" });
+    const e = eligibilityOf(p, [], [], TODAY);
+    expect(e.eligible).toBe(false);
+    expect(e.reason).toBe("dormant");
+  });
+
+  it("calls a Nurture household again once its revisit comes due", () => {
+    const p = household("a", { stage: "Nurture" });
+    const scheduled = [task("t1", "a", { dueDate: TODAY, ruleId: "nurture-follow-up" })];
+    expect(eligibilityOf(p, [], scheduled, TODAY).eligible).toBe(true);
+  });
+
+  it("never says never-called about a household that has been spoken to", () => {
+    const spoken = [call("c1", "a", "Not At This Time")];
+    const queue = buildQueue(input({ prospects: [household("a")], calls: spoken }));
+    expect(queue[0].why).not.toContain("Never called");
+  });
+
   it("holds a hot lead whose next action is booked for later", () => {
     const p = household("a", {
       stage: "Opportunity",

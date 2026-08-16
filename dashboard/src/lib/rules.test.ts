@@ -151,9 +151,33 @@ describe("the combined seven-dial cap", () => {
 describe("rule 3 — Bad Number", () => {
   const { state } = run(household(), ["Bad Number"]);
 
-  it("closes with the bad-number reason", () => {
-    expect(state.stage).toBe("Closed");
-    expect(state.closedReason).toBe("bad-number");
+  it("does not close the household — a dead number is a research job", () => {
+    expect(state.stage).not.toBe("Closed");
+    expect(state.closedReason).toBeNull();
+    expect(state.needsPhoneNumber).toBe(true);
+  });
+
+  it("leaves the stage exactly where it was", () => {
+    const contacted = household({ stage: "Contacted" });
+    const { prospect } = reconcileProspect(
+      contacted,
+      [call({ id: "c1", outcome: "Bad Number" })],
+      [],
+      { applyStage: true, today: "2026-08-03" },
+    );
+    expect(prospect.stage).toBe("Contacted");
+    expect(prospect.needsPhoneNumber).toBe(true);
+  });
+
+  it("keeps it out of the calling queue without closing it", () => {
+    const { prospect } = reconcileProspect(
+      household({ stage: "Attempting" }),
+      [call({ id: "c1", outcome: "Bad Number" })],
+      [],
+      { applyStage: true, today: "2026-08-03" },
+    );
+    expect(prospect.needsPhoneNumber).toBe(true);
+    expect(prospect.closedReason).toBeNull();
   });
 
   it("raises an undated task so it never reads as due today", () => {
@@ -196,22 +220,37 @@ describe("rule 5 — Not At This Time", () => {
     expect(state.pendingTask?.dueDate).toBe("2026-10-02");
   });
 
-  it("third time: closed as dormant with nothing scheduled", () => {
+  it("third time: scheduling stops, but it is not closed", () => {
     const { state } = run(household(), [
       "Not At This Time",
       "Not At This Time",
       "Not At This Time",
     ]);
-    expect(state.stage).toBe("Closed");
-    expect(state.closedReason).toBe("dormant");
+    expect(state.stage).toBe("Nurture");
+    expect(state.closedReason).toBeNull();
     expect(state.pendingTask).toBeNull();
   });
 
   it("never puts a dormant household back on a timer", () => {
     const { state } = run(household(), Array<CallOutcome>(5).fill("Not At This Time"));
-    expect(state.stage).toBe("Closed");
-    expect(state.closedReason).toBe("dormant");
+    expect(state.stage).toBe("Nurture");
     expect(state.pendingTask).toBeNull();
+  });
+
+  it("leaves it dormant and recoverable rather than written off", () => {
+    const calls = Array<CallOutcome>(3)
+      .fill("Not At This Time")
+      .map((outcome, i) =>
+        call({ id: `c${i}`, outcome, at: `2026-08-0${i + 1}T14:00:00.000Z` }),
+      );
+    const { prospect, tasks } = reconcileProspect(household(), calls, [], {
+      applyStage: true,
+      today: "2026-08-03",
+    });
+    expect(prospect.stage).toBe("Nurture");
+    expect(prospect.closedReason).toBeNull();
+    expect(prospect.doNotContact).toBe(false);
+    expect(tasks.filter(isRuleTask)).toHaveLength(0);
   });
 });
 
