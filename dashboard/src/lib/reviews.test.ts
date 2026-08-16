@@ -174,7 +174,7 @@ describe("conflicts protect newer data", () => {
 
   it("refuses a field that may not be set from a review", () => {
     const forbidden = proposal({
-      changes: [{ field: "lastOutcome", from: null, to: "Hot Lead — Very Interested" }],
+      changes: [{ field: "lastOutcome", from: null, to: "Hot Lead" }],
     });
     const result = applyProposal(forbidden, world(), [forbidden], { at: AT });
     expect(result.ok).toBe(false);

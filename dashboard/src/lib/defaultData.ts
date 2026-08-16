@@ -1,4 +1,12 @@
-import type { CallOutcome, LineId, Period, PolicyLine, Stage, Urgency } from "../types";
+import type {
+  CallOutcome,
+  LineId,
+  NextActionKind,
+  Period,
+  PolicyLine,
+  Stage,
+  Urgency,
+} from "../types";
 
 export const defaultPolicyLines: PolicyLine[] = [
   { id: "property", name: "Property", policyGoal: 40, premiumGoal: 0 },
@@ -57,26 +65,41 @@ export const urgencyName: Record<Urgency, string> = {
 /** The eight approved outcomes, in the order they appear in the logger. */
 export const callOutcomes: CallOutcome[] = [
   "No Answer — No Voicemail",
-  "No Answer — Voicemail Left",
-  "Bad Phone Number",
+  "No Answer — Voicemail",
+  "Bad Number",
   "Definitely Not Interested",
-  "Not at This Time",
+  "Not At This Time",
   "Somewhat Interested",
-  "Hot Lead — Very Interested",
+  "Hot Lead",
   "Insurance Review Scheduled",
 ];
 
 /** Colour band per outcome — cold at the top, hot at the bottom. */
 export const outcomeClass: Record<CallOutcome, string> = {
   "No Answer — No Voicemail": "badge-muted",
-  "No Answer — Voicemail Left": "badge-muted",
-  "Bad Phone Number": "badge-critical",
+  "No Answer — Voicemail": "badge-muted",
+  "Bad Number": "badge-critical",
   "Definitely Not Interested": "badge-critical",
-  "Not at This Time": "badge-info",
+  "Not At This Time": "badge-info",
   "Somewhat Interested": "badge-serious",
-  "Hot Lead — Very Interested": "badge-warning",
+  "Hot Lead": "badge-warning",
   "Insurance Review Scheduled": "badge-good",
 };
+
+/** The three that may not be logged without saying what happens next. */
+export const VALUABLE_OUTCOMES: CallOutcome[] = [
+  "Somewhat Interested",
+  "Hot Lead",
+  "Insurance Review Scheduled",
+];
+
+export const nextActionKinds: NextActionKind[] = [
+  "Quote them",
+  "Schedule review",
+  "Call back",
+  "Waiting on information",
+  "Other",
+];
 
 export const stageClass: Record<Stage, string> = {
   New: "badge-muted",

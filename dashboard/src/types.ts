@@ -114,16 +114,24 @@ export type ClosedReason =
  */
 export type PriorityGrade = "A" | "B" | "C" | "D" | "";
 
-/** The eight call outcomes. Nothing writes these until phase 3. */
+/** The eight call outcomes, exactly as specified. */
 export type CallOutcome =
   | "No Answer — No Voicemail"
-  | "No Answer — Voicemail Left"
-  | "Bad Phone Number"
+  | "No Answer — Voicemail"
+  | "Bad Number"
   | "Definitely Not Interested"
-  | "Not at This Time"
+  | "Not At This Time"
   | "Somewhat Interested"
-  | "Hot Lead — Very Interested"
+  | "Hot Lead"
   | "Insurance Review Scheduled";
+
+/** What happens next after a valuable outcome. Required for those three. */
+export type NextActionKind =
+  | "Quote them"
+  | "Schedule review"
+  | "Call back"
+  | "Waiting on information"
+  | "Other";
 
 /** One person inside a household. */
 export interface Contact {
@@ -273,6 +281,10 @@ export interface Call {
    * so that editing or deleting the call reconciles the task it produced.
    */
   nextAction?: string;
+  /** Which of the five standard next actions was chosen. */
+  nextActionKind?: NextActionKind;
+  /** When the next action is due. Required alongside it. */
+  nextActionAt?: string;
   /** Required by the Insurance Review rule — when the appointment is. */
   appointmentAt?: string;
 }

@@ -182,6 +182,37 @@ rules cannot produce a sensible follow-up without them. The conversion score is
 prompted beside a hot lead and applied only if a number is typed — never
 inferred.
 
+## NEXT CALL
+
+`lib/queue.ts` answers two questions that are deliberately kept apart: **may
+this household be called** (`eligibilityOf`) and **which one first**
+(`buildQueue`). Mixing them is how hot leads end up buried under cold names.
+
+Suppression: do-not-contact, bad number, closed, won, attempt cap reached, and
+anything whose next attempt or next action is booked for a future date. That
+last one matters — without it a hot lead sits at the top of the queue forever
+and you never get past them.
+
+Priority tiers, worked in order: hot opportunity due → follow-up due → newly
+qualified (graded, never called) → targeted (has a Why They Fit) → prior
+no-answer → cold list. Ties break on who has waited longest, never on record
+age alone.
+
+**The seven-attempt cap flags, it does not close.** `needsReview` goes true,
+automatic scheduling stops, and the household appears in Work mode's review
+list with *Keep calling* and *Close as unreachable*. Writing somebody off stays
+the user's decision. Both that flag and `needsPhoneNumber` are replayed from
+the calls, so undoing the call that set one clears it.
+
+Outcome names were renamed in call schema v2 (`lib/callSchema.ts`) — the values
+are stored on every call *and* mirrored onto `lastOutcome`, so both are
+rewritten on boot. `currentOutcome()` maps any older spelling forward.
+
+**Dates from `<input type="date">` are date-only strings.** `new Date("2026-08-22")`
+parses as UTC midnight and reads as the 21st in any western timezone. `dayOf()`
+in `rules.ts` pins them to local midnight — a due date must land on the day it
+was typed.
+
 ## Opportunities, intake and dedupe
 
 **Prospect status and opportunity stage are different things.** The household

@@ -84,7 +84,7 @@ describe("rule 1 — No Answer, no voicemail", () => {
 
 describe("rule 2 — No Answer, voicemail left", () => {
   it("moves to Attempting and asks for a callback in three days", () => {
-    const { state } = run(household(), ["No Answer — Voicemail Left"]);
+    const { state } = run(household(), ["No Answer — Voicemail"]);
     expect(state.stage).toBe("Attempting");
     expect(state.pendingTask?.ruleId).toBe("voicemail-callback");
     expect(state.pendingTask?.dueDate).toBe("2026-08-04");
@@ -93,9 +93,9 @@ describe("rule 2 — No Answer, voicemail left", () => {
 
   it("counts a voicemail as one of the seven, not as an extra", () => {
     const { state } = run(household(), [
-      "No Answer — Voicemail Left",
+      "No Answer — Voicemail",
       "No Answer — No Voicemail",
-      "No Answer — Voicemail Left",
+      "No Answer — Voicemail",
     ]);
     expect(state.attempts).toBe(3);
     expect(state.voicemails).toBe(2);
@@ -105,11 +105,11 @@ describe("rule 2 — No Answer, voicemail left", () => {
 describe("the combined seven-dial cap", () => {
   const sevenMixed: CallOutcome[] = [
     "No Answer — No Voicemail",
-    "No Answer — Voicemail Left",
+    "No Answer — Voicemail",
     "No Answer — No Voicemail",
-    "No Answer — Voicemail Left",
+    "No Answer — Voicemail",
     "No Answer — No Voicemail",
-    "No Answer — Voicemail Left",
+    "No Answer — Voicemail",
     "No Answer — No Voicemail",
   ];
 
@@ -120,29 +120,36 @@ describe("the combined seven-dial cap", () => {
     expect(state.pendingTask).not.toBeNull();
   });
 
-  it("closes as unreachable on the seventh", () => {
+  it("flags for review on the seventh rather than closing", () => {
     const { state } = run(household(), sevenMixed);
-    expect(state.stage).toBe("Closed");
-    expect(state.closedReason).toBe("unreachable");
     expect(state.exhausted).toBe(true);
+    expect(state.needsReview).toBe(true);
+    // Writing somebody off is the user's decision, never the rule's.
+    expect(state.stage).not.toBe("Closed");
+    expect(state.closedReason).toBeNull();
   });
 
-  it("cancels the callback task when it closes", () => {
+  it("stops scheduling further attempts once flagged", () => {
     const { state } = run(household(), sevenMixed);
     expect(state.pendingTask).toBeNull();
   });
 
   it("counts both no-answer kinds toward the same seven", () => {
-    const allVoicemail = Array<CallOutcome>(7).fill("No Answer — Voicemail Left");
+    const allVoicemail = Array<CallOutcome>(7).fill("No Answer — Voicemail");
     const { state } = run(household(), allVoicemail);
     expect(state.attempts).toBe(7);
-    expect(state.stage).toBe("Closed");
-    expect(state.closedReason).toBe("unreachable");
+    expect(state.needsReview).toBe(true);
+    expect(state.stage).not.toBe("Closed");
+  });
+
+  it("clears the flag again if one of those calls is deleted", () => {
+    const six = sevenMixed.slice(0, 6);
+    expect(run(household(), six).state.needsReview).toBe(false);
   });
 });
 
-describe("rule 3 — Bad Phone Number", () => {
-  const { state } = run(household(), ["Bad Phone Number"]);
+describe("rule 3 — Bad Number", () => {
+  const { state } = run(household(), ["Bad Number"]);
 
   it("closes with the bad-number reason", () => {
     expect(state.stage).toBe("Closed");
@@ -174,15 +181,15 @@ describe("rule 4 — Definitely Not Interested", () => {
   });
 });
 
-describe("rule 5 — Not at This Time", () => {
+describe("rule 5 — Not At This Time", () => {
   it("first time: Nurture, one month out", () => {
-    const { state } = run(household(), ["Not at This Time"]);
+    const { state } = run(household(), ["Not At This Time"]);
     expect(state.stage).toBe("Nurture");
     expect(state.pendingTask?.dueDate).toBe("2026-09-01");
   });
 
   it("second time: still Nurture, two months out", () => {
-    const { state } = run(household(), ["Not at This Time", "Not at This Time"]);
+    const { state } = run(household(), ["Not At This Time", "Not At This Time"]);
     expect(state.stage).toBe("Nurture");
     expect(state.notAtThisTimeCount).toBe(2);
     // Second call is 2 Aug; two months on is 2 Oct.
@@ -191,9 +198,9 @@ describe("rule 5 — Not at This Time", () => {
 
   it("third time: closed as dormant with nothing scheduled", () => {
     const { state } = run(household(), [
-      "Not at This Time",
-      "Not at This Time",
-      "Not at This Time",
+      "Not At This Time",
+      "Not At This Time",
+      "Not At This Time",
     ]);
     expect(state.stage).toBe("Closed");
     expect(state.closedReason).toBe("dormant");
@@ -201,7 +208,7 @@ describe("rule 5 — Not at This Time", () => {
   });
 
   it("never puts a dormant household back on a timer", () => {
-    const { state } = run(household(), Array<CallOutcome>(5).fill("Not at This Time"));
+    const { state } = run(household(), Array<CallOutcome>(5).fill("Not At This Time"));
     expect(state.stage).toBe("Closed");
     expect(state.closedReason).toBe("dormant");
     expect(state.pendingTask).toBeNull();
@@ -266,7 +273,7 @@ describe("rule 6 — Somewhat Interested", () => {
 
 describe("rule 7 — Hot Lead", () => {
   it("goes to Opportunity with the stated next action due today", () => {
-    const hot = call({ id: "h1", outcome: "Hot Lead — Very Interested", nextAction: "Send bundle quote" });
+    const hot = call({ id: "h1", outcome: "Hot Lead", nextAction: "Send bundle quote" });
     const state = replayCalls(household(), [hot]);
     expect(state.stage).toBe("Opportunity");
     expect(state.nextAction).toBe("Send bundle quote");
@@ -276,7 +283,7 @@ describe("rule 7 — Hot Lead", () => {
   });
 
   it("never invents a conversion score", () => {
-    const hot = call({ id: "h1", outcome: "Hot Lead — Very Interested", nextAction: "Call back" });
+    const hot = call({ id: "h1", outcome: "Hot Lead", nextAction: "Call back" });
     const { prospect } = reconcileProspect(household(), [hot], [], {
       applyStage: true,
       today: "2026-08-03",
@@ -379,7 +386,7 @@ describe("reconciliation", () => {
     expect(tasks).toContainEqual(doneTask);
   });
 
-  it("cancels the open callback when the cap closes the household", () => {
+  it("cancels the open callback and flags for review at the cap", () => {
     const outcomes = Array<CallOutcome>(7).fill("No Answer — No Voicemail");
     const calls = outcomes.map((outcome, i) =>
       call({ id: `c${i}`, outcome, at: `2026-08-0${i + 1}T14:00:00.000Z` }),
@@ -388,9 +395,24 @@ describe("reconciliation", () => {
       applyStage: true,
       today: "2026-08-07",
     });
-    expect(prospect.stage).toBe("Closed");
-    expect(prospect.closedReason).toBe("unreachable");
+    expect(prospect.needsReview).toBe(true);
+    expect(prospect.stage).not.toBe("Closed");
     expect(tasks.filter(isRuleTask)).toHaveLength(0);
+  });
+
+  it("sets the research flag on a bad number, and clears it if undone", () => {
+    const bad = call({ id: "c1", outcome: "Bad Number" });
+    const flagged = reconcileProspect(household(), [bad], [], {
+      applyStage: true,
+      today: "2026-08-03",
+    });
+    expect(flagged.prospect.needsPhoneNumber).toBe(true);
+
+    const undone = reconcileProspect(flagged.prospect, [], flagged.tasks, {
+      applyStage: false,
+      today: "2026-08-04",
+    });
+    expect(undone.prospect.needsPhoneNumber).toBe(false);
   });
 });
 
@@ -493,6 +515,38 @@ describe("a stage moved by hand is respected", () => {
     });
     expect(prospect.stage).toBe("Attempting");
     expect(prospect.stageSource).toBe("rule");
+  });
+});
+
+describe("a captured next-action date lands on the day it was typed", () => {
+  it("does not shift a date-only value backwards", () => {
+    const hot = call({
+      id: "h1",
+      outcome: "Hot Lead",
+      nextAction: "Send the quote",
+      // What a <input type="date"> hands back — no time, no zone.
+      nextActionAt: "2026-08-22",
+    });
+    const state = replayCalls(household(), [hot]);
+    expect(state.nextActionDate).toBe("2026-08-22");
+    expect(state.pendingTask?.dueDate).toBe("2026-08-22");
+  });
+
+  it("honours it for Somewhat Interested too", () => {
+    const warm = call({
+      id: "s1",
+      outcome: "Somewhat Interested",
+      nextAction: "Quote them",
+      nextActionAt: "2026-09-01",
+    });
+    const state = replayCalls(household(), [warm]);
+    expect(state.pendingTask?.dueDate).toBe("2026-09-01");
+  });
+
+  it("falls back to the rule cadence when no date was captured", () => {
+    const warm = call({ id: "s2", outcome: "Somewhat Interested" });
+    const state = replayCalls(readyHousehold(), [warm]);
+    expect(state.pendingTask?.dueDate).toBe("2026-08-04");
   });
 });
 

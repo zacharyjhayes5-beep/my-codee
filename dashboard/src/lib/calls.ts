@@ -10,7 +10,7 @@ import { newId } from "./storage";
 /** The two outcomes that mean nobody picked up. */
 export const NO_ANSWER_OUTCOMES: CallOutcome[] = [
   "No Answer — No Voicemail",
-  "No Answer — Voicemail Left",
+  "No Answer — Voicemail",
 ];
 
 export function isNoAnswer(outcome: CallOutcome): boolean {
@@ -62,7 +62,7 @@ export function attemptCounts(prospectCalls: Call[]): AttemptCounts {
   for (const call of prospectCalls) {
     if (!isNoAnswer(call.outcome)) continue;
     attempts += 1;
-    if (call.outcome === "No Answer — Voicemail Left") voicemails += 1;
+    if (call.outcome === "No Answer — Voicemail") voicemails += 1;
   }
 
   return { attempts, voicemails, total: prospectCalls.length };

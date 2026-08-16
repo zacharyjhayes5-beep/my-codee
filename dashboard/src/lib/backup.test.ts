@@ -209,7 +209,7 @@ describe("call records", () => {
       prospectId,
       at,
       direction: "outbound" as const,
-      outcome: "No Answer — Voicemail Left" as const,
+      outcome: "No Answer — Voicemail" as const,
       durationMin: null,
       summary: "Left a message about the renewal",
       notes: "Try evenings",
@@ -256,7 +256,7 @@ describe("call records", () => {
 
     const restored = get("calls");
     expect(restored).toHaveLength(1);
-    expect(restored[0].outcome).toBe("No Answer — Voicemail Left");
+    expect(restored[0].outcome).toBe("No Answer — Voicemail");
     expect(restored[0].sourceRef?.title).toBe("Reed follow-up");
     expect(restored[0].notes).toBe("Try evenings");
     expect(restored[0].prospectId).toBe("p1");

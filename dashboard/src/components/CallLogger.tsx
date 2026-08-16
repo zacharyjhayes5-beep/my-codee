@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { Call, CallOutcome, Prospect } from "../types";
-import { callOutcomes } from "../lib/defaultData";
+import type { Call, CallOutcome, NextActionKind, Prospect } from "../types";
+import { VALUABLE_OUTCOMES, callOutcomes, nextActionKinds } from "../lib/defaultData";
 import { attemptCounts, fromLocalInput, toLocalInput } from "../lib/calls";
 import { RULE_CONSTANTS, quoteReadiness } from "../lib/rules";
 
@@ -41,18 +41,21 @@ export function CallLogger({
     setDraft((prev) => ({ ...prev, ...next }));
   }
 
-  const needsNextAction = draft.outcome === "Hot Lead — Very Interested";
+  // The three valuable outcomes may not be logged without saying what happens
+  // next and when — that is the whole point of logging them.
+  const needsNextAction = VALUABLE_OUTCOMES.includes(draft.outcome);
   const needsAppointment = draft.outcome === "Insurance Review Scheduled";
 
   const missingNextAction = needsNextAction && !(draft.nextAction ?? "").trim();
+  const missingNextDate = needsNextAction && !(draft.nextActionAt ?? "").trim();
   const missingAppointment = needsAppointment && !(draft.appointmentAt ?? "").trim();
-  const blocked = missingNextAction || missingAppointment;
+  const blocked = missingNextAction || missingNextDate || missingAppointment;
 
   // Counts exclude the call being edited so an edit doesn't double-count itself.
   const others = priorCalls.filter((c) => c.id !== draft.id);
   const counts = attemptCounts(others);
   const voicemailCapHit =
-    draft.outcome === "No Answer — Voicemail Left" &&
+    draft.outcome === "No Answer — Voicemail" &&
     counts.voicemails >= RULE_CONSTANTS.maxVoicemails;
   const readiness = quoteReadiness(prospect);
 
@@ -68,6 +71,8 @@ export function CallLogger({
         summary: draft.summary.trim(),
         notes: draft.notes.trim(),
         nextAction: needsNextAction ? (draft.nextAction ?? "").trim() : undefined,
+        nextActionKind: needsNextAction ? draft.nextActionKind : undefined,
+        nextActionAt: needsNextAction ? draft.nextActionAt : undefined,
         appointmentAt: needsAppointment ? draft.appointmentAt : undefined,
         // A pointer to the Granola note, never its contents.
         sourceRef: title ? { system: "granola", title } : null,
@@ -120,15 +125,47 @@ export function CallLogger({
         </label>
 
         {needsNextAction && (
-          <label className="mini-field wide">
-            Next action <span className="required-mark">required</span>
-            <input
-              className={missingNextAction ? "needs-input" : ""}
-              value={draft.nextAction ?? ""}
-              onChange={(e) => patch({ nextAction: e.target.value })}
-              placeholder="e.g. send home + auto quote today"
-            />
-          </label>
+          <>
+            <label className="mini-field">
+              What happens next <span className="required-mark">required</span>
+              <select
+                value={draft.nextActionKind ?? ""}
+                onChange={(e) => {
+                  const kind = e.target.value as NextActionKind;
+                  patch({
+                    nextActionKind: kind,
+                    // Pre-fill the wording but leave it editable.
+                    nextAction: draft.nextAction?.trim() ? draft.nextAction : kind,
+                  });
+                }}
+              >
+                <option value="">Choose…</option>
+                {nextActionKinds.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="mini-field">
+              Due <span className="required-mark">required</span>
+              <input
+                type="date"
+                className={missingNextDate ? "needs-input" : ""}
+                value={draft.nextActionAt ?? ""}
+                onChange={(e) => patch({ nextActionAt: e.target.value })}
+              />
+            </label>
+            <label className="mini-field wide">
+              Next action <span className="required-mark">required</span>
+              <input
+                className={missingNextAction ? "needs-input" : ""}
+                value={draft.nextAction ?? ""}
+                onChange={(e) => patch({ nextAction: e.target.value })}
+                placeholder="e.g. send home + auto quote"
+              />
+            </label>
+          </>
         )}
 
         {needsAppointment && (
@@ -216,7 +253,11 @@ export function CallLogger({
         </button>
         {blocked && (
           <span className="blocked-why">
-            {missingNextAction ? "Enter the next action first" : "Enter the review date first"}
+            {missingAppointment
+              ? "Enter the review date first"
+              : missingNextAction
+                ? "Say what happens next first"
+                : "Give the next action a date"}
           </span>
         )}
       </div>

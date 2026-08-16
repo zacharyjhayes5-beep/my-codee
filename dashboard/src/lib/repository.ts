@@ -13,6 +13,12 @@ import {
 } from "./db";
 import { defaultOwnerName, defaultPeriod } from "./defaultData";
 import { normalizeProposals, reviewsFromSuggestions } from "./reviews";
+import {
+  CALL_SCHEMA_VERSION,
+  callsNeedMigration,
+  normalizeCalls,
+  normalizeProspectOutcome,
+} from "./callSchema";
 import { migratedLines, migratedProspects, migratedTasks } from "./migrate";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import type {
@@ -75,6 +81,7 @@ export const LEGACY_RECORD_KEYS: Record<
 const MIGRATION_FLAG = "migratedFromLocalStorage";
 const SCHEMA_FLAG = "prospectSchemaVersion";
 const REVIEWS_FLAG = "suggestionsMovedToReviews";
+const CALL_SCHEMA_FLAG = "callSchemaVersion";
 const DISMISSED_KEY = "dismissed";
 
 /* ------------------------------------------------------------------ */
@@ -207,6 +214,29 @@ export interface SchemaReport {
   prospectsRewritten: number;
 }
 
+/**
+ * Renaming three outcomes changed values that are stored on every call and
+ * mirrored onto each household, so both are rewritten together. Without this,
+ * an old call would carry a value the rules no longer match on.
+ */
+async function upgradeCallOutcomes(): Promise<void> {
+  const stored = (await readMeta<number>(CALL_SCHEMA_FLAG)) ?? 1;
+  if (stored >= CALL_SCHEMA_VERSION) return;
+
+  const calls = await readAll<Call>("calls");
+  if (callsNeedMigration(calls)) {
+    await writeAll("calls", normalizeCalls(calls));
+  }
+
+  const prospects = await readAll<Prospect>("prospects");
+  const fixed = prospects.map(normalizeProspectOutcome);
+  if (fixed.some((p, i) => p !== prospects[i])) {
+    await writeAll("prospects", fixed);
+  }
+
+  await writeMeta(CALL_SCHEMA_FLAG, CALL_SCHEMA_VERSION);
+}
+
 export interface ReviewMigrationReport {
   ran: boolean;
   suggestionsConverted: number;
@@ -292,6 +322,7 @@ export async function initRepository(): Promise<BootResult> {
   const migration = await migrateIfNeeded();
   const schema = await upgradeProspectSchema();
   const reviewMigration = await migrateSuggestionsToReviews();
+  await upgradeCallOutcomes();
 
   cache = {
     prospects: await readAll<Prospect>("prospects"),

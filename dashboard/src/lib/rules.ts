@@ -70,8 +70,14 @@ function isoDay(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/**
+ * A date-only string like `2026-08-22` is parsed as UTC midnight, which then
+ * reads as the previous day anywhere west of Greenwich. Pinning it to local
+ * midnight keeps a due date on the day it was typed.
+ */
 function dayOf(iso: string): Date {
-  const d = new Date(iso);
+  const value = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00` : iso;
+  const d = new Date(value);
   return Number.isNaN(d.getTime()) ? new Date() : d;
 }
 
@@ -174,6 +180,10 @@ export interface RuleOutcomeState {
   notAtThisTimeCount: number;
   /** True once the combined dial cap is reached. */
   exhausted: boolean;
+  /** Flagged for a human decision — the cap never closes a household itself. */
+  needsReview: boolean;
+  /** Set by Bad Number; puts the household in the research queue. */
+  needsPhoneNumber: boolean;
 }
 
 function emptyState(): RuleOutcomeState {
@@ -189,6 +199,8 @@ function emptyState(): RuleOutcomeState {
     voicemails: 0,
     notAtThisTimeCount: 0,
     exhausted: false,
+    needsReview: false,
+    needsPhoneNumber: false,
   };
 }
 
@@ -213,8 +225,8 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
 
   switch (call.outcome) {
     case "No Answer — No Voicemail":
-    case "No Answer — Voicemail Left": {
-      const leftMessage = call.outcome === "No Answer — Voicemail Left";
+    case "No Answer — Voicemail": {
+      const leftMessage = call.outcome === "No Answer — Voicemail";
       state.attempts += 1;
       if (leftMessage) state.voicemails += 1;
 
@@ -223,9 +235,12 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
 
       if (state.attempts >= maxAttempts) {
         // The cap is combined: both no-answer kinds count toward the same seven.
-        state.stage = "Closed";
-        state.closedReason = "unreachable";
+        //
+        // It stops the automatic scheduling and flags the household for a
+        // decision — it deliberately does *not* close it. Writing somebody off
+        // is a consequential call, and it stays the user's to make.
         state.exhausted = true;
+        state.needsReview = true;
         state.pendingTask = null;
         return;
       }
@@ -248,9 +263,10 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       return;
     }
 
-    case "Bad Phone Number": {
+    case "Bad Number": {
       state.stage = "Closed";
       state.closedReason = "bad-number";
+      state.needsPhoneNumber = true;
       state.pendingTask = {
         ruleId: "bad-number",
         text: `Find a better number — ${householdLabel(prospect)}`,
@@ -272,7 +288,7 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       return;
     }
 
-    case "Not at This Time": {
+    case "Not At This Time": {
       state.notAtThisTimeCount += 1;
       const months = RULE_CONSTANTS.nurtureFollowUpMonths;
 
@@ -306,13 +322,20 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       const readiness = quoteReadiness(prospect);
       state.closedReason = null;
 
+      // The captured next action wins over the rule's default wording.
+      const stated = (call.nextAction ?? "").trim();
+      if (stated) state.nextAction = stated;
+      if (call.nextActionAt) state.nextActionDate = isoDay(dayOf(call.nextActionAt));
+
       if (readiness.ready) {
         state.stage = "Quoting";
         state.pendingTask = {
           ruleId: "build-quote",
-          text: `Build quote — ${householdLabel(prospect)}`,
+          text: stated || `Build quote — ${householdLabel(prospect)}`,
           detail: "Details are complete.",
-          dueDate: addDays(call.at, RULE_CONSTANTS.quoteDays),
+          dueDate: call.nextActionAt
+            ? isoDay(dayOf(call.nextActionAt))
+            : addDays(call.at, RULE_CONSTANTS.quoteDays),
           urgency: "now",
           kind: "quote",
           callId: call.id,
@@ -321,9 +344,11 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
         state.stage = "Qualifying";
         state.pendingTask = {
           ruleId: "collect-details",
-          text: `Collect missing quote details — ${householdLabel(prospect)}`,
+          text: stated || `Collect missing quote details — ${householdLabel(prospect)}`,
           detail: `Still needed: ${readiness.missing.join(", ")}.`,
-          dueDate: addDays(call.at, RULE_CONSTANTS.collectDetailsDays),
+          dueDate: call.nextActionAt
+            ? isoDay(dayOf(call.nextActionAt))
+            : addDays(call.at, RULE_CONSTANTS.collectDetailsDays),
           urgency: "week",
           kind: "followup",
           callId: call.id,
@@ -332,17 +357,18 @@ function applyOne(prospect: Prospect, call: Call, state: RuleOutcomeState): void
       return;
     }
 
-    case "Hot Lead — Very Interested": {
+    case "Hot Lead": {
       const action = (call.nextAction ?? "").trim();
+      const due = call.nextActionAt ? isoDay(dayOf(call.nextActionAt)) : isoDay(dayOf(call.at));
       state.stage = "Opportunity";
       state.closedReason = null;
       state.nextAction = action || null;
-      state.nextActionDate = isoDay(dayOf(call.at));
+      state.nextActionDate = due;
       state.pendingTask = {
         ruleId: "hot-lead",
         text: action || `Next step — ${householdLabel(prospect)}`,
         detail: "Logged as a hot lead.",
-        dueDate: isoDay(dayOf(call.at)),
+        dueDate: due,
         urgency: "now",
         kind: "followup",
         callId: call.id,
@@ -439,7 +465,14 @@ export function reconcileProspect(
   const wanted = state.pendingTask;
   const tasks = wanted ? [...keep, taskFromDesired(wanted, prospect.id, options.today)] : keep;
 
-  let next: Prospect = { ...prospect, doNotContact: state.doNotContact };
+  let next: Prospect = {
+    ...prospect,
+    doNotContact: state.doNotContact,
+    // Both are replayed from the calls, so undoing the call that set one
+    // clears it again rather than leaving the household stuck.
+    needsReview: state.needsReview,
+    needsPhoneNumber: state.needsPhoneNumber,
+  };
 
   if (state.nextAction) {
     next = { ...next, nextAction: state.nextAction, nextActionDate: state.nextActionDate };

@@ -26,19 +26,19 @@ describe("the eight outcomes", () => {
   it("offers exactly the approved list, in order", () => {
     expect(callOutcomes).toEqual([
       "No Answer — No Voicemail",
-      "No Answer — Voicemail Left",
-      "Bad Phone Number",
+      "No Answer — Voicemail",
+      "Bad Number",
       "Definitely Not Interested",
-      "Not at This Time",
+      "Not At This Time",
       "Somewhat Interested",
-      "Hot Lead — Very Interested",
+      "Hot Lead",
       "Insurance Review Scheduled",
     ]);
   });
 
   it("treats only the two no-answer outcomes as unanswered", () => {
     expect(isNoAnswer("No Answer — No Voicemail")).toBe(true);
-    expect(isNoAnswer("No Answer — Voicemail Left")).toBe(true);
+    expect(isNoAnswer("No Answer — Voicemail")).toBe(true);
     for (const outcome of callOutcomes.slice(2)) {
       expect(isNoAnswer(outcome)).toBe(false);
     }
@@ -56,8 +56,8 @@ describe("the eight outcomes", () => {
 describe("a call belongs to exactly one household", () => {
   const calls = [
     call("a", "p1", "2026-08-10T10:00:00.000Z", "Somewhat Interested"),
-    call("b", "p2", "2026-08-11T10:00:00.000Z", "Bad Phone Number"),
-    call("c", "p1", "2026-08-12T10:00:00.000Z", "Not at This Time"),
+    call("b", "p2", "2026-08-11T10:00:00.000Z", "Bad Number"),
+    call("c", "p1", "2026-08-12T10:00:00.000Z", "Not At This Time"),
   ];
 
   it("returns only that household's calls", () => {
@@ -81,11 +81,11 @@ describe("latest-call fields", () => {
   it("takes the outcome from the newest call, not the last one entered", () => {
     // Entered out of order on purpose.
     const calls = [
-      call("late", "p1", "2026-08-14T09:00:00.000Z", "Hot Lead — Very Interested"),
+      call("late", "p1", "2026-08-14T09:00:00.000Z", "Hot Lead"),
       call("early", "p1", "2026-08-02T09:00:00.000Z", "No Answer — No Voicemail"),
     ];
     const updated = withLatestCallFields(prospect, calls);
-    expect(updated.lastOutcome).toBe("Hot Lead — Very Interested");
+    expect(updated.lastOutcome).toBe("Hot Lead");
     expect(updated.lastOutcomeAt).toBe("2026-08-14T09:00:00.000Z");
   });
 
@@ -95,14 +95,14 @@ describe("latest-call fields", () => {
   });
 
   it("falls back to the previous call when the newest is deleted", () => {
-    const older = call("older", "p1", "2026-08-02T09:00:00.000Z", "Not at This Time");
+    const older = call("older", "p1", "2026-08-02T09:00:00.000Z", "Not At This Time");
     const newer = call("newer", "p1", "2026-08-14T09:00:00.000Z", "Somewhat Interested");
 
     const after = withLatestCallFields(prospect, [older, newer]);
     expect(after.lastOutcome).toBe("Somewhat Interested");
 
     const deleted = withLatestCallFields(after, [older]);
-    expect(deleted.lastOutcome).toBe("Not at This Time");
+    expect(deleted.lastOutcome).toBe("Not At This Time");
     expect(deleted.lastOutcomeAt).toBe("2026-08-02T09:00:00.000Z");
   });
 
@@ -129,12 +129,12 @@ describe("latest-call fields", () => {
   });
 
   it("follows an edit that moves a call's date to the top", () => {
-    const a = call("a", "p1", "2026-08-02T09:00:00.000Z", "Not at This Time");
+    const a = call("a", "p1", "2026-08-02T09:00:00.000Z", "Not At This Time");
     const b = call("b", "p1", "2026-08-14T09:00:00.000Z", "Somewhat Interested");
     expect(withLatestCallFields(prospect, [a, b]).lastOutcome).toBe("Somewhat Interested");
 
     const movedForward = { ...a, at: "2026-08-20T09:00:00.000Z" };
-    expect(withLatestCallFields(prospect, [movedForward, b]).lastOutcome).toBe("Not at This Time");
+    expect(withLatestCallFields(prospect, [movedForward, b]).lastOutcome).toBe("Not At This Time");
   });
 
   it("leaves stage, grade and score untouched — phase 4 owns those", () => {
@@ -162,7 +162,7 @@ describe("attempt and voicemail counts", () => {
   it("counts only unanswered dials as attempts", () => {
     const calls = [
       call("1", "p1", "2026-08-01T09:00:00.000Z", "No Answer — No Voicemail"),
-      call("2", "p1", "2026-08-02T09:00:00.000Z", "No Answer — Voicemail Left"),
+      call("2", "p1", "2026-08-02T09:00:00.000Z", "No Answer — Voicemail"),
       call("3", "p1", "2026-08-03T09:00:00.000Z", "Somewhat Interested"),
       call("4", "p1", "2026-08-04T09:00:00.000Z", "Insurance Review Scheduled"),
     ];
@@ -174,9 +174,9 @@ describe("attempt and voicemail counts", () => {
 
   it("counts a voicemail as one of the attempts, not as an extra", () => {
     const calls = [
-      call("1", "p1", "2026-08-01T09:00:00.000Z", "No Answer — Voicemail Left"),
-      call("2", "p1", "2026-08-02T09:00:00.000Z", "No Answer — Voicemail Left"),
-      call("3", "p1", "2026-08-03T09:00:00.000Z", "No Answer — Voicemail Left"),
+      call("1", "p1", "2026-08-01T09:00:00.000Z", "No Answer — Voicemail"),
+      call("2", "p1", "2026-08-02T09:00:00.000Z", "No Answer — Voicemail"),
+      call("3", "p1", "2026-08-03T09:00:00.000Z", "No Answer — Voicemail"),
     ];
     const counts = attemptCounts(calls);
     // Three dials, three of which left a message — the combined cap reading.
@@ -187,11 +187,11 @@ describe("attempt and voicemail counts", () => {
   it("reaches the seven-dial cap across a mixed run", () => {
     const outcomes: CallOutcome[] = [
       "No Answer — No Voicemail",
-      "No Answer — Voicemail Left",
+      "No Answer — Voicemail",
       "No Answer — No Voicemail",
-      "No Answer — Voicemail Left",
+      "No Answer — Voicemail",
       "No Answer — No Voicemail",
-      "No Answer — Voicemail Left",
+      "No Answer — Voicemail",
       "No Answer — No Voicemail",
     ];
     const calls = outcomes.map((o, i) =>
@@ -204,7 +204,7 @@ describe("attempt and voicemail counts", () => {
 
   it("does not count a bad number as an unanswered attempt", () => {
     const counts = attemptCounts([
-      call("1", "p1", "2026-08-01T09:00:00.000Z", "Bad Phone Number"),
+      call("1", "p1", "2026-08-01T09:00:00.000Z", "Bad Number"),
     ]);
     expect(counts.attempts).toBe(0);
     expect(counts.total).toBe(1);

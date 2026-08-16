@@ -13,6 +13,7 @@ import { appendAudit, auditEntry, diffEntries } from "../lib/audit";
 import { opportunitiesFor, patchOpportunity } from "../lib/opportunities";
 import { mergeInto } from "../lib/dedupe";
 import { IntakePanel } from "./IntakePanel";
+import { WorkMode } from "./WorkMode";
 import { callsFor, withLatestCallFields } from "../lib/calls";
 import { blankProspect } from "../lib/prospectSchema";
 import { reconcileProspect } from "../lib/rules";
@@ -50,6 +51,7 @@ export function ProspectsTab({
   onOwnerNameChange,
 }: ProspectsTabProps) {
   const [search, setSearch] = useState("");
+  const [mode, setMode] = useState<"browse" | "work">("browse");
   const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -220,8 +222,43 @@ export function ProspectsTab({
     setExpandedId(prospect.id);
   }
 
+  if (mode === "work") {
+    return (
+      <div className="tab-panel">
+        <div className="mode-switch">
+          <button onClick={() => setMode("browse")}>Browse</button>
+          <button className="active">Work</button>
+        </div>
+        <WorkMode
+          prospects={prospects}
+          calls={calls}
+          tasks={tasks}
+          opportunities={opportunities}
+          onSaveCall={saveCall}
+          onOpenProfile={(id) => {
+            setMode("browse");
+            setExpandedId(id);
+          }}
+          onClearReview={(id, decision) =>
+            patchProspect(
+              id,
+              decision === "close"
+                ? { needsReview: false, stage: "Closed", closedReason: "unreachable", stageSource: "manual" }
+                : { needsReview: false },
+            )
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="tab-panel">
+      <div className="mode-switch">
+        <button className="active">Browse</button>
+        <button onClick={() => setMode("work")}>Work</button>
+      </div>
+
       <IntakePanel
         prospects={prospects}
         onCreate={createProspect}
