@@ -11,7 +11,8 @@ import type {
   Task,
 } from "../types";
 import { countsByCategory, currency, totalsFor } from "../lib/policies";
-import { DailyLayer } from "./DailyLayer";
+import type { CorrespondenceNote } from "../lib/dailyBrief";
+import { CommandCenter } from "./CommandCenter";
 import { ProgressOrb } from "./ProgressOrb";
 
 export type CommandTarget = "progress" | "todo" | "prospects" | "map" | "pipeline";
@@ -25,6 +26,8 @@ interface OperatorTabProps {
   reviews: ReviewProposal[];
   calls: Call[];
   opportunities: Opportunity[];
+  correspondence: CorrespondenceNote[];
+  onCorrespondenceChange: (notes: CorrespondenceNote[]) => void;
   onCommand: (target: CommandTarget) => void;
   onGo: (target: "prospects" | "todo" | "pipeline", prospectId?: string) => void;
 }
@@ -66,6 +69,8 @@ export function OperatorTab({
   reviews,
   calls,
   opportunities,
+  correspondence,
+  onCorrespondenceChange,
   onCommand,
   onGo,
 }: OperatorTabProps) {
@@ -192,12 +197,14 @@ export function OperatorTab({
         </div>
       </section>
 
-      <DailyLayer
+      <CommandCenter
         prospects={prospects}
-        opportunities={opportunities}
-        tasks={tasks}
         calls={calls}
+        tasks={tasks}
+        opportunities={opportunities}
         reviews={reviews}
+        correspondence={correspondence}
+        onCorrespondenceChange={onCorrespondenceChange}
         onGo={onGo}
       />
 

@@ -182,6 +182,43 @@ rules cannot produce a sensible follow-up without them. The conversion score is
 prompted beside a hot lead and applied only if a number is typed — never
 inferred.
 
+## Command Center and transcript review
+
+The Operator tab **is** the Command Center — same slot, still the default. Panel
+order is the design: daily brief, today's schedule, what needs me, follow-ups,
+goal pace, correspondence, end of day. **Operational work above KPIs** — the
+book-of-business figures stay on Progress. Do not promote a metric above the
+day's work.
+
+`lib/dailyBrief.ts` builds the brief. The focus list is ordered deliberately:
+appointments, then clearing overdue work, then quote work, *then* cold-call
+volume — quotes close, dials do not.
+
+Correspondence is **entered by hand**. There is no mail, calendar or messaging
+connection and this phase did not add one; the triage exists so the shape is
+right when a real source arrives.
+
+`lib/transcriptReview.ts` turns a Granola transcript into the five required
+review fields — Information Gathered, Attitude, Quality, Notes, Conversion
+Score — plus proposed outcome, Important Notes, next action/date and
+opportunity stage. **No model call, no API key.** It reads with the same
+deterministic parsing the importer uses, and the `CUES` table maps phrases onto
+the agreed 1–10 scale, so a score always carries its reason.
+
+**The transcript is never stored.** Notes and call summaries are *written
+readings*, not excerpts — an earlier version sliced the raw body into
+`summary`, which made the dashboard a partial copy of the record Granola
+already holds. Tests assert no verbatim sentence survives into a proposal.
+
+Suggested Important Notes are **appended** to what is already there, never
+replacing it, and the diff shows both.
+
+**`EDITABLE_FIELDS` in `reviews.ts` must list every field a proposal can
+emit.** A field outside it is refused at approval — safe, but it silently
+breaks the workflow proposing it. That happened: `importantNotes` was added to
+households in 6A and not to the allowlist, so transcript reviews were refused
+whole. There is now a test asserting the analyser's fields are all allowed.
+
 ## The daily layer
 
 `lib/goals.ts` holds the daily targets — **30 cold calls / 50 stretch, 2

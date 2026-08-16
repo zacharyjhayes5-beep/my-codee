@@ -4,7 +4,7 @@ import type {
   Call,
   Opportunity,
   Prospect,
-  ProspectNote,
+  ReviewProposal,
   Stage,
   Task,
 } from "../types";
@@ -14,12 +14,12 @@ import { opportunitiesFor, opportunityFromCall, patchOpportunity } from "../lib/
 import { quoteReadiness } from "../lib/rules";
 import { mergeInto } from "../lib/dedupe";
 import { IntakePanel } from "./IntakePanel";
+import { TranscriptPanel } from "./TranscriptPanel";
 import { WorkMode } from "./WorkMode";
 import { callsFor, withLatestCallFields } from "../lib/calls";
 import { blankProspect } from "../lib/prospectSchema";
 import { reconcileProspect } from "../lib/rules";
 import { today } from "../lib/storage";
-import { ImportPanel } from "./ImportPanel";
 import { ProspectCard } from "./ProspectCard";
 
 interface ProspectsTabProps {
@@ -36,6 +36,8 @@ interface ProspectsTabProps {
   /** Arrived here from somewhere that named a household — open it. */
   focusProspectId: string | null;
   onFocusHandled: () => void;
+  /** A transcript review joins the same inbox everything else goes through. */
+  onQueueReview: (proposal: ReviewProposal) => void;
   ownerName: string;
   onOwnerNameChange: (name: string) => void;
 }
@@ -53,6 +55,7 @@ export function ProspectsTab({
   onOpportunitiesChange,
   focusProspectId,
   onFocusHandled,
+  onQueueReview,
   ownerName,
   onOwnerNameChange,
 }: ProspectsTabProps) {
@@ -114,24 +117,6 @@ export function ProspectsTab({
 
   function createProspect(prospect: Prospect) {
     onChange((prev) => [prospect, ...prev]);
-  }
-
-  function appendNote(id: string, note: ProspectNote, patch: Partial<Prospect>) {
-    onChange((prev) =>
-      prev.map((p) => {
-        if (p.id !== id) return p;
-        return {
-          ...p,
-          stage: patch.stage ?? p.stage,
-          lines: Array.from(new Set([...p.lines, ...(patch.lines ?? [])])),
-          area: p.area || patch.area || "",
-          phone: p.phone || patch.phone || "",
-          email: p.email || patch.email || "",
-          notes: [...p.notes, note],
-          updatedAt: today(),
-        };
-      })
-    );
   }
 
   /**
@@ -292,12 +277,11 @@ export function ProspectsTab({
         }
       />
 
-      <ImportPanel
+      <TranscriptPanel
         prospects={prospects}
         ownerName={ownerName}
         onOwnerNameChange={onOwnerNameChange}
-        onCreate={createProspect}
-        onAppend={appendNote}
+        onQueueReview={onQueueReview}
       />
 
       <div className="prospect-toolbar">

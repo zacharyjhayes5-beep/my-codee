@@ -37,6 +37,7 @@ function App() {
   const [reviews, setReviews] = useStored("reviews");
   const [audit, setAudit] = useStored("audit");
   const [opportunities, setOpportunities] = useStored("opportunities");
+  const [correspondence, setCorrespondence] = useStored("correspondence");
 
   /**
    * Applies a proposal or nothing at all. The whole next state is assembled
@@ -106,6 +107,8 @@ function App() {
             reviews={reviews}
             calls={calls}
             opportunities={opportunities}
+            correspondence={correspondence}
+            onCorrespondenceChange={setCorrespondence}
             onCommand={(target: CommandTarget) => setTab(target)}
             onGo={(target, prospectId) => {
               setTab(target);
@@ -162,6 +165,7 @@ function App() {
             onOpportunitiesChange={setOpportunities}
             focusProspectId={focusProspectId}
             onFocusHandled={() => setFocusProspectId(null)}
+            onQueueReview={(proposal) => setReviews([...reviews, proposal])}
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
           />

@@ -28,6 +28,8 @@ import { newId } from "./storage";
  */
 export const EDITABLE_FIELDS = [
   "name",
+  "firstName",
+  "lastName",
   "stage",
   "closedReason",
   "priorityGrade",
@@ -42,6 +44,13 @@ export const EDITABLE_FIELDS = [
   "address",
   "doNotContact",
   "source",
+  // Added when households gained them. A field that a proposal can produce but
+  // this list does not name is refused at approval — which is safe, but it
+  // silently breaks the workflow that proposes it.
+  "leadSource",
+  "whyTheyFit",
+  "importantNotes",
+  "assets",
 ] as const;
 
 export type EditableField = (typeof EDITABLE_FIELDS)[number];
