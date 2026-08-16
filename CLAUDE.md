@@ -182,6 +182,38 @@ rules cannot produce a sensible follow-up without them. The conversion score is
 prompted beside a hot lead and applied only if a number is typed — never
 inferred.
 
+## The daily layer
+
+`lib/goals.ts` holds the daily targets — **30 cold calls / 50 stretch, 2
+referral outreach, 3 targeted, 2 quote follow-ups** — and the pace maths.
+A progress bar is not the point: every reading carries what it now takes per
+remaining hour to still land the goal, against an 8am–5pm working day.
+
+`lib/attention.ts` is What Needs Me: at most five things, ranked hot
+opportunity → today's appointment → overdue follow-up → quote due → gone quiet
+→ attempt-cap review → pending proposals. The hard part is what it leaves out.
+
+Quote follow-ups count when the work is **finished**, not when it is scheduled.
+
+**Compare timestamps with `localDay()` from `lib/calls.ts`, never
+`iso.slice(0, 10)`.** A call's `at` is a UTC instant, so slicing it gives the
+UTC date — a call logged at 8pm in Michigan would land on tomorrow and vanish
+from today's numbers. This caught out the goal counts and the appointment
+check; the whole daily layer goes through the helper now.
+
+## Pipeline
+
+The Pipeline tab is a view over `Opportunity` records, never a second copy of a
+household. Eight stages, counts and value per stage, what is due or overdue,
+and what has gone quiet (`STALL_DAYS` — 7 days at Quote Presented, 10 at
+Decision Pending).
+
+`opportunityFromCall()` creates or advances an opportunity when a call means
+real business. **An insurance review attaches as an appointment, never as a
+stage.** It only ever moves an opportunity forward — a later call cannot drag
+one back down the pipeline — and every path supplies a next action and date,
+because the model refuses anything less.
+
 ## NEXT CALL
 
 `lib/queue.ts` answers two questions that are deliberately kept apart: **may

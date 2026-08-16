@@ -1,10 +1,20 @@
 import { useMemo } from "react";
 import { differenceInCalendarDays, format } from "date-fns";
-import type { Period, PolicyEntry, PolicyLine, Prospect, ReviewProposal, Task } from "../types";
+import type {
+  Call,
+  Opportunity,
+  Period,
+  PolicyEntry,
+  PolicyLine,
+  Prospect,
+  ReviewProposal,
+  Task,
+} from "../types";
 import { countsByCategory, currency, totalsFor } from "../lib/policies";
+import { DailyLayer } from "./DailyLayer";
 import { ProgressOrb } from "./ProgressOrb";
 
-export type CommandTarget = "progress" | "todo" | "prospects" | "map";
+export type CommandTarget = "progress" | "todo" | "prospects" | "map" | "pipeline";
 
 interface OperatorTabProps {
   entries: PolicyEntry[];
@@ -13,7 +23,10 @@ interface OperatorTabProps {
   prospects: Prospect[];
   tasks: Task[];
   reviews: ReviewProposal[];
+  calls: Call[];
+  opportunities: Opportunity[];
   onCommand: (target: CommandTarget) => void;
+  onGo: (target: "prospects" | "todo" | "pipeline", prospectId?: string) => void;
 }
 
 function parseDay(iso: string) {
@@ -51,7 +64,10 @@ export function OperatorTab({
   prospects,
   tasks,
   reviews,
+  calls,
+  opportunities,
   onCommand,
+  onGo,
 }: OperatorTabProps) {
   const stats = useMemo(() => {
     const inPeriod = entries.filter(
@@ -175,6 +191,15 @@ export function OperatorTab({
           </span>
         </div>
       </section>
+
+      <DailyLayer
+        prospects={prospects}
+        opportunities={opportunities}
+        tasks={tasks}
+        calls={calls}
+        reviews={reviews}
+        onGo={onGo}
+      />
 
       <section className="op-panel op-ticker">
         <header className="op-panel-head">Today</header>

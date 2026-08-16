@@ -6,23 +6,27 @@ import { OperatorTab, type CommandTarget } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
 import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
+import { PipelineTab } from "./components/PipelineTab";
 import { useStored } from "./lib/repository";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
 import type { ReviewProposal } from "./types";
 
-type Tab = "operator" | "progress" | "todo" | "prospects" | "map";
+type Tab = "operator" | "progress" | "todo" | "prospects" | "pipeline" | "map";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "operator", label: "Operator" },
   { id: "progress", label: "Progress" },
   { id: "todo", label: "To-Do" },
   { id: "prospects", label: "Prospects" },
+  { id: "pipeline", label: "Pipeline" },
   { id: "map", label: "Lead Map" },
 ];
 
 function App() {
   const [tab, setTab] = useState<Tab>("operator");
+  /** Set when arriving from another screen, so the right card opens. */
+  const [focusProspectId, setFocusProspectId] = useState<string | null>(null);
   const [lines, setLines] = useStored("lines");
   const [period, setPeriod] = useStored("period");
   const [entries, setEntries] = useStored("policies");
@@ -100,7 +104,13 @@ function App() {
             prospects={prospects}
             tasks={tasks}
             reviews={reviews}
+            calls={calls}
+            opportunities={opportunities}
             onCommand={(target: CommandTarget) => setTab(target)}
+            onGo={(target, prospectId) => {
+              setTab(target);
+              if (prospectId) setFocusProspectId(prospectId);
+            }}
           />
         )}
         {tab === "progress" && (
@@ -125,6 +135,16 @@ function App() {
             dismissed={dismissed}
           />
         )}
+        {tab === "pipeline" && (
+          <PipelineTab
+            opportunities={opportunities}
+            prospects={prospects}
+            onOpenProspect={(id) => {
+              setFocusProspectId(id);
+              setTab("prospects");
+            }}
+          />
+        )}
         {tab === "map" && (
           <LeadMap prospects={prospects} onOpenProspect={() => setTab("prospects")} />
         )}
@@ -140,6 +160,8 @@ function App() {
             onAuditChange={setAudit}
             opportunities={opportunities}
             onOpportunitiesChange={setOpportunities}
+            focusProspectId={focusProspectId}
+            onFocusHandled={() => setFocusProspectId(null)}
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
           />

@@ -1,5 +1,6 @@
 import type {
   Appointment,
+  Call,
   Opportunity,
   OpportunityEvent,
   OpportunityLine,
@@ -176,6 +177,112 @@ export function addAppointment(
     ],
     updatedAt: today(),
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Created from a call                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Some outcomes mean there is now a real chance of writing business, so an
+ * opportunity is created or updated to match. An insurance review attaches as
+ * an appointment — it is never a stage of its own.
+ *
+ * Every path here supplies a next action and a date, because the model refuses
+ * anything less and an auto-created record must not be the exception.
+ */
+export function opportunityFromCall(
+  call: Call,
+  existing: Opportunity[],
+  quoteReady: boolean,
+): { next: Opportunity[]; created: boolean } | null {
+  const mine = existing.filter(
+    (o) => o.prospectId === call.prospectId && o.stage !== "Written" && o.stage !== "Lost",
+  );
+  const current = mine[0];
+
+  const shape = shapeFor(call, quoteReady);
+  if (!shape) return null;
+
+  if (!current) {
+    const made = blankOpportunity(call.prospectId, {
+      stage: shape.stage,
+      nextAction: shape.nextAction,
+      nextActionDate: shape.nextActionDate,
+    });
+    const withAppointment = shape.appointmentAt
+      ? addAppointment(made, {
+          at: shape.appointmentAt,
+          kind: "insurance-review",
+          notes: call.summary,
+        })
+      : made;
+    return { next: [...existing, withAppointment], created: true };
+  }
+
+  let updated = patchOpportunity(current, {
+    stage: shape.advanceOnly && rank(current.stage) > rank(shape.stage) ? current.stage : shape.stage,
+    nextAction: shape.nextAction,
+    nextActionDate: shape.nextActionDate,
+  });
+
+  if (shape.appointmentAt) {
+    updated = addAppointment(updated, {
+      at: shape.appointmentAt,
+      kind: "insurance-review",
+      notes: call.summary,
+    });
+  }
+
+  return { next: existing.map((o) => (o.id === current.id ? updated : o)), created: false };
+}
+
+function rank(stage: OpportunityStage): number {
+  return OPPORTUNITY_STAGES.indexOf(stage);
+}
+
+interface Shape {
+  stage: OpportunityStage;
+  nextAction: string;
+  nextActionDate: string;
+  appointmentAt?: string;
+  /** Don't drag an opportunity backwards down the pipeline. */
+  advanceOnly: boolean;
+}
+
+function shapeFor(call: Call, quoteReady: boolean): Shape | null {
+  const day = (iso?: string) => (iso ? iso.slice(0, 10) : "");
+  const fallback = day(call.at);
+
+  switch (call.outcome) {
+    case "Insurance Review Scheduled":
+      return {
+        stage: "Fact-Find / Information Gathering",
+        nextAction: "Insurance review",
+        nextActionDate: day(call.appointmentAt) || fallback,
+        appointmentAt: call.appointmentAt,
+        advanceOnly: true,
+      };
+
+    case "Hot Lead":
+      return {
+        stage: "Qualified / Open",
+        nextAction: (call.nextAction ?? "").trim() || "Follow up",
+        nextActionDate: day(call.nextActionAt) || fallback,
+        advanceOnly: true,
+      };
+
+    case "Somewhat Interested":
+      return {
+        stage: quoteReady ? "Quoting" : "Fact-Find / Information Gathering",
+        nextAction: (call.nextAction ?? "").trim() || (quoteReady ? "Build the quote" : "Collect details"),
+        nextActionDate: day(call.nextActionAt) || fallback,
+        advanceOnly: true,
+      };
+
+    default:
+      return null;
+  }
 }
 
 /* ------------------------------------------------------------------ */

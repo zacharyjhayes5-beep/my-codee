@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   AuditEntry,
   Call,
@@ -10,7 +10,8 @@ import type {
 } from "../types";
 import { prospectStages } from "../lib/defaultData";
 import { appendAudit, auditEntry, diffEntries } from "../lib/audit";
-import { opportunitiesFor, patchOpportunity } from "../lib/opportunities";
+import { opportunitiesFor, opportunityFromCall, patchOpportunity } from "../lib/opportunities";
+import { quoteReadiness } from "../lib/rules";
 import { mergeInto } from "../lib/dedupe";
 import { IntakePanel } from "./IntakePanel";
 import { WorkMode } from "./WorkMode";
@@ -32,6 +33,9 @@ interface ProspectsTabProps {
   onAuditChange: (entries: AuditEntry[]) => void;
   opportunities: Opportunity[];
   onOpportunitiesChange: (opportunities: Opportunity[]) => void;
+  /** Arrived here from somewhere that named a household — open it. */
+  focusProspectId: string | null;
+  onFocusHandled: () => void;
   ownerName: string;
   onOwnerNameChange: (name: string) => void;
 }
@@ -47,11 +51,21 @@ export function ProspectsTab({
   onAuditChange,
   opportunities,
   onOpportunitiesChange,
+  focusProspectId,
+  onFocusHandled,
   ownerName,
   onOwnerNameChange,
 }: ProspectsTabProps) {
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState<"browse" | "work">("browse");
+
+  useEffect(() => {
+    if (!focusProspectId) return;
+    setMode("browse");
+    setExpandedId(focusProspectId);
+    onFocusHandled();
+  }, [focusProspectId, onFocusHandled]);
+
   const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -128,6 +142,15 @@ export function ProspectsTab({
    */
   function saveCall(call: Call, isNew: boolean) {
     const previous = calls.find((c) => c.id === call.id);
+
+    // Outcomes that mean real business is in play create or move an
+    // opportunity, with the review attached as an appointment rather than
+    // becoming a stage of its own.
+    const household = prospects.find((p) => p.id === call.prospectId);
+    if (household) {
+      const result = opportunityFromCall(call, opportunities, quoteReadiness(household).ready);
+      if (result) onOpportunitiesChange(result.next);
+    }
     onCallsChange((prev) => {
       const next = [...prev.filter((c) => c.id !== call.id), call];
       // A newly logged call is an explicit action, so its rule wins even over
