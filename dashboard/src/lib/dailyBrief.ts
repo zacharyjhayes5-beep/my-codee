@@ -174,6 +174,11 @@ export function buildDailyBrief(input: {
   if (overdue > 0) {
     focus.push(`Clear ${overdue} overdue follow-up${overdue === 1 ? "" : "s"} before new dials`);
   }
+  if (dueToday > 0) {
+    // Without this the brief could name follow-ups in its headline and then
+    // never tell you to do them.
+    focus.push(`Work ${dueToday} follow-up${dueToday === 1 ? "" : "s"} due today`);
+  }
 
   const quoteWork = followUps.filter((f) => f.recommended.toLowerCase().includes("quote")).length;
   if (quoteWork > 0) {

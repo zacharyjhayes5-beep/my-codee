@@ -290,6 +290,22 @@ describe("the daily brief", () => {
     expect(quoteIndex).toBeLessThan(dialIndex);
   });
 
+  it("tells you to work follow-ups that are due today, not just overdue ones", () => {
+    const dueNow: Task = {
+      id: "t1",
+      text: "Call Dana back",
+      detail: "",
+      urgency: "now",
+      done: false,
+      dueDate: TODAY,
+      source: "manual",
+      createdAt: TODAY,
+    };
+    const result = brief({ tasks: [dueNow] });
+    expect(result.headline).toContain("due today");
+    expect(result.focus.join(" | ")).toMatch(/follow-up.*due today/i);
+  });
+
   it("names households worth ringing today", () => {
     expect(brief().freshProspects.some((p) => p.name === "Dana Reed")).toBe(true);
   });

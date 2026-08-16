@@ -1276,6 +1276,17 @@
   padding-top: 10px;
 }
 
+.snapshot-heading {
+  margin: 12px 0 0;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-top: 1px solid var(--gridline);
+  padding-top: 16px;
+}
+
 /* Command Center */
 .command-center {
   display: flex;

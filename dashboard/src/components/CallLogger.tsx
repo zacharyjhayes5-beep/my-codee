@@ -54,9 +54,8 @@ export function CallLogger({
   // Counts exclude the call being edited so an edit doesn't double-count itself.
   const others = priorCalls.filter((c) => c.id !== draft.id);
   const counts = attemptCounts(others);
-  const voicemailCapHit =
-    draft.outcome === "No Answer — Voicemail" &&
-    counts.voicemails >= RULE_CONSTANTS.maxVoicemails;
+  const voicemailCapUsed = counts.voicemails >= RULE_CONSTANTS.maxVoicemails;
+  const voicemailCapHit = draft.outcome === "No Answer — Voicemail" && voicemailCapUsed;
   const readiness = quoteReadiness(prospect);
 
   function save() {
@@ -118,7 +117,10 @@ export function CallLogger({
           >
             {callOutcomes.map((o) => (
               <option key={o} value={o}>
-                {o}
+                {/* Once three messages are left the rule says stop offering a
+                    fourth. It stays selectable so a call that really happened
+                    can still be recorded — it is just no longer suggested. */}
+                {o === "No Answer — Voicemail" && voicemailCapUsed ? `${o} — cap reached` : o}
               </option>
             ))}
           </select>
@@ -175,7 +177,19 @@ export function CallLogger({
               type="datetime-local"
               className={missingAppointment ? "needs-input" : ""}
               value={draft.appointmentAt ? toLocalInput(draft.appointmentAt) : ""}
-              onChange={(e) => patch({ appointmentAt: fromLocalInput(e.target.value) })}
+              onChange={(e) => {
+                const at = fromLocalInput(e.target.value);
+                // For a booked review the next action *is* the review and the
+                // date *is* the appointment. Asking for all three separately
+                // is the same question three times, so these fill themselves —
+                // still editable if the real next step is something else.
+                patch({
+                  appointmentAt: at,
+                  nextActionKind: draft.nextActionKind ?? "Schedule review",
+                  nextAction: draft.nextAction?.trim() ? draft.nextAction : "Insurance review",
+                  nextActionAt: draft.nextActionAt?.trim() ? draft.nextActionAt : at.slice(0, 10),
+                });
+              }}
             />
           </label>
         )}

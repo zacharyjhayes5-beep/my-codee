@@ -124,6 +124,21 @@ export function OperatorTab({
 
   return (
     <div className="operator">
+      {/* Today's work comes first. The book-of-business figures are the
+          snapshot underneath it, never the thing you open the app to. */}
+      <CommandCenter
+        prospects={prospects}
+        calls={calls}
+        tasks={tasks}
+        opportunities={opportunities}
+        reviews={reviews}
+        correspondence={correspondence}
+        onCorrespondenceChange={onCorrespondenceChange}
+        onGo={onGo}
+      />
+
+      <h2 className="snapshot-heading">Business snapshot</h2>
+
       <div className="op-grid">
         <section className="op-panel op-vitals">
           <header className="op-panel-head">System vitals</header>
@@ -196,17 +211,6 @@ export function OperatorTab({
           </span>
         </div>
       </section>
-
-      <CommandCenter
-        prospects={prospects}
-        calls={calls}
-        tasks={tasks}
-        opportunities={opportunities}
-        reviews={reviews}
-        correspondence={correspondence}
-        onCorrespondenceChange={onCorrespondenceChange}
-        onGo={onGo}
-      />
 
       <section className="op-panel op-ticker">
         <header className="op-panel-head">Today</header>
