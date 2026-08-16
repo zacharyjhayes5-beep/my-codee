@@ -61,6 +61,9 @@ export const SETTING_KEYS = {
   lines: "fb-dashboard:lines:v3",
   // Hand-entered correspondence — small, bounded, and not a record.
   correspondence: "fb-dashboard:correspondence",
+  /** When the last export happened, so the app can say when it has been a while. */
+  lastBackupAt: "fb-dashboard:lastBackupAt",
+  noticeSeen: "fb-dashboard:storageNoticeSeen",
 } as const;
 
 export type SettingKey = keyof typeof SETTING_KEYS;
@@ -106,6 +109,8 @@ interface Cache {
   persistency: number;
   lines: PolicyLine[];
   correspondence: CorrespondenceNote[];
+  lastBackupAt: string;
+  noticeSeen: boolean;
 }
 
 export type StoreKey = keyof Cache;
@@ -352,6 +357,8 @@ function loadSettings() {
     persistency: readLocal<number>(SETTING_KEYS.persistency) ?? 0,
     lines: readLocal<PolicyLine[]>(SETTING_KEYS.lines) ?? migratedLines(),
     correspondence: readLocal<CorrespondenceNote[]>(SETTING_KEYS.correspondence) ?? [],
+    lastBackupAt: readLocal<string>(SETTING_KEYS.lastBackupAt) ?? "",
+    noticeSeen: readLocal<boolean>(SETTING_KEYS.noticeSeen) ?? false,
   };
 }
 

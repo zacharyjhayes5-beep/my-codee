@@ -1276,6 +1276,207 @@
   padding-top: 10px;
 }
 
+/* ============================================================
+   Narrow screens
+   ============================================================ */
+
+/* A flex or grid child will not shrink below its content unless told to.
+   Wide tables live inside .scroller, but the scroller itself has to be
+   allowed to be narrower than what it holds — otherwise it pushes the whole
+   page sideways instead of scrolling internally. */
+/* Wide tables scroll inside their own box. Without this they push the whole
+   page sideways, which is what they were doing — the class was applied in the
+   markup but never actually given an overflow rule. */
+.scroller,
+.table-wrap {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-panel,
+.command-center,
+.operator {
+  min-width: 0;
+}
+
+/* Same rule for the header chain: without this the six tabs size the whole
+   page, and the tab bar's own overflow-x never gets a chance to engage. */
+.app-header,
+.app-header > *,
+.header-controls,
+.tab-bar,
+.backup-panel,
+.backup-buttons {
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .app {
+    padding: 16px 12px 56px;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  /* A column flex item still takes its content's width unless the box is
+     pinned. Without this the six tabs size the header, and the header sizes
+     the page. */
+  .app-header > *,
+  .header-controls > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .header-controls {
+    align-items: stretch;
+  }
+
+  /* Six tabs will not fit. Scroll them rather than wrapping into a block
+     that pushes everything else down. */
+  .tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-bar button {
+    flex: 0 0 auto;
+    padding: 8px 13px;
+    font-size: 0.88rem;
+  }
+
+  .backup-panel,
+  .backup-buttons {
+    align-items: stretch;
+  }
+
+  .backup-buttons {
+    justify-content: flex-start;
+  }
+
+  /* One column everywhere — the two-up grids are unreadable at this width. */
+  .cc-grid,
+  .card-grid,
+  .goal-grid,
+  .intake-grid,
+  .mapping-grid,
+  .call-form-grid,
+  .review-two-up,
+  .prospect-grid,
+  .line-grid,
+  .stage-board {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-row {
+    flex-wrap: wrap;
+  }
+
+  .next-call-btn {
+    width: 100%;
+    padding: 18px 20px;
+  }
+
+  .work-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .call-card {
+    padding: 16px 16px;
+  }
+
+  .call-number {
+    font-size: 1.35rem;
+  }
+
+  /* Tap targets, and stop long values squeezing labels to nothing. */
+  .call-card-actions,
+  .call-logger-foot,
+  .opportunity-actions,
+  .dup-actions {
+    flex-wrap: wrap;
+  }
+
+  .fu-recommended {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .needs-me-go {
+    padding-left: 14px;
+  }
+
+  .storage-notice {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .prospect-meta,
+  .call-form-grid {
+    gap: 10px;
+  }
+
+  .op-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Storage notice */
+.storage-notice {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: var(--surface-1);
+  border: 1px solid var(--border-firm, rgba(0, 229, 255, 0.26));
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.storage-notice.warn {
+  border-color: rgba(255, 176, 32, 0.35);
+  border-left-color: var(--status-warning);
+}
+
+.storage-notice strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.92rem;
+}
+
+.storage-notice p {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 70ch;
+}
+
+.storage-notice p:last-child {
+  margin-bottom: 0;
+}
+
+.storage-notice button {
+  flex-shrink: 0;
+}
+
 .snapshot-heading {
   margin: 12px 0 0;
   font-size: 0.74rem;

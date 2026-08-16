@@ -7,6 +7,7 @@ import { ProgressTab } from "./components/ProgressTab";
 import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
 import { PipelineTab } from "./components/PipelineTab";
+import { StorageNotice } from "./components/StorageNotice";
 import { useStored } from "./lib/repository";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
@@ -38,6 +39,8 @@ function App() {
   const [audit, setAudit] = useStored("audit");
   const [opportunities, setOpportunities] = useStored("opportunities");
   const [correspondence, setCorrespondence] = useStored("correspondence");
+  const [lastBackupAt, setLastBackupAt] = useStored("lastBackupAt");
+  const [noticeSeen, setNoticeSeen] = useStored("noticeSeen");
 
   /**
    * Applies a proposal or nothing at all. The whole next state is assembled
@@ -92,9 +95,16 @@ function App() {
               </button>
             ))}
           </nav>
-          <BackupPanel />
+          <BackupPanel onExported={() => setLastBackupAt(new Date().toISOString())} />
         </div>
       </header>
+
+      <StorageNotice
+        prospects={prospects}
+        lastBackupAt={lastBackupAt}
+        dismissed={noticeSeen}
+        onDismissed={() => setNoticeSeen(true)}
+      />
 
       <main>
         {tab === "operator" && (

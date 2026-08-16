@@ -81,6 +81,13 @@ export function TranscriptPanel({
           </label>
         </div>
 
+        {prospects.length === 0 && (
+          <p className="rule-hint">
+            A call review attaches to a household, so add one above first — otherwise there
+            is nothing for the review to belong to.
+          </p>
+        )}
+
         <div
           className="drop-zone"
           onClick={() => fileInput.current?.click()}

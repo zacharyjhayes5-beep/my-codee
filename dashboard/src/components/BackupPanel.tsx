@@ -7,7 +7,7 @@ import { replaceAll } from "../lib/repository";
  * and the settings still in localStorage — to one file. Restore reads a file
  * of either format back in.
  */
-export function BackupPanel() {
+export function BackupPanel({ onExported }: { onExported: () => void }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -26,9 +26,10 @@ export function BackupPanel() {
       link.click();
       URL.revokeObjectURL(url);
 
+      onExported();
       setStatus({
         tone: "good",
-        text: `Saved ${total} record${total === 1 ? "" : "s"} and your settings to your Downloads folder.`,
+        text: `Saved ${total} record${total === 1 ? "" : "s"} and your settings to your Downloads folder. Move it somewhere you'd find it later.`,
       });
     } catch {
       setStatus({ tone: "bad", text: "Could not save the backup file." });

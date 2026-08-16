@@ -318,7 +318,7 @@ export function ProspectsTab({
       {visible.length === 0 ? (
         <p className="empty">
           {prospects.length === 0
-            ? "No prospects yet — drop a Granola note above to make the first profile."
+            ? "No households yet — add one with Quick add above, or bring a list in with Bulk import."
             : "Nothing matches that filter."}
         </p>
       ) : (

@@ -182,6 +182,19 @@ rules cannot produce a sensible follow-up without them. The conversion score is
 prompted beside a hot lead and applied only if a number is typed — never
 inferred.
 
+## Layout rules that bit once
+
+**Wide tables must sit inside `.scroller` (or `.table-wrap`), and those classes
+own the `overflow-x: auto`.** The classes were applied in markup for several
+phases without the CSS rule ever existing, so every wide table pushed the whole
+page sideways instead of scrolling inside itself. If a table gets a `min-width`,
+check its wrapper actually scrolls.
+
+**A flex item does not shrink below its content** — cross-axis included. The
+header chain (`.app-header`, `.header-controls`, `.tab-bar`) needs `min-width: 0`
+*and*, in the mobile column layout, an explicit `width: 100%`, or the six tabs
+size the whole page.
+
 ## Command Center and transcript review
 
 The Operator tab **is** the Command Center — same slot, still the default. Panel

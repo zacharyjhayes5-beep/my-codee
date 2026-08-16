@@ -109,9 +109,11 @@ export function WorkMode({
         />
       ) : (
         <p className="empty work-empty">
-          {stats.callable === 0
-            ? "Nobody is callable right now — everyone is scheduled, closed, or waiting on you."
-            : "Press NEXT CALL to start."}
+          {prospects.length === 0
+            ? "No households to call yet. Add one in Browse, then come back."
+            : stats.callable === 0
+              ? "Nobody is callable right now — everyone is scheduled, dormant, closed, or waiting on you."
+              : "Press NEXT CALL to start."}
         </p>
       )}
 
