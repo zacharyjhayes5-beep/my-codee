@@ -18,6 +18,7 @@ import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import type {
   AuditEntry,
   Call,
+  Opportunity,
   Period,
   PolicyEntry,
   PolicyLine,
@@ -88,6 +89,7 @@ interface Cache {
   calls: Call[];
   reviews: ReviewProposal[];
   audit: AuditEntry[];
+  opportunities: Opportunity[];
   dismissed: string[];
   period: Period;
   owner: string;
@@ -281,7 +283,7 @@ export async function initRepository(): Promise<BootResult> {
   if (!usable) {
     const legacy = collectionsFromLegacy();
     // Calls were born in IndexedDB — there is no localStorage fallback for them.
-    cache = { ...legacy, calls: [], reviews: [], audit: [], ...loadSettings() };
+    cache = { ...legacy, calls: [], reviews: [], audit: [], opportunities: [], ...loadSettings() };
     ready = true;
     emit();
     return { usingIndexedDb: false, migration: null, schema: null, reviews: null };
@@ -299,6 +301,7 @@ export async function initRepository(): Promise<BootResult> {
     calls: await readAll<Call>("calls"),
     reviews: await readAll<ReviewProposal>("reviews"),
     audit: await readAll<AuditEntry>("audit"),
+    opportunities: await readAll<Opportunity>("opportunities"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
@@ -397,6 +400,7 @@ export interface RepositorySnapshot {
     calls: Call[];
     reviews: ReviewProposal[];
     audit: AuditEntry[];
+    opportunities: Opportunity[];
   };
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
@@ -418,6 +422,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         calls: await readAll<Call>("calls"),
         reviews: await readAll<ReviewProposal>("reviews"),
         audit: await readAll<AuditEntry>("audit"),
+        opportunities: await readAll<Opportunity>("opportunities"),
       }
     : {
         prospects: get("prospects"),
@@ -427,6 +432,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         calls: [],
         reviews: [],
         audit: [],
+        opportunities: [],
       };
 
   const dismissed = usable ? ((await readMeta<string[]>(DISMISSED_KEY)) ?? []) : get("dismissed");
@@ -458,6 +464,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     // here means a restore lands already current.
     await writeAll("reviews", normalizeProposals(next.records.reviews));
     await writeAll("audit", next.records.audit ?? []);
+    await writeAll("opportunities", next.records.opportunities ?? []);
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -487,6 +494,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     calls: next.records.calls ?? [],
     reviews: normalizeProposals(next.records.reviews),
     audit: next.records.audit ?? [],
+    opportunities: next.records.opportunities ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

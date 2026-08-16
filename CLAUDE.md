@@ -182,6 +182,33 @@ rules cannot produce a sensible follow-up without them. The conversion score is
 prompted beside a hot lead and applied only if a number is typed — never
 inferred.
 
+## Opportunities, intake and dedupe
+
+**Prospect status and opportunity stage are different things.** The household
+keeps its 10-value `stage`; an `Opportunity` is a separate record linked by
+`prospectId` with its own 8-stage pipeline (`lib/opportunities.ts`). One
+household can carry several. The pipeline is a view over those records, never
+a second copy of the person.
+
+**`validateOpportunity()` is not optional.** An opportunity may not exist
+without a next action *and* a next action date; the form disables save and the
+model refuses. Do not add a code path that creates one without both.
+
+**Temperature is derived, never stored.** `temperatureOf()` reads stage and
+conversion score and returns the reading *plus* why — the displayed value must
+always be explainable from the record. Quality (A–D priority) and score (1–10
+likelihood) stay separate from it and from each other.
+
+**Asset indicators are research, not facts.** `prospect.assets` comes from
+public records. It is labelled as indicators in the UI and must never be shown
+or treated as confirmed coverage.
+
+**Intake never creates blindly.** `lib/dedupe.ts` scores candidates —
+phone/email match is `certain`, same address `likely`, same name only
+`possible` — and both Quick Add and Bulk Import stop and ask. A duplicate row
+in an import defaults to *skip*, not create. `mergeInto()` fills gaps only; an
+existing value is never overwritten.
+
 ## Review inbox and audit
 
 `lib/reviews.ts` holds the proposal model. **A proposal is a request, not a

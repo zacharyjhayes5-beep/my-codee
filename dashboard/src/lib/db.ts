@@ -5,8 +5,8 @@
  */
 
 export const DB_NAME = "fb-dashboard";
-/** v2 adds the calls, reviews and audit stores — created empty, unused until later phases. */
-export const DB_VERSION = 2;
+/** v2 added calls, reviews and audit. v3 adds opportunities. */
+export const DB_VERSION = 3;
 
 /** Stores holding one row per record, keyed by the record's own id. */
 export const RECORD_STORES = [
@@ -17,15 +17,9 @@ export const RECORD_STORES = [
   "calls",
   "reviews",
   "audit",
+  "opportunities",
 ] as const;
 export type RecordStore = (typeof RECORD_STORES)[number];
-
-/** The stores the app actually reads and writes today. */
-export const ACTIVE_STORES = ["prospects", "policies", "tasks", "suggestions"] as const;
-
-/** Created now so storage and backups are already shaped for them. */
-export const RESERVED_STORES = ["calls", "reviews", "audit"] as const;
-export type ReservedStore = (typeof RESERVED_STORES)[number];
 
 /** Key/value store for things that aren't id-bearing records. */
 export const META_STORE = "meta";

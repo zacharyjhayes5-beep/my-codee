@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import type { Call, LineId, Prospect, Stage } from "../types";
+import type { Call, LineId, Opportunity, Prospect, Stage } from "../types";
 import { lineOptions, prospectStages, stageClass } from "../lib/defaultData";
 import { blankCall } from "../lib/calls";
+import { temperatureClass, temperatureOf } from "../lib/opportunities";
 import { newId, today } from "../lib/storage";
 import { CallHistory } from "./CallHistory";
 import { CallLogger } from "./CallLogger";
+import { OpportunityPanel } from "./OpportunityPanel";
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -18,6 +20,9 @@ interface ProspectCardProps {
   onSaveCall: (call: Call, isNew: boolean) => void;
   onDeleteCall: (callId: string) => void;
   onSetScore: (score: number | null) => void;
+  opportunities: Opportunity[];
+  onSaveOpportunity: (opportunity: Opportunity, isNew: boolean) => void;
+  onRemoveOpportunity: (id: string) => void;
 }
 
 function formatDay(iso: string) {
@@ -38,6 +43,9 @@ export function ProspectCard({
   onSaveCall,
   onDeleteCall,
   onSetScore,
+  opportunities,
+  onSaveOpportunity,
+  onRemoveOpportunity,
 }: ProspectCardProps) {
   const [newNote, setNewNote] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -58,6 +66,7 @@ export function ProspectCard({
 
   const notes = [...prospect.notes].sort((a, b) => b.date.localeCompare(a.date));
   const lastTouch = notes[0]?.date ?? prospect.updatedAt;
+  const reading = temperatureOf(prospect);
 
   function toggleLine(id: LineId) {
     const on = prospect.lines.includes(id);
@@ -90,6 +99,9 @@ export function ProspectCard({
           onChange={(e) => onChange({ name: e.target.value })}
           aria-label="Prospect name"
         />
+        <span className={`temp-chip ${temperatureClass[reading.temperature]}`} title={reading.because}>
+          {reading.temperature}
+        </span>
         <select
           className={`status-select ${stageClass[prospect.stage]}`}
           value={prospect.stage}
@@ -124,6 +136,24 @@ export function ProspectCard({
         })}
       </div>
 
+      {/* Read before dialling — deliberately above the editable fields. */}
+      {(prospect.whyTheyFit || prospect.importantNotes) && (
+        <div className="call-context">
+          {prospect.whyTheyFit && (
+            <p className="why-fit">
+              <span className="context-label">Why they fit</span>
+              {prospect.whyTheyFit}
+            </p>
+          )}
+          {prospect.importantNotes && (
+            <p className="important-notes">
+              <span className="context-label">Important</span>
+              {prospect.importantNotes}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="prospect-meta">
         <label className="inline-field">
           <span>Area</span>
@@ -134,7 +164,7 @@ export function ProspectCard({
           />
         </label>
         <label className="inline-field">
-          <span>Next step</span>
+          <span>Next action</span>
           <input
             value={prospect.nextAction}
             onChange={(e) => onChange({ nextAction: e.target.value })}
@@ -178,6 +208,117 @@ export function ProspectCard({
             </label>
           </div>
 
+          <h4>Opportunities</h4>
+          <OpportunityPanel
+            prospectId={prospect.id}
+            opportunities={opportunities}
+            onSave={onSaveOpportunity}
+            onRemove={onRemoveOpportunity}
+          />
+
+          <details className="profile-section">
+            <summary>Contact &amp; household</summary>
+            <div className="prospect-meta">
+              <label className="inline-field">
+                <span>First name</span>
+                <input value={prospect.firstName} onChange={(e) => onChange({ firstName: e.target.value })} />
+              </label>
+              <label className="inline-field">
+                <span>Last name</span>
+                <input value={prospect.lastName} onChange={(e) => onChange({ lastName: e.target.value })} />
+              </label>
+              <label className="inline-field">
+                <span>Lead source</span>
+                <input value={prospect.leadSource} onChange={(e) => onChange({ leadSource: e.target.value })} />
+              </label>
+              <label className="inline-field">
+                <span>Street</span>
+                <input
+                  value={prospect.address.line1}
+                  onChange={(e) => onChange({ address: { ...prospect.address, line1: e.target.value } })}
+                />
+              </label>
+              <label className="inline-field">
+                <span>City</span>
+                <input
+                  value={prospect.address.city}
+                  onChange={(e) => onChange({ address: { ...prospect.address, city: e.target.value } })}
+                />
+              </label>
+              <label className="inline-field">
+                <span>ZIP</span>
+                <input
+                  value={prospect.address.zip}
+                  onChange={(e) => onChange({ address: { ...prospect.address, zip: e.target.value } })}
+                />
+              </label>
+            </div>
+            {prospect.contacts.length > 0 && (
+              <ul className="contact-list">
+                {prospect.contacts.map((c) => (
+                  <li key={c.id}>
+                    {[c.firstName, c.lastName].filter(Boolean).join(" ") || "Unnamed"}
+                    {c.dob && <span className="muted-note"> · DOB {c.dob}</span>}
+                    {c.isPrimary && <span className="muted-note"> · primary</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+
+          <details className="profile-section">
+            <summary>Property &amp; asset indicators</summary>
+            <p className="indicator-warning">
+              Research indicators only — not confirmed coverage.
+            </p>
+            <div className="prospect-meta">
+              <label className="inline-field">
+                <span>Owner / renter</span>
+                <select
+                  value={prospect.assets.ownership}
+                  onChange={(e) =>
+                    onChange({
+                      assets: { ...prospect.assets, ownership: e.target.value as "owner" | "renter" | "" },
+                    })
+                  }
+                >
+                  <option value="">Unknown</option>
+                  <option value="owner">Owner</option>
+                  <option value="renter">Renter</option>
+                </select>
+              </label>
+              <label className="inline-field">
+                <span>Est. property value</span>
+                <input
+                  type="number"
+                  value={prospect.assets.estimatedPropertyValue ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      assets: {
+                        ...prospect.assets,
+                        estimatedPropertyValue: e.target.value ? Number(e.target.value) : null,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className="inline-field">
+                <span>Vehicles</span>
+                <input
+                  value={prospect.assets.vehicles}
+                  onChange={(e) => onChange({ assets: { ...prospect.assets, vehicles: e.target.value } })}
+                />
+              </label>
+              <label className="inline-field">
+                <span>Other assets</span>
+                <input
+                  value={prospect.assets.other}
+                  onChange={(e) => onChange({ assets: { ...prospect.assets, other: e.target.value } })}
+                />
+              </label>
+            </div>
+          </details>
+
           <h4>Calls</h4>
           {callDraft ? (
             <CallLogger
@@ -200,6 +341,27 @@ export function ProspectCard({
             onEdit={(call) => setCallDraft({ call, mode: "edit" })}
             onDelete={onDeleteCall}
           />
+
+          <h4>Why they fit &amp; important notes</h4>
+          <div className="prospect-meta">
+            <label className="inline-field wide">
+              <span>Why they fit</span>
+              <input
+                value={prospect.whyTheyFit}
+                onChange={(e) => onChange({ whyTheyFit: e.target.value })}
+                placeholder="What makes them worth a call"
+              />
+            </label>
+            <label className="inline-field wide">
+              <span>Important notes</span>
+              <textarea
+                rows={2}
+                value={prospect.importantNotes}
+                onChange={(e) => onChange({ importantNotes: e.target.value })}
+                placeholder="Read this before dialling — rate increase, who decides, timing…"
+              />
+            </label>
+          </div>
 
           <h4>Notes</h4>
           {notes.length === 0 && <p className="empty">No notes yet.</p>}

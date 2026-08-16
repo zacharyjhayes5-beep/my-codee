@@ -1,4 +1,12 @@
-import type { Address, ClosedReason, Contact, Prospect, ProspectNote, Stage } from "../types";
+import type {
+  Address,
+  AssetIndicators,
+  ClosedReason,
+  Contact,
+  Prospect,
+  ProspectNote,
+  Stage,
+} from "../types";
 import { newId } from "./storage";
 
 /**
@@ -16,9 +24,11 @@ import { newId } from "./storage";
 
 /**
  * 4 split the old `status`. 5 added `stageSource` / `stageCallId` so a stage
- * knows whether a rule or a person put it there.
+ * knows whether a rule or a person put it there. 6 added the intake and
+ * research fields — names, lead source, Why They Fit, Important Notes and the
+ * asset indicators.
  */
-export const PROSPECT_SCHEMA_VERSION = 5;
+export const PROSPECT_SCHEMA_VERSION = 6;
 
 /** The six statuses v3 could hold, and where each one lands. */
 export const STATUS_TO_STAGE: Record<string, Stage> = {
@@ -50,6 +60,27 @@ export function blankContact(): Contact {
     email: "",
     isPrimary: true,
     quoteReadyNote: "",
+    relationship: "",
+    occupation: "",
+    employer: "",
+  };
+}
+
+/** Researched indicators, all empty. Nothing here is ever assumed. */
+export function blankAssets(): AssetIndicators {
+  return {
+    ownership: "",
+    estimatedPropertyValue: null,
+    propertyType: "",
+    yearBuilt: "",
+    lakefront: false,
+    secondHome: false,
+    vehicles: "",
+    boat: false,
+    rv: false,
+    recreational: "",
+    businessOwnership: "",
+    other: "",
   };
 }
 
@@ -59,6 +90,15 @@ export function blankProspect(overrides: Partial<Prospect> = {}): Prospect {
   return {
     id: newId(),
     name: "",
+    firstName: "",
+    lastName: "",
+    leadSource: "",
+    whyTheyFit: "",
+    importantNotes: "",
+    assets: blankAssets(),
+    needsPhoneNumber: false,
+    needsReview: false,
+    mergedFrom: [],
     contacts: [],
     address: blankAddress(),
     area: "",
@@ -136,7 +176,30 @@ function asContacts(value: unknown): Contact[] {
       email: c.email ?? "",
       isPrimary: Boolean(c.isPrimary),
       quoteReadyNote: c.quoteReadyNote ?? "",
+      relationship: c.relationship ?? "",
+      occupation: c.occupation ?? "",
+      employer: c.employer ?? "",
     }));
+}
+
+function asAssets(value: unknown): AssetIndicators {
+  if (!value || typeof value !== "object") return blankAssets();
+  const a = value as Partial<AssetIndicators>;
+  return {
+    ownership: a.ownership === "owner" || a.ownership === "renter" ? a.ownership : "",
+    estimatedPropertyValue:
+      typeof a.estimatedPropertyValue === "number" ? a.estimatedPropertyValue : null,
+    propertyType: a.propertyType ?? "",
+    yearBuilt: a.yearBuilt ?? "",
+    lakefront: Boolean(a.lakefront),
+    secondHome: Boolean(a.secondHome),
+    vehicles: a.vehicles ?? "",
+    boat: Boolean(a.boat),
+    rv: Boolean(a.rv),
+    recreational: a.recreational ?? "",
+    businessOwnership: a.businessOwnership ?? "",
+    other: a.other ?? "",
+  };
 }
 
 function asAddress(value: unknown): Address {
@@ -180,6 +243,15 @@ export function normalizeProspect(input: unknown): Prospect {
   return {
     id: raw.id ?? newId(),
     name: raw.name ?? "",
+    firstName: raw.firstName ?? "",
+    lastName: raw.lastName ?? "",
+    leadSource: raw.leadSource ?? "",
+    whyTheyFit: raw.whyTheyFit ?? "",
+    importantNotes: raw.importantNotes ?? "",
+    assets: asAssets(raw.assets),
+    needsPhoneNumber: Boolean(raw.needsPhoneNumber),
+    needsReview: Boolean(raw.needsReview),
+    mergedFrom: Array.isArray(raw.mergedFrom) ? raw.mergedFrom : [],
     contacts: asContacts(raw.contacts),
     address: asAddress(raw.address),
     area: raw.area ?? "",

@@ -139,7 +139,35 @@ export interface Contact {
    * so a partial answer ("wouldn't give DOB") isn't mistaken for unasked.
    */
   quoteReadyNote: string;
+  relationship: string;
+  occupation: string;
+  employer: string;
 }
+
+/**
+ * Researched signals about a household's property and assets.
+ *
+ * These are **indicators, not verified insurance facts** — they come from
+ * public records and research, not from a policy. Nothing here may be shown or
+ * treated as confirmed coverage.
+ */
+export interface AssetIndicators {
+  ownership: "owner" | "renter" | "";
+  estimatedPropertyValue: number | null;
+  propertyType: string;
+  yearBuilt: string;
+  lakefront: boolean;
+  secondHome: boolean;
+  vehicles: string;
+  boat: boolean;
+  rv: boolean;
+  recreational: string;
+  businessOwnership: string;
+  other: string;
+}
+
+/** Derived from status and conversion score — never maintained by hand. */
+export type Temperature = "Hot" | "Warm" | "Nurture" | "Cold";
 
 export interface Address {
   line1: string;
@@ -163,7 +191,23 @@ export interface ProspectNote {
  */
 export interface Prospect {
   id: string;
+  /** Household display name — "Tom & Linda Vargas". */
   name: string;
+  /** The primary person, kept on the household for fast search and display. */
+  firstName: string;
+  lastName: string;
+  leadSource: string;
+  /** Why this household is worth attention — shown before every call. */
+  whyTheyFit: string;
+  /** Human context to read before dialling. Not transcript, not call history. */
+  importantNotes: string;
+  assets: AssetIndicators;
+  /** Set by the Bad Number rule; puts the record in the research queue. */
+  needsPhoneNumber: boolean;
+  /** Set when the attempt cap is reached. Flags for review, never auto-closes. */
+  needsReview: boolean;
+  /** How this record arrived, kept when duplicates are merged. */
+  mergedFrom: string[];
   /** People in the household. Empty until somebody is actually entered. */
   contacts: Contact[];
   /** Structured address. Blank after migration — `area` is the live label. */
@@ -231,6 +275,71 @@ export interface Call {
   nextAction?: string;
   /** Required by the Insurance Review rule — when the appointment is. */
   appointmentAt?: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* Opportunities                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The eight pipeline stages. Separate from the household's own status: a
+ * prospect can be Contacted while an opportunity on them is at Quote
+ * Presented.
+ */
+export type OpportunityStage =
+  | "Qualified / Open"
+  | "Fact-Find / Information Gathering"
+  | "Quoting"
+  | "Quote Presented"
+  | "Decision Pending"
+  | "Written"
+  | "Lost"
+  | "Nurture";
+
+/** Lines an opportunity covers. */
+export type OpportunityLine = "Auto" | "Home" | "Umbrella" | "Life" | "Commercial" | "Other";
+
+/**
+ * An appointment hangs off an opportunity. An insurance review is one of
+ * these — deliberately *not* a pipeline stage of its own.
+ */
+export interface Appointment {
+  id: string;
+  at: string; // ISO datetime
+  kind: "insurance-review" | "meeting" | "call";
+  notes: string;
+}
+
+/** One traceable change to an opportunity. */
+export interface OpportunityEvent {
+  id: string;
+  at: string;
+  field: string;
+  from: unknown;
+  to: unknown;
+  summary: string;
+}
+
+/**
+ * A realistic chance of writing business, linked to one household. The
+ * pipeline is a view over these — never a second copy of the person.
+ */
+export interface Opportunity {
+  id: string;
+  prospectId: string;
+  stage: OpportunityStage;
+  lines: OpportunityLine[];
+  estimatedValue: number | null;
+  /** Working probability signal, mirrored from the household's score. */
+  conversionScore: number | null;
+  /** Both required — an opportunity may never exist without them. */
+  nextAction: string;
+  nextActionDate: string;
+  appointments: Appointment[];
+  history: OpportunityEvent[];
+  closedReason: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** Where a proposal came from. Never the transcript itself. */

@@ -32,6 +32,7 @@ function App() {
   const [calls, setCalls] = useStored("calls");
   const [reviews, setReviews] = useStored("reviews");
   const [audit, setAudit] = useStored("audit");
+  const [opportunities, setOpportunities] = useStored("opportunities");
 
   /**
    * Applies a proposal or nothing at all. The whole next state is assembled
@@ -137,6 +138,8 @@ function App() {
             onTasksChange={setTasks}
             audit={audit}
             onAuditChange={setAudit}
+            opportunities={opportunities}
+            onOpportunitiesChange={setOpportunities}
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
           />

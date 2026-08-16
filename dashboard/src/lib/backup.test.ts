@@ -112,7 +112,7 @@ describe("current-format export", () => {
 
     const file = await buildBackup();
 
-    expect(file.version).toBe(3);
+    expect(file.version).toBe(4);
     expect(file.records.prospects).toHaveLength(2);
     expect(file.records.policies).toHaveLength(2);
     expect(file.records.tasks).toHaveLength(1);
@@ -154,7 +154,7 @@ describe("current-format round trip", () => {
     const parsed = parseBackup(exported);
     await replaceAll(parsed.snapshot);
 
-    expect(parsed.version).toBe(3);
+    expect(parsed.version).toBe(4);
     expect(get("prospects")).toHaveLength(2);
     expect(get("policies")).toHaveLength(2);
     expect(get("dismissed")).toEqual(["already rejected"]);
@@ -452,8 +452,8 @@ describe("v1 backups still restore", () => {
     await replaceAll(parseBackup(JSON.stringify(v1File)).snapshot);
 
     const upgraded = await buildBackup();
-    expect(upgraded.version).toBe(3);
-    expect(upgraded.prospectSchema).toBe(5);
+    expect(upgraded.version).toBe(4);
+    expect(upgraded.prospectSchema).toBe(6);
     expect(upgraded.records.prospects).toHaveLength(1);
     expect(upgraded.records.prospects[0].stage).toBe("Review Scheduled");
     expect(upgraded.settings[SETTING_KEYS.persistency]).toBe(84);

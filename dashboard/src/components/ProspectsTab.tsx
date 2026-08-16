@@ -1,7 +1,18 @@
 import { useMemo, useState } from "react";
-import type { AuditEntry, Call, Prospect, ProspectNote, Stage, Task } from "../types";
+import type {
+  AuditEntry,
+  Call,
+  Opportunity,
+  Prospect,
+  ProspectNote,
+  Stage,
+  Task,
+} from "../types";
 import { prospectStages } from "../lib/defaultData";
 import { appendAudit, auditEntry, diffEntries } from "../lib/audit";
+import { opportunitiesFor, patchOpportunity } from "../lib/opportunities";
+import { mergeInto } from "../lib/dedupe";
+import { IntakePanel } from "./IntakePanel";
 import { callsFor, withLatestCallFields } from "../lib/calls";
 import { blankProspect } from "../lib/prospectSchema";
 import { reconcileProspect } from "../lib/rules";
@@ -18,6 +29,8 @@ interface ProspectsTabProps {
   onTasksChange: (tasks: Task[]) => void;
   audit: AuditEntry[];
   onAuditChange: (entries: AuditEntry[]) => void;
+  opportunities: Opportunity[];
+  onOpportunitiesChange: (opportunities: Opportunity[]) => void;
   ownerName: string;
   onOwnerNameChange: (name: string) => void;
 }
@@ -31,6 +44,8 @@ export function ProspectsTab({
   onTasksChange,
   audit,
   onAuditChange,
+  opportunities,
+  onOpportunitiesChange,
   ownerName,
   onOwnerNameChange,
 }: ProspectsTabProps) {
@@ -207,6 +222,16 @@ export function ProspectsTab({
 
   return (
     <div className="tab-panel">
+      <IntakePanel
+        prospects={prospects}
+        onCreate={createProspect}
+        onMerge={(existingId, incoming) =>
+          onChange((prev) =>
+            prev.map((p) => (p.id === existingId ? { ...mergeInto(p, incoming), updatedAt: today() } : p)),
+          )
+        }
+      />
+
       <ImportPanel
         prospects={prospects}
         ownerName={ownerName}
@@ -271,6 +296,17 @@ export function ProspectsTab({
               onSaveCall={saveCall}
               onDeleteCall={deleteCall}
               onSetScore={(score) => patchProspect(p.id, { conversionScore: score })}
+              opportunities={opportunitiesFor(opportunities, p.id)}
+              onSaveOpportunity={(o, isNew) =>
+                onOpportunitiesChange(
+                  isNew
+                    ? [...opportunities, o]
+                    : opportunities.map((x) => (x.id === o.id ? patchOpportunity(x, o) : x)),
+                )
+              }
+              onRemoveOpportunity={(id) =>
+                onOpportunitiesChange(opportunities.filter((x) => x.id !== id))
+              }
             />
           ))}
         </div>

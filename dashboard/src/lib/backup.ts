@@ -1,4 +1,13 @@
-import type { AuditEntry, Call, PolicyEntry, Prospect, ReviewProposal, Suggestion, Task } from "../types";
+import type {
+  AuditEntry,
+  Call,
+  Opportunity,
+  PolicyEntry,
+  Prospect,
+  ReviewProposal,
+  Suggestion,
+  Task,
+} from "../types";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import { LEGACY_RECORD_KEYS, SETTING_KEYS, type RepositorySnapshot, snapshot } from "./repository";
 
@@ -18,7 +27,7 @@ import { LEGACY_RECORD_KEYS, SETTING_KEYS, type RepositorySnapshot, snapshot } f
  */
 
 export const FILE_MARKER = "agency-dashboard-backup";
-export const CURRENT_VERSION = 3;
+export const CURRENT_VERSION = 4;
 
 export interface BackupRecords {
   prospects: Prospect[];
@@ -28,11 +37,12 @@ export interface BackupRecords {
   calls: Call[];
   reviews: ReviewProposal[];
   audit: AuditEntry[];
+  opportunities: Opportunity[];
 }
 
-export interface BackupV3 {
+export interface BackupV4 {
   app: typeof FILE_MARKER;
-  version: 3;
+  version: 4;
   exportedAt: string;
   /** Schema of the prospect records inside, so a reader never has to guess. */
   prospectSchema: number;
@@ -41,10 +51,13 @@ export interface BackupV3 {
   settings: Record<string, unknown>;
 }
 
-/** The shape v2 files carry — four record collections, no schema stamp. */
-interface BackupV2 {
+/**
+ * v2 and v3 carry the same sectioned shape with fewer record collections, so
+ * one reader handles all three — the gaps come back as empty arrays.
+ */
+interface BackupSectioned {
   app: typeof FILE_MARKER;
-  version: 2;
+  version: 2 | 3 | 4;
   exportedAt: string;
   records: Partial<BackupRecords>;
   meta: { dismissed: string[] };
@@ -72,7 +85,7 @@ function asArray<T>(value: unknown): T[] {
 }
 
 /** Builds the file contents from what is actually in storage right now. */
-export async function buildBackup(): Promise<BackupV3> {
+export async function buildBackup(): Promise<BackupV4> {
   const snap = await snapshot();
   return {
     app: FILE_MARKER,
@@ -94,6 +107,7 @@ export function countsOf(snap: RepositorySnapshot): Record<string, number> {
     calls: snap.records.calls.length,
     reviews: snap.records.reviews.length,
     audit: snap.records.audit.length,
+    opportunities: snap.records.opportunities.length,
     dismissed: snap.meta.dismissed.length,
     settings: Object.keys(snap.settings).length,
   };
@@ -103,7 +117,7 @@ export function countsOf(snap: RepositorySnapshot): Record<string, number> {
  * v2 and v3 share a shape; v2 simply has no calls, reviews or audit rows, and
  * its prospects are pre-v4. Both gaps are filled the same way.
  */
-function parseRecordSections(file: BackupV2 | BackupV3): RepositorySnapshot {
+function parseRecordSections(file: BackupSectioned): RepositorySnapshot {
   return {
     records: {
       prospects: normalizeProspects(file.records?.prospects),
@@ -113,6 +127,7 @@ function parseRecordSections(file: BackupV2 | BackupV3): RepositorySnapshot {
       calls: asArray<Call>(file.records?.calls),
       reviews: asArray<ReviewProposal>(file.records?.reviews),
       audit: asArray<AuditEntry>(file.records?.audit),
+      opportunities: asArray<Opportunity>(file.records?.opportunities),
     },
     meta: { dismissed: asArray<string>(file.meta?.dismissed) },
     settings: file.settings && typeof file.settings === "object" ? { ...file.settings } : {},
@@ -137,6 +152,7 @@ function parseV1(file: BackupV1): RepositorySnapshot {
       calls: [],
       reviews: [],
       audit: [],
+      opportunities: [],
     },
     meta: { dismissed: asArray<string>(data[LEGACY_RECORD_KEYS.dismissed]) },
     settings,
@@ -184,7 +200,7 @@ export function parseBackup(text: string): ParsedBackup {
   const snap =
     version === 1
       ? parseV1(file as BackupV1)
-      : parseRecordSections(file as BackupV2 | BackupV3);
+      : parseRecordSections(file as BackupSectioned);
 
   const counts = countsOf(snap);
   // Every collection counts, not just the four that existed when this guard was

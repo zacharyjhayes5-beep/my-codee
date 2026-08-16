@@ -38,6 +38,9 @@ function readyHousehold(): Prospect {
     email: "dana@example.com",
     isPrimary: true,
     quoteReadyNote: "",
+    relationship: "",
+    occupation: "",
+    employer: "",
   };
   return household({
     contacts: [contact],
@@ -232,6 +235,9 @@ describe("rule 6 — Somewhat Interested", () => {
           email: "",
           isPrimary: true,
           quoteReadyNote: "",
+          relationship: "",
+          occupation: "",
+          employer: "",
         },
       ],
       address: { line1: "12 Maple St", city: "Howell", state: "MI", zip: "" },
