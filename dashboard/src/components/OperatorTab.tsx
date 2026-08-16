@@ -52,12 +52,12 @@ function compact(n: number) {
 }
 
 const commands: { id: CommandTarget; label: string; hint: string }[] = [
-  { id: "progress", label: "LOG POLICY", hint: "add to the book" },
-  { id: "prospects", label: "IMPORT NOTES", hint: "granola → profile" },
-  { id: "todo", label: "PLAN TODAY", hint: "what's due" },
-  { id: "map", label: "LEAD MAP", hint: "see the web" },
-  { id: "todo", label: "REVIEW INBOX", hint: "approve suggestions" },
-  { id: "progress", label: "WK REVIEW", hint: "pace & tiers" },
+  { id: "progress", label: "Log policy", hint: "add to the book" },
+  { id: "prospects", label: "Import notes", hint: "Granola → profile" },
+  { id: "todo", label: "Plan today", hint: "what's due" },
+  { id: "map", label: "Lead map", hint: "see the web" },
+  { id: "todo", label: "Review inbox", hint: "approve suggestions" },
+  { id: "progress", label: "Week review", hint: "pace & tiers" },
 ];
 
 export function OperatorTab({
@@ -200,7 +200,7 @@ export function OperatorTab({
         <header className="op-panel-head">Big goal</header>
         <div className="op-bhag-body">
           <span className="op-bhag-text">
-            ROAD TO {stats.policyGoal} POLICIES
+            Road to {stats.policyGoal} policies
           </span>
           <div className="op-bhag-track">
             <div className="op-bhag-fill" style={{ width: `${Math.min(100, stats.goalPct)}%` }} />

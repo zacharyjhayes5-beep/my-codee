@@ -6,31 +6,30 @@ interface ProgressOrbProps {
 }
 
 /**
- * The hero readout — a glowing core wrapped in a progress ring. The core's
- * brightness and the ring's sweep both track progress, so a glance reads as
- * "how hot is the book right now".
+ * The hero readout — a quiet core wrapped in a progress ring. The ring's sweep
+ * carries the number; the core only warms slightly as progress climbs, so the
+ * panel reads as a gauge rather than something lit from inside.
  */
 export function ProgressOrb({ pct, label, caption }: ProgressOrbProps) {
   const clamped = Math.min(100, Math.max(0, pct));
   const radius = 92;
   const circumference = 2 * Math.PI * radius;
   const dash = (clamped / 100) * circumference;
-  // Core glow grows with progress but never fully dies at zero.
-  const heat = 0.35 + (clamped / 100) * 0.65;
+  // Kept shallow on purpose: a hint of warmth, not a glow.
+  const heat = 0.25 + (clamped / 100) * 0.35;
 
   return (
     <div className="orb">
       <svg viewBox="0 0 240 240" className="orb-svg" role="img" aria-label={`${label}: ${Math.round(clamped)}%`}>
         <defs>
           <radialGradient id="orb-core" cx="50%" cy="46%" r="52%">
-            <stop offset="0%" stopColor="#fff6d8" stopOpacity={0.95 * heat} />
-            <stop offset="26%" stopColor="var(--accent)" stopOpacity={0.85 * heat} />
-            <stop offset="62%" stopColor="#0d5f86" stopOpacity={0.55 * heat} />
-            <stop offset="100%" stopColor="#04121c" stopOpacity="0.9" />
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.5 * heat} />
+            <stop offset="45%" stopColor="var(--accent)" stopOpacity={0.22 * heat} />
+            <stop offset="100%" stopColor="var(--surface-2)" stopOpacity="0.9" />
           </radialGradient>
           <radialGradient id="orb-halo" cx="50%" cy="50%" r="50%">
             <stop offset="55%" stopColor="var(--accent)" stopOpacity="0" />
-            <stop offset="82%" stopColor="var(--accent)" stopOpacity={0.16 * heat} />
+            <stop offset="82%" stopColor="var(--accent)" stopOpacity={0.07 * heat} />
             <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
           </radialGradient>
           <filter id="orb-blur" x="-50%" y="-50%" width="200%" height="200%">
@@ -40,7 +39,7 @@ export function ProgressOrb({ pct, label, caption }: ProgressOrbProps) {
 
         <circle cx="120" cy="120" r="118" fill="url(#orb-halo)" className="orb-halo" />
         <circle cx="120" cy="120" r="74" fill="url(#orb-core)" className="orb-core" />
-        <circle cx="120" cy="120" r="74" fill="none" stroke="var(--accent)" strokeOpacity="0.25" filter="url(#orb-blur)" strokeWidth="3" />
+        <circle cx="120" cy="120" r="74" fill="none" stroke="var(--accent)" strokeOpacity="0.1" filter="url(#orb-blur)" strokeWidth="2" />
 
         {/* Progress ring */}
         <circle

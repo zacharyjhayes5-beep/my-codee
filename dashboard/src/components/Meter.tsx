@@ -33,7 +33,6 @@ export function Meter({ label, value, goal, format, dotColor, pacePct }: MeterPr
           style={{
             width: `${clamped}%`,
             background: met ? "var(--status-good)" : "var(--accent)",
-            boxShadow: `0 0 12px ${met ? "var(--status-good)" : "var(--accent)"}`,
           }}
         />
         {hasGoal && paceClamped !== null && (

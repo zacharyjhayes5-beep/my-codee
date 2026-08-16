@@ -436,7 +436,7 @@
 }
 
 .agenda-overdue {
-  border: 1px solid rgba(255, 45, 85, 0.35);
+  border: 1px solid var(--danger-soft);
   background: var(--neon-red-soft);
   border-radius: 10px;
   padding: 10px 12px;
@@ -447,7 +447,6 @@
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--neon-red);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
@@ -612,7 +611,7 @@
 
 .src-obsidian {
   color: var(--series-3);
-  background: rgba(176, 107, 255, 0.14);
+  background: var(--accent-soft);
 }
 
 .src-gmail {
@@ -777,7 +776,7 @@
 }
 
 .task-row.overdue {
-  border-color: rgba(255, 45, 85, 0.3);
+  border-color: var(--danger-soft);
 }
 
 .task-line {
@@ -967,7 +966,6 @@
   color: var(--text-muted);
   font-weight: 500;
   font-size: 0.72rem;
-  text-transform: uppercase;
   letter-spacing: 0.03em;
   position: sticky;
   top: 0;
@@ -1119,7 +1117,6 @@
   margin-left: auto;
   font-size: 0.7rem;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   border-radius: 999px;
   padding: 2px 9px;
@@ -1444,7 +1441,7 @@
   align-items: flex-start;
   justify-content: space-between;
   background: var(--surface-1);
-  border: 1px solid var(--border-firm, rgba(0, 229, 255, 0.26));
+  border: 1px solid var(--border-strong);
   border-left: 3px solid var(--accent);
   border-radius: 10px;
   padding: 14px 18px;
@@ -1452,7 +1449,7 @@
 }
 
 .storage-notice.warn {
-  border-color: rgba(255, 176, 32, 0.35);
+  border-color: var(--attention-soft);
   border-left-color: var(--status-warning);
 }
 
@@ -1480,8 +1477,7 @@
 .snapshot-heading {
   margin: 12px 0 0;
   font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
   border-top: 1px solid var(--gridline);
@@ -1502,7 +1498,7 @@
 }
 
 .cc-headline {
-  border-color: var(--border-firm, rgba(0, 229, 255, 0.26));
+  border-color: var(--border-strong);
 }
 
 .cc-headline-text {
@@ -1559,8 +1555,7 @@
 
 .fu-priority {
   font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   padding: 1px 6px;
   border-radius: 999px;
   min-width: 62px;
@@ -1592,8 +1587,7 @@
 .post-group h5 {
   margin: 0 0 5px;
   font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -1638,8 +1632,7 @@
 .proposed-block h5 {
   margin: 0 0 6px;
   font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -1692,8 +1685,7 @@
   display: inline-block;
   min-width: 130px;
   font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
 }
 
@@ -1872,8 +1864,7 @@
 .eod-block h5 {
   margin: 0 0 6px;
   font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -1901,8 +1892,8 @@
   min-width: 140px;
 }
 
-.pipe-stat.alert { border-color: rgba(255, 45, 85, 0.35); }
-.pipe-stat.warn { border-color: rgba(255, 176, 32, 0.35); }
+.pipe-stat.alert { border-color: var(--danger-soft); }
+.pipe-stat.warn { border-color: var(--attention-soft); }
 
 .pipe-stat-value {
   font-size: 1.5rem;
@@ -1990,8 +1981,7 @@
 .pipeline-table th {
   text-align: left;
   font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
   padding: 9px 12px;
@@ -2006,8 +1996,8 @@
   vertical-align: top;
 }
 
-.pipeline-table tr.row-overdue td { background: rgba(255, 45, 85, 0.05); }
-.pipeline-table tr.row-quiet td { background: rgba(255, 176, 32, 0.05); }
+.pipeline-table tr.row-overdue td { background: var(--danger-soft); }
+.pipeline-table tr.row-quiet td { background: var(--attention-soft); }
 
 .due-overdue { color: var(--neon-red); }
 .due-today { color: var(--status-warning); }
@@ -2097,7 +2087,7 @@
 
 .call-card {
   background: var(--surface-1);
-  border: 1px solid var(--border-firm, rgba(0, 229, 255, 0.26));
+  border: 1px solid var(--border-strong);
   border-radius: 14px;
   padding: 22px 24px;
   display: flex;
@@ -2182,15 +2172,14 @@
 }
 
 .review-queue {
-  border-color: rgba(255, 176, 32, 0.3);
+  border-color: var(--attention-soft);
 }
 
 .review-queue h4,
 .up-next h4 {
   margin: 0;
   font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -2221,8 +2210,7 @@
 
 .tier-pill {
   font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   padding: 1px 7px;
   border-radius: 999px;
   background: var(--accent-soft);
@@ -2266,8 +2254,7 @@
 .import-step {
   margin: 6px 0 0;
   font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -2297,8 +2284,7 @@
 .import-table th {
   text-align: left;
   font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
   padding: 8px 10px;
@@ -2313,7 +2299,7 @@
 }
 
 .import-table tr.dup-row td {
-  background: rgba(255, 176, 32, 0.06);
+  background: var(--attention-soft);
 }
 
 .good-note {
@@ -2327,8 +2313,8 @@
 }
 
 .dup-review {
-  background: rgba(255, 176, 32, 0.08);
-  border: 1px solid rgba(255, 176, 32, 0.3);
+  background: var(--attention-soft);
+  border: 1px solid var(--attention-soft);
   border-radius: 8px;
   padding: 12px 14px;
   display: flex;
@@ -2355,8 +2341,7 @@
 
 .dup-strength {
   font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   padding: 1px 6px;
   border-radius: 999px;
   background: var(--surface-2);
@@ -2405,8 +2390,7 @@
 
 .temp-chip {
   font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.01em;
   padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
@@ -2478,8 +2462,7 @@
 
 .opp-stalled {
   font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   color: var(--status-warning);
   margin-left: auto;
 }
@@ -2523,8 +2506,7 @@
 
 .edited-chip {
   font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.01em;
   padding: 1px 6px;
   border-radius: 999px;
   background: var(--accent-soft);
@@ -2542,8 +2524,8 @@
 }
 
 .conflict-block {
-  background: rgba(255, 176, 32, 0.08);
-  border: 1px solid rgba(255, 176, 32, 0.3);
+  background: var(--attention-soft);
+  border: 1px solid var(--attention-soft);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -2576,8 +2558,7 @@
 .review-section h5 {
   margin: 0 0 6px;
   font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -2599,8 +2580,7 @@
   font-weight: 500;
   color: var(--text-muted);
   font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   padding: 4px 8px 6px 0;
   border-bottom: 1px solid var(--gridline);
 }
@@ -2667,7 +2647,7 @@
 
 .call-logger {
   background: var(--surface-2);
-  border: 1px solid var(--border-firm, rgba(0, 229, 255, 0.26));
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
   padding: 14px 16px;
   display: flex;
@@ -2706,8 +2686,7 @@
 
 .required-mark {
   font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   color: var(--neon-red);
   margin-left: 6px;
 }
@@ -2723,8 +2702,7 @@
 
 .optional-mark {
   font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   margin-left: 6px;
 }
@@ -2755,8 +2733,7 @@
 
 .task-origin-chip {
   font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.01em;
   padding: 1px 6px;
   border-radius: 999px;
   background: var(--accent-soft);
@@ -2826,8 +2803,7 @@
 
 .call-direction {
   font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
   margin-left: auto;
 }
@@ -3411,7 +3387,6 @@
 .source-tag {
   margin-left: 8px;
   font-size: 0.68rem;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   background: var(--accent-track);
   color: var(--accent);
@@ -3541,12 +3516,12 @@
 }
 
 .primary-btn {
-  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.35);
+  box-shadow: 0 0 0 1px var(--border-strong);
   transition: box-shadow 0.2s ease;
 }
 
 .primary-btn:hover {
-  box-shadow: var(--glow-blue), 0 0 0 1px rgba(0, 229, 255, 0.6);
+  box-shadow: var(--glow-blue), 0 0 0 1px var(--accent);
 }
 
 .danger-btn:hover,
@@ -3566,17 +3541,19 @@
 /* Tables read better with a touch more separation on dark */
 .book-table tbody tr:hover,
 .crm-table tbody tr:hover {
-  background: rgba(0, 229, 255, 0.04);
+  background: var(--accent-soft);
 }
 
 /* ============================================================
    OPERATOR DECK
-   Terminal-console styling: mono type, bracketed panels,
-   labelled headers, one hero readout.
+   Panelled layout with one hero readout. Mono is kept for figures
+   and short metadata; everything a person reads is set in sans.
    ============================================================ */
 
 :root {
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+  /* Kept as an alias so the seventeen rules below still resolve, but there is
+     now one mono stack for the whole app, defined in index.css. */
+  --mono: var(--font-mono);
 }
 
 .operator {
@@ -3595,7 +3572,7 @@
 .op-panel {
   position: relative;
   background:
-    linear-gradient(180deg, rgba(0, 229, 255, 0.03), transparent 42%),
+    linear-gradient(180deg, transparent, transparent 42%),
     var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -3634,8 +3611,7 @@
   gap: 10px;
   font-family: var(--mono);
   font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.01em;
   color: var(--accent);
   padding-bottom: 8px;
   margin-bottom: 12px;
@@ -3760,7 +3736,7 @@
   font-weight: 700;
   line-height: 1;
   color: #fff;
-  text-shadow: 0 0 22px rgba(0, 229, 255, 0.75);
+  text-shadow: none;
   font-variant-numeric: tabular-nums;
 }
 
@@ -3818,7 +3794,7 @@
 }
 
 .op-commands button:hover {
-  background: rgba(0, 229, 255, 0.08);
+  background: var(--accent-soft);
   box-shadow: var(--glow-blue);
   transform: translateX(2px);
 }
@@ -3850,7 +3826,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--text-primary);
-  text-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
+  text-shadow: none;
 }
 
 .op-bhag-track {
@@ -3863,7 +3839,7 @@
 .op-bhag-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--neon-red), var(--accent));
-  box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
+  box-shadow: var(--shadow-1);
   transition: width 0.5s ease;
 }
 
@@ -3899,23 +3875,20 @@
   font-family: var(--mono);
   font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .app-header p {
   font-family: var(--mono);
   font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
 }
 
 .tab-bar button {
   font-family: var(--mono);
   font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .op-ticker-body .op-overdue em {
@@ -3972,14 +3945,14 @@
   max-height: 72vh;
   touch-action: none;
   background:
-    radial-gradient(620px 420px at 50% 45%, rgba(0, 229, 255, 0.05), transparent 70%),
+    radial-gradient(620px 420px at 50% 45%, transparent, transparent 70%),
     var(--page);
   border: 1px solid var(--gridline);
   border-radius: 3px;
 }
 
 .map-edge {
-  stroke: #3d5a7a;
+  stroke: var(--border-strong);
   stroke-width: 1.3;
   opacity: 0.9;
   transition: opacity 0.2s ease, stroke 0.2s ease;
@@ -4021,8 +3994,7 @@
 .map-node.kind-line text {
   font-size: 13px;
   fill: var(--text-primary);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 .map-label {
@@ -4058,8 +4030,7 @@
 .status-chip {
   font-family: var(--mono);
   font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   border: 1px solid currentColor;
   border-radius: 2px;
   padding: 1px 7px;
@@ -4069,4 +4040,541 @@
   font-family: var(--mono);
   font-size: 0.68rem;
   color: var(--text-muted);
+}
+
+/* ============================================================
+   Surfaces and controls — consolidation pass
+
+   These come last on purpose. The sheet grew a slightly different card and
+   button treatment per phase; rather than leave nine variations, the shared
+   behaviour is settled once here. Component rules keep their layout, spacing
+   and semantics — only the surface, border, radius and depth are unified.
+   ============================================================ */
+
+/* A panel is a quiet surface lifted just off the ground: one hairline, a
+   modest radius, a restrained shadow. No bright outline, no gradient. */
+.op-panel,
+.card,
+.intake-panel,
+.call-card,
+.review-queue,
+.up-next,
+.pipe-stat,
+.stage-column,
+.tier-card,
+.aa-card,
+.suggestion-card,
+.opportunity-row,
+.call-logger,
+.import-panel,
+.inbox,
+.storage-notice,
+.book-section,
+.goals-section,
+.tier-section,
+.aa-section {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+.op-panel {
+  padding: 16px 18px 18px;
+}
+
+/* Things that sit *inside* a panel are flatter still — a box inside a box
+   inside a box is the thing this design brief is trying to stop. */
+.call-row,
+.opportunity-row,
+.proposed-block,
+.conflict-block,
+.dup-review,
+.aa-req,
+.review-detail {
+  box-shadow: none;
+}
+
+.call-row,
+.aa-req {
+  background: var(--surface-2);
+  border-color: var(--gridline);
+}
+
+/* Panel headings read as headings: sentence case, normal tracking, and the
+   weight doing the work rather than colour. */
+.op-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* The seven small metric labels that stay uppercase are the only place tiny
+   tracked capitals belong. */
+.op-vital-label,
+.eod-label,
+.pipe-stat-label,
+.context-label,
+.aa-req-label,
+.orb-label,
+.call-history-head {
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ---------- Controls ----------
+   One primary action per context carries the accent. Everything else is a
+   dark neutral that only reveals itself on hover. */
+.primary-btn,
+.ghost-btn,
+.danger-btn,
+.next-call-btn,
+.tab-bar button,
+.mode-switch button,
+.mode-toggle button {
+  border-radius: var(--radius-sm);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  font-family: var(--font-sans);
+}
+
+.primary-btn {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid transparent;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: none;
+}
+
+.ghost-btn {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+.ghost-btn:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.danger-btn {
+  background: transparent;
+  border: 1px solid var(--danger-soft);
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.danger-btn:hover,
+.remove-btn:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+  box-shadow: none;
+}
+
+/* Selected navigation is obvious through contrast, not luminance. */
+.tab-bar {
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+
+.tab-bar button {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.tab-bar button:hover:not(.active) {
+  color: var(--text-primary);
+  background: var(--surface-2);
+}
+
+.tab-bar button.active {
+  background: var(--surface-3);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.mode-switch button.active,
+.mode-toggle button.active {
+  background: var(--surface-3);
+  color: var(--accent);
+  box-shadow: none;
+}
+
+/* The one genuinely loud control in the application, because it is the one
+   thing the calling workflow exists to press. */
+.next-call-btn {
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  box-shadow: var(--shadow-2);
+}
+
+.next-call-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Inputs recede until used. */
+input,
+select,
+textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 9px;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--border-strong);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.needs-input {
+  border-color: var(--attention);
+}
+
+/* ---------- Restraint ----------
+   Decoration that survived from the neon era. */
+.drop-zone.dragging {
+  animation: none;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tier-card.current,
+.tier-badge.current,
+.pace-pill.behind,
+.pace-pill.good {
+  animation: none;
+}
+
+.tier-card.current {
+  border-color: var(--border-strong);
+}
+
+/* Accent is for interaction and meaning. A chip that only says what kind of
+   thing something is stays neutral. */
+.src-chip,
+.task-origin-chip,
+.edited-chip,
+.tier-pill,
+.grade-chip,
+.score-chip {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  border: 1px solid var(--gridline);
+  font-weight: 500;
+}
+
+/* Headings: let size and weight carry the hierarchy. */
+.app-header h1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.app-header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.snapshot-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0;
+}
+
+h2,
+h3,
+h4,
+h5 {
+  letter-spacing: -0.005em;
+}
+
+/* Tables: quiet headers, hairline rows. */
+.book-table th,
+.pipeline-table th,
+.import-table th,
+.diff-table th {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  background: var(--surface-2);
+}
+
+.book-table tbody tr:hover,
+.crm-table tbody tr:hover,
+.pipeline-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* Figures line up; prose does not need to. */
+.op-vital-value,
+.eod-value,
+.pipe-stat-value,
+.stage-count,
+.goal-count,
+.call-when,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Colour with meaning — corrections
+
+   Auditing the rendered pages turned up accent being used as emphasis rather
+   than as signal: the brief headline, appointment times, money figures, day
+   names and stage chips were all cyan simply because they mattered. Weight and
+   size carry importance; colour is reserved for interaction and state.
+   ============================================================ */
+
+/* The most important line on the screen. It earns that through size and
+   weight, not by being the brightest thing in the room. */
+.cc-headline-text {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Neutral metadata: a time, a weekday, a running count. */
+.schedule-time,
+.agenda-weekday {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.queue-stats em {
+  color: var(--text-primary);
+}
+
+/* Money is not a state. */
+.stat-tile .stat-value,
+.stat-value,
+.op-vital-value {
+  color: var(--text-primary);
+}
+
+.stat-tile.accent {
+  box-shadow: var(--shadow-1);
+  border-color: var(--border);
+}
+
+/* Due today is ordinary. Overdue is the problem, and only it gets colour. */
+.fu-priority.today {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.fu-priority.overdue {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* A pipeline stage is a fact, not a status. */
+.stage-chip {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+/* Fills show progress through length. They do not need to emit light. */
+.goal-fill,
+.meter-fill,
+.orb-progress {
+  box-shadow: none;
+}
+
+.op-flag.alert {
+  box-shadow: none;
+  color: var(--danger);
+  background: var(--danger-soft);
+  /* Matches .op-flag.alert's own specificity, so the pulse actually stops. */
+  animation: none;
+}
+
+.op-flag.ok {
+  box-shadow: none;
+  color: var(--text-secondary);
+  background: var(--surface-3);
+  animation: none;
+}
+
+/* Badge vocabulary, settled once so every chip in the app agrees.
+
+   These carry the pipeline stages, so they read as a ramp: parked stages stay
+   quiet, stages in motion brighten without spending colour, the two stages
+   waiting on someone turn amber, and only the two that resolve an opportunity
+   get a hue of their own. "Quoting" is not a status worth a colour. */
+.badge-muted {
+  background: var(--surface-3);
+  color: var(--text-muted);
+}
+
+.badge-info {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.badge-good {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-warning,
+.badge-serious {
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+
+.badge-critical {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* Breathing room. The brief asks for whitespace before another container. */
+.app {
+  padding: 28px 24px 72px;
+}
+
+.tab-panel {
+  gap: 20px;
+}
+
+.command-center {
+  gap: 18px;
+}
+
+/* Specific overrides for accent that outranked the rules above.
+
+   Each of these used cyan to mean "this is the important number". Importance
+   is carried by size and weight; the colour was only making figures glow. The
+   one deliberate exception is "Today" in the week agenda, which marks the
+   current day among seven — that is a genuine selected state, so it keeps the
+   accent. */
+.op-ticker-body em,
+.stat-tile.accent .stat-value,
+.book-totals strong.net {
+  color: var(--text-primary);
+  font-style: normal;
+}
+
+/* Stop the leftover keyframe references from driving box-shadow and
+   text-shadow, so the settled panel treatment actually applies. */
+.app-header h1,
+.stat-tile.accent {
+  animation: none;
+}
+
+/* ============================================================
+   Type: mono for figures, sans for prose
+
+   The Operator deck was originally styled as a terminal, which put monospace
+   on headings, button labels, hints and captions — roughly half the words on
+   the screen. Mono earns its place on aligned figures and short metadata, so
+   that is where it stays. Everything written as a sentence goes back to sans.
+   ============================================================ */
+.op-panel-head,
+.op-flag,
+.op-vital-label,
+.op-cmd-label,
+.op-cmd-hint,
+.op-bhag-text,
+.op-bhag-meta,
+.orb-label,
+.orb-caption,
+.link-btn {
+  font-family: var(--font-sans);
+}
+
+/* Figures, times and counts keep the aligned digits. */
+.op-vital-value,
+.orb-pct,
+.schedule-time,
+.op-ticker-body em {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* These were sized and spaced to look like console output. */
+.op-cmd-label {
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.op-bhag-text {
+  letter-spacing: -0.01em;
+  font-weight: 650;
+}
+
+.op-flag {
+  letter-spacing: 0.02em;
+  font-size: 0.68rem;
+  border: none;
+  border-radius: 999px;
+  padding: 3px 9px;
+  animation: none;
+}
+
+/* Lead Map: names and sentences are prose, not identifiers.
+
+   The map was setting household names, line names and its explanatory hint in
+   monospace, which made a relationship diagram read like console output. */
+.map-hint,
+.map-legend,
+.map-legend span,
+.map-node text,
+.map-node.kind-line text {
+  font-family: var(--font-sans);
+}
+
+/* The call logger.
+
+   The household name was cyan and the "required" marker red. Neither is a
+   state: you are not in trouble for not having filled the form in yet. Red is
+   kept for validation that has actually failed. */
+.call-logger-who {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.required-mark {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.optional-mark {
+  color: var(--text-muted);
+  font-weight: 400;
 }

@@ -1,39 +1,95 @@
+/**
+ * Design tokens.
+ *
+ * Everything visual is defined here. Components reference tokens, never raw
+ * colour — changing the look of the whole application should mean editing this
+ * file, not three thousand lines of component CSS.
+ *
+ * The intent is a calm, understated command centre: near-black charcoal
+ * ground, quiet graphite surfaces, and colour reserved for meaning. The
+ * interface should look settled when nothing needs attention.
+ */
+
 :root {
   color-scheme: dark;
 
-  /* Surfaces — near-black with a cold cast */
-  --page: #05070c;
-  --surface-1: #0b0f18;
-  --surface-2: #111826;
-  --gridline: #1a2333;
-  --baseline: #2b3a52;
-  --border: rgba(0, 229, 255, 0.13);
+  /* ---------- Ground and surfaces ----------
+     Three steps only: the page, a panel, and something lifted above a panel.
+     More steps than that and the hierarchy stops reading. */
+  --page: #0b0f14;
+  --surface-1: #121820;
+  --surface-2: #19212b;
+  --surface-3: #1e2731;
 
-  --text-primary: #e9f4ff;
-  --text-secondary: #94a7c4;
-  --text-muted: #64789a;
+  /* Hairlines. Steel at low opacity so panels separate without being outlined. */
+  --gridline: rgba(139, 152, 169, 0.1);
+  --border: rgba(139, 152, 169, 0.14);
+  --border-strong: rgba(139, 152, 169, 0.24);
+  --baseline: rgba(139, 152, 169, 0.3);
 
-  /* Neon accents */
-  --accent: #00e5ff;
-  --accent-soft: rgba(0, 229, 255, 0.14);
-  --accent-track: rgba(0, 229, 255, 0.16);
-  --neon-red: #ff2d55;
-  --neon-red-soft: rgba(255, 45, 85, 0.14);
-  --on-accent: #03070d;
+  /* ---------- Text ----------
+     Off-white rather than pure white; the ground is soft, so the text is too. */
+  --text-primary: #e6edf3;
+  --text-secondary: #8b98a9;
+  --text-muted: #6b7684;
 
-  --status-good: #00ffa3;
-  --status-warning: #ffb020;
-  --status-serious: #ff7849;
-  --status-critical: #ff2d55;
+  /* ---------- Meaning ----------
+     Colour is a signal, not decoration. Accent marks what is interactive or
+     selected. The other three say something is good, wants attention, or is
+     wrong. Anything neutral stays neutral. */
+  --accent: #45c7c7;
+  --accent-hover: #5ad4d4;
+  --accent-soft: rgba(69, 199, 199, 0.1);
+  --accent-track: rgba(69, 199, 199, 0.16);
+  --on-accent: #06181c;
 
-  --series-1: #00e5ff; /* Property — neon blue */
-  --series-2: #ff2d55; /* Casualty — neon red */
-  --series-3: #b06bff; /* Life — violet, the blend of the two */
+  --success: #4faf94;
+  --success-soft: rgba(79, 175, 148, 0.12);
 
-  --glow-blue: 0 0 18px rgba(0, 229, 255, 0.28);
-  --glow-red: 0 0 18px rgba(255, 45, 85, 0.28);
+  --attention: #d3a04b;
+  --attention-soft: rgba(211, 160, 75, 0.12);
 
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --danger: #d4696b;
+  --danger-soft: rgba(212, 105, 107, 0.12);
+
+  /* ---------- Legacy aliases ----------
+     The component sheet grew up with these names. Mapping them here retunes
+     the whole application without touching every rule that uses them. */
+  --neon-red: var(--danger);
+  --neon-red-soft: var(--danger-soft);
+  --status-good: var(--success);
+  --status-warning: var(--attention);
+  --status-serious: #c8834f;
+  --status-critical: var(--danger);
+
+  /* Chart series — distinct enough to tell apart, quiet enough to sit together. */
+  --series-1: #5b9fc9; /* Property */
+  --series-2: #c8834f; /* Casualty */
+  --series-3: #8f88c4; /* Life */
+
+  /* ---------- Depth ----------
+     Panels lift off the ground with shadow, not with a bright outline. The old
+     glow tokens now resolve to the same restrained shadows. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --glow-blue: var(--shadow-2);
+  --glow-red: var(--shadow-2);
+
+  /* ---------- Shape ---------- */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  /* ---------- Type ----------
+     Sans for everything a person reads. Mono kept for figures and short
+     metadata, where aligned digits genuinely help. */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  /* Small uppercase labels only — normal headings get no extra tracking. */
+  --tracking-label: 0.06em;
+
+  font-family: var(--font-sans);
 }
 
 * {
@@ -50,10 +106,9 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--text-primary);
-  background-image:
-    radial-gradient(900px 500px at 12% -8%, rgba(0, 229, 255, 0.08), transparent 60%),
-    radial-gradient(760px 460px at 92% 4%, rgba(255, 45, 85, 0.07), transparent 62%);
-  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
 button,
@@ -72,57 +127,52 @@ textarea {
 }
 
 ::selection {
-  background: rgba(0, 229, 255, 0.28);
+  background: var(--accent-track);
 }
 
-/* ---------- neon pulses ---------- */
+/* Visible keyboard focus, without the neon. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ---------- Motion ----------
+   The pulsing rings this file used to carry are gone. The selectors that
+   referenced them still resolve, so nothing breaks — they now settle on a
+   quiet ring instead of breathing at you all day. */
 
 @keyframes pulse-blue {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.22), 0 0 10px rgba(0, 229, 255, 0.12);
-  }
-  50% {
-    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.55), 0 0 26px rgba(0, 229, 255, 0.32);
+    box-shadow: 0 0 0 1px var(--accent-track);
   }
 }
 
 @keyframes pulse-red {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(255, 45, 85, 0.22), 0 0 10px rgba(255, 45, 85, 0.12);
-  }
-  50% {
-    box-shadow: 0 0 0 1px rgba(255, 45, 85, 0.55), 0 0 26px rgba(255, 45, 85, 0.32);
+    box-shadow: 0 0 0 1px var(--danger-soft);
   }
 }
 
 @keyframes glow-text-blue {
   0%,
   100% {
-    text-shadow: 0 0 6px rgba(0, 229, 255, 0.25);
-  }
-  50% {
-    text-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+    text-shadow: none;
   }
 }
 
 @keyframes glow-text-red {
   0%,
   100% {
-    text-shadow: 0 0 6px rgba(255, 45, 85, 0.25);
-  }
-  50% {
-    text-shadow: 0 0 16px rgba(255, 45, 85, 0.6);
+    text-shadow: none;
   }
 }
 
 @keyframes fuel-shimmer {
   0%,
   100% {
-    opacity: 0.82;
-  }
-  50% {
     opacity: 1;
   }
 }

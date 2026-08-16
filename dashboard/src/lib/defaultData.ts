@@ -48,10 +48,12 @@ export const urgencyLevels: { id: Urgency; name: string; blurb: string }[] = [
   { id: "someday", name: "Someday", blurb: "When there's room" },
 ];
 
+/* A severity ramp, so it has to fall off monotonically: red, amber, then two
+   greys. Cyan sat at "soon" and read as a highlight rather than a step down. */
 export const urgencyColor: Record<Urgency, string> = {
   now: "var(--status-critical)",
   week: "var(--status-warning)",
-  soon: "var(--accent)",
+  soon: "var(--text-secondary)",
   someday: "var(--text-muted)",
 };
 
