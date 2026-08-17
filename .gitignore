@@ -1,0 +1,12 @@
+# Never commit local secrets or Cloudflare state.
+.dev.vars
+.dev.vars.*
+.wrangler/
+node_modules/
+dist/
+.env
+.env.*
+*.log
+
+# Dry-run output contains real homeowner names and parcel numbers.
+worker/dryrun-report.txt
