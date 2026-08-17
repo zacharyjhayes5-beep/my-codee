@@ -28,7 +28,7 @@ import { newId } from "./storage";
  * research fields — names, lead source, Why They Fit, Important Notes and the
  * asset indicators.
  */
-export const PROSPECT_SCHEMA_VERSION = 6;
+export const PROSPECT_SCHEMA_VERSION = 7;
 
 /** The six statuses v3 could hold, and where each one lands. */
 export const STATUS_TO_STAGE: Record<string, Stage> = {
@@ -115,6 +115,7 @@ export function blankProspect(overrides: Partial<Prospect> = {}): Prospect {
     nextActionDate: "",
     doNotContact: false,
     source: "",
+    parcelId: "",
     lines: [],
     phone: "",
     email: "",
@@ -274,6 +275,8 @@ export function normalizeProspect(input: unknown): Prospect {
     nextActionDate: raw.nextActionDate ?? "",
     doNotContact: Boolean(raw.doNotContact),
     source: raw.source ?? "",
+    // Blank for every record that predates GIS ingestion. Never invented.
+    parcelId: raw.parcelId ?? "",
     lines,
     phone: raw.phone ?? "",
     email: raw.email ?? "",

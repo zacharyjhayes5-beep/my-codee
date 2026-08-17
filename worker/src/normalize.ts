@@ -22,6 +22,7 @@ export interface GisAttributes {
   OWNERZIPCODE?: string | null;
   PROPERTYADDRESS?: string | null;
   PROPADDRESSCITY?: string | null;
+  PROPADDRESSSTATE_ZIPCODE?: string | null;
   PROPERTYCLASS?: string | null;
   GOVERNMENTALUNIT?: string | null;
   ACREAGE?: number | null;
@@ -34,6 +35,8 @@ export interface ParcelRecord {
   ownerNormalized: string;
   propertyAddress: string;
   propertyCity: string;
+  propertyState: string;
+  propertyZip: string;
   ownerAddress: string;
   ownerCity: string;
   ownerZip: string;
@@ -83,6 +86,25 @@ export function displayOwner(
 }
 
 /**
+ * Split the property's state and postcode.
+ *
+ * GIS packs them into one unseparated field — "MI49506". This is the *property*
+ * location and must not be confused with the owner's mailing postcode, which is
+ * a different column and frequently a different state: an East Grand Rapids
+ * house in this dataset is owned from Hollywood, Florida. Using the owner's
+ * postcode on the property address would address mail to the wrong place.
+ */
+export function splitStateZip(value: string | null | undefined): {
+  propertyState: string;
+  propertyZip: string;
+} {
+  const packed = squash(value).toUpperCase().replace(/\s+/g, "");
+  const match = packed.match(/^([A-Z]{2})(\d{5})(\d{4})?$/);
+  if (!match) return { propertyState: "", propertyZip: "" };
+  return { propertyState: match[1], propertyZip: match[2] };
+}
+
+/**
  * Build a parcel record, or null when the row lacks the two fields that make
  * it usable. A parcel with no number cannot be deduplicated and a parcel with
  * no owner cannot be classified, so neither is worth carrying forward.
@@ -99,6 +121,7 @@ export function toParcelRecord(attrs: GisAttributes): ParcelRecord | null {
     ownerNormalized,
     propertyAddress: squash(attrs.PROPERTYADDRESS),
     propertyCity: squash(attrs.PROPADDRESSCITY),
+    ...splitStateZip(attrs.PROPADDRESSSTATE_ZIPCODE),
     ownerAddress: squash(attrs.OWNERADDRESS),
     ownerCity: squash(attrs.OWNERCITY),
     ownerZip: squash(attrs.OWNERZIPCODE),

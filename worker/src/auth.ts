@@ -21,34 +21,33 @@ export interface AuthEnv {
 
 export type AuthResult = { ok: true } | { ok: false; response: Response };
 
-const DENIED: AuthResult = {
-  ok: false,
-  response: new Response(JSON.stringify({ error: "unauthorized" }), {
-    status: 401,
-    headers: { "content-type": "application/json" },
-  }),
-};
+/**
+ * Built on demand rather than held as a module constant: the Workers runtime
+ * forbids constructing a Response in global scope, so a shared instance fails
+ * validation at deploy time.
+ */
+function deny(status: number, error: string): AuthResult {
+  return {
+    ok: false,
+    response: new Response(JSON.stringify({ error }), {
+      status,
+      headers: { "content-type": "application/json" },
+    }),
+  };
+}
 
 export function authorize(request: Request, env: AuthEnv): AuthResult {
   const expected = env.API_TOKEN;
 
   // A missing secret must fail closed. An unset token that allowed traffic
   // through would silently publish homeowner data.
-  if (!expected) {
-    return {
-      ok: false,
-      response: new Response(JSON.stringify({ error: "server not configured" }), {
-        status: 503,
-        headers: { "content-type": "application/json" },
-      }),
-    };
-  }
+  if (!expected) return deny(503, "server not configured");
 
   const header = request.headers.get("authorization") ?? "";
   const presented = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  if (!presented) return DENIED;
+  if (!presented) return deny(401, "unauthorized");
 
-  return timingSafeEqual(presented, expected) ? { ok: true } : DENIED;
+  return timingSafeEqual(presented, expected) ? { ok: true } : deny(401, "unauthorized");
 }
 
 /**

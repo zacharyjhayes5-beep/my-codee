@@ -21,6 +21,14 @@ import { blankProspect } from "../lib/prospectSchema";
 import { reconcileProspect } from "../lib/rules";
 import { today } from "../lib/storage";
 import { ProspectCard } from "./ProspectCard";
+import {
+  GisSyncError,
+  acknowledgeLeads,
+  fetchNewLeads,
+  mergeLeads,
+  readSyncSettings,
+  writeSyncSettings,
+} from "../lib/gisSync";
 
 type SortKey = "name" | "stage" | "area" | "next" | "touched";
 
@@ -99,6 +107,62 @@ export function ProspectsTab({
   const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "touched", dir: -1 });
+  const [syncing, setSyncing] = useState(false);
+  const [syncNote, setSyncNote] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
+
+  /**
+   * Pull whatever the ingestion service has ready.
+   *
+   * The order is deliberate: records are committed locally *before* the server
+   * is told they were taken. A failure between the two leaves the leads
+   * unsynced upstream, so the next sync delivers them again rather than losing
+   * them. Parcel number is checked again here, so a restored backup or a reset
+   * database cannot reintroduce a household that already exists.
+   */
+  async function syncGis() {
+    setSyncNote(null);
+
+    let settings = readSyncSettings();
+    if (!settings) {
+      const endpoint = window.prompt("Lead service address (https://…workers.dev)")?.trim();
+      if (!endpoint) return;
+      const token = window.prompt("Access token for the lead service")?.trim();
+      if (!token) return;
+      settings = { endpoint, token };
+      writeSyncSettings(settings);
+    }
+
+    setSyncing(true);
+    try {
+      const leads = await fetchNewLeads(settings);
+      if (leads.length === 0) {
+        setSyncNote({ tone: "good", text: "No new leads waiting." });
+        return;
+      }
+
+      const { added, duplicates } = mergeLeads(prospects, leads);
+      if (added.length > 0) onChange((prev) => [...prev, ...added]);
+
+      const acknowledged = await acknowledgeLeads(
+        settings,
+        leads.map((l) => l.id),
+      );
+
+      const parts = [`Added ${added.length} lead${added.length === 1 ? "" : "s"}`];
+      if (duplicates.length > 0) parts.push(`${duplicates.length} already here`);
+      setSyncNote({
+        tone: "good",
+        text: `${parts.join(" · ")}. They need a phone number before they can be called. (${acknowledged} confirmed upstream.)`,
+      });
+    } catch (cause) {
+      setSyncNote({
+        tone: "bad",
+        text: cause instanceof GisSyncError ? cause.message : "The sync could not finish.",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   const counts = useMemo(() => {
     const map = new Map<Stage, number>();
@@ -376,10 +440,17 @@ export function ProspectsTab({
             {sorted.length} of {prospects.length} households
           </span>
         </div>
-        <button className="primary-btn" onClick={addBlank}>
-          Blank profile
-        </button>
+        <div className="lead-toolbar-actions">
+          <button className="ghost-btn" onClick={() => void syncGis()} disabled={syncing}>
+            {syncing ? "Syncing…" : "Sync GIS leads"}
+          </button>
+          <button className="primary-btn" onClick={addBlank}>
+            Blank profile
+          </button>
+        </div>
       </div>
+
+      {syncNote && <p className={`sync-note ${syncNote.tone}`}>{syncNote.text}</p>}
 
       {sorted.length === 0 ? (
         <p className="lead-empty">

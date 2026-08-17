@@ -2,12 +2,18 @@ name = "gis-ingest"
 main = "src/index.ts"
 compatibility_date = "2026-08-01"
 
+# The stable workers.dev route is the only public surface. Preview URLs would
+# publish every uploaded version at its own address, which is more exposure
+# than a homeowner-data API should carry.
+workers_dev = true
+preview_urls = false
+
 # The D1 binding. `database_id` is filled in after the database is created —
 # `wrangler d1 create gis_leads` prints it. It is an identifier, not a secret.
 [[d1_databases]]
 binding = "DB"
 database_name = "gis_leads"
-database_id = "PLACEHOLDER_FILL_AFTER_D1_CREATE"
+database_id = "a2cf8737-159f-4cd7-8c1d-198a4ef3b071"
 
 [vars]
 # Development batch size. The spec calls for proving the pipeline end to end

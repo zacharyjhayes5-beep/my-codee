@@ -59,6 +59,8 @@ CREATE TABLE IF NOT EXISTS leads (
   owner_normalized  TEXT NOT NULL,
   property_address  TEXT,
   property_city     TEXT,
+  property_state    TEXT,
+  property_zip      TEXT,
   owner_address     TEXT,
   owner_city        TEXT,
   owner_zip         TEXT,

@@ -90,9 +90,10 @@ export async function commitRun(
         .prepare(
           `INSERT OR IGNORE INTO leads (
              id, pnum, govt_unit, owner_raw, owner_normalized,
-             property_address, property_city, owner_address, owner_city, owner_zip,
+             property_address, property_city, property_state, property_zip,
+             owner_address, owner_city, owner_zip,
              acreage, reason, created_at, run_id
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
           lead.id,
@@ -102,6 +103,8 @@ export async function commitRun(
           lead.ownerNormalized,
           lead.propertyAddress,
           lead.propertyCity,
+          lead.propertyState,
+          lead.propertyZip,
           lead.ownerAddress,
           lead.ownerCity,
           lead.ownerZip,
@@ -172,6 +175,8 @@ export interface LeadRow {
   owner_raw: string;
   property_address: string | null;
   property_city: string | null;
+  property_state: string | null;
+  property_zip: string | null;
   owner_address: string | null;
   owner_city: string | null;
   owner_zip: string | null;
@@ -185,7 +190,8 @@ export async function unsyncedLeads(db: D1Database, limit: number): Promise<Lead
   const { results } = await db
     .prepare(
       `SELECT id, pnum, govt_unit, owner_raw, property_address, property_city,
-              owner_address, owner_city, owner_zip, acreage, reason, created_at
+              property_state, property_zip, owner_address, owner_city, owner_zip,
+              acreage, reason, created_at
          FROM leads
         WHERE synced_at IS NULL
      ORDER BY created_at, pnum

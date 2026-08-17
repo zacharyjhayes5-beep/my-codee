@@ -21,15 +21,44 @@ export interface Env extends AuthEnv {
   BATCH_MODE?: string;
 }
 
-function json(body: unknown, status = 200): Response {
+/**
+ * Origins allowed to call the API from a browser.
+ *
+ * The dashboard is served from GitHub Pages and, in development, from Vite on
+ * localhost. A wildcard would let any page on the internet attempt a call —
+ * the token would still stop it, but there is no reason to widen the surface.
+ */
+const ALLOWED_ORIGINS = new Set([
+  "https://zacharyjhayes5-beep.github.io",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+function corsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get("origin") ?? "";
+  if (!ALLOWED_ORIGINS.has(origin)) return {};
+  return {
+    "access-control-allow-origin": origin,
+    "access-control-allow-headers": "authorization, content-type",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+    "access-control-max-age": "86400",
+    vary: "Origin",
+  };
+}
+
+/** Attach CORS to a response built elsewhere, such as an auth rejection. */
+function withCors(response: Response, request: Request): Response {
+  const headers = new Headers(response.headers);
+  for (const [k, v] of Object.entries(corsHeaders(request))) headers.set(k, v);
+  return new Response(response.body, { status: response.status, headers });
+}
+
+function json(body: unknown, status = 200, request?: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "content-type": "application/json",
-      // The dashboard is served from GitHub Pages, a different origin.
-      "access-control-allow-origin": "*",
-      "access-control-allow-headers": "authorization, content-type",
-      "access-control-allow-methods": "GET, POST, OPTIONS",
+      ...(request ? corsHeaders(request) : {}),
     },
   });
 }
@@ -42,41 +71,45 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    if (request.method === "OPTIONS") return json({}, 204);
-    if (url.pathname === "/health") return json({ ok: true });
+    // A 204 must not carry a body — constructing one that does throws, which
+    // is what made every browser preflight fail with a 500.
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
+    }
+    if (url.pathname === "/health") return json({ ok: true }, 200, request);
 
     const auth = authorize(request, env);
-    if (!auth.ok) return auth.response;
+    if (!auth.ok) return withCors(auth.response, request);
 
     try {
       if (url.pathname === "/leads" && request.method === "GET") {
         const limit = Math.min(Number(url.searchParams.get("limit") ?? 100) || 100, 500);
         const leads = await unsyncedLeads(env.DB, limit);
-        return json({ leads, count: leads.length });
+        return json({ leads, count: leads.length }, 200, request);
       }
 
       if (url.pathname === "/leads/ack" && request.method === "POST") {
         const body = (await request.json().catch(() => ({}))) as { ids?: unknown };
         const ids = Array.isArray(body.ids) ? body.ids.filter((i): i is string => typeof i === "string") : [];
-        if (ids.length === 0) return json({ error: "no ids supplied" }, 400);
+        if (ids.length === 0) return json({ error: "no ids supplied" }, 400, request);
         const acknowledged = await markSynced(env.DB, ids);
-        return json({ acknowledged });
+        return json({ acknowledged }, 200, request);
       }
 
       if (url.pathname === "/ingest" && request.method === "POST") {
         const mode = modeOf(env);
         const result = await runIngestion(env.DB, mode, "manual");
-        return json({ mode, batchTarget: batchSize(mode), ...result }, result.status === "ok" ? 200 : 500);
+        return json({ mode, batchTarget: batchSize(mode), ...result }, result.status === "ok" ? 200 : 500, request);
       }
 
       if (url.pathname === "/runs" && request.method === "GET") {
-        return json({ runs: await recentRuns(env.DB) });
+        return json({ runs: await recentRuns(env.DB) }, 200, request);
       }
 
-      return json({ error: "not found" }, 404);
+      return json({ error: "not found" }, 404, request);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
-      return json({ error: message }, 500);
+      return json({ error: message }, 500, request);
     }
   },
 

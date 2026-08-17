@@ -453,7 +453,7 @@ describe("v1 backups still restore", () => {
 
     const upgraded = await buildBackup();
     expect(upgraded.version).toBe(4);
-    expect(upgraded.prospectSchema).toBe(6);
+    expect(upgraded.prospectSchema).toBe(7);
     expect(upgraded.records.prospects).toHaveLength(1);
     expect(upgraded.records.prospects[0].stage).toBe("Review Scheduled");
     expect(upgraded.settings[SETTING_KEYS.persistency]).toBe(84);

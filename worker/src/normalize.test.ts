@@ -4,6 +4,7 @@ import {
   leadId,
   normalizeOwner,
   normalizePnum,
+  splitStateZip,
   squash,
   toParcelRecord,
 } from "./normalize";
@@ -118,5 +119,25 @@ describe("leadId", () => {
     expect(leadId("00-00-00-000-001", "BRENNAN ALICE M")).not.toBe(
       leadId("00-00-00-000-002", "BRENNAN ALICE M"),
     );
+  });
+});
+
+describe("splitStateZip", () => {
+  it("splits the packed state and postcode GIS returns", () => {
+    expect(splitStateZip("MI49506")).toEqual({ propertyState: "MI", propertyZip: "49506" });
+  });
+
+  it("tolerates padding", () => {
+    expect(splitStateZip("  MI49301   ")).toEqual({ propertyState: "MI", propertyZip: "49301" });
+  });
+
+  it("keeps the five-digit postcode when a plus-four is present", () => {
+    expect(splitStateZip("MI495061234")).toEqual({ propertyState: "MI", propertyZip: "49506" });
+  });
+
+  it("returns blanks rather than guessing when the field is unusable", () => {
+    expect(splitStateZip("")).toEqual({ propertyState: "", propertyZip: "" });
+    expect(splitStateZip(null)).toEqual({ propertyState: "", propertyZip: "" });
+    expect(splitStateZip("garbage")).toEqual({ propertyState: "", propertyZip: "" });
   });
 });

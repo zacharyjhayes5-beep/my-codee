@@ -242,7 +242,13 @@ export interface Prospect {
   nextActionDate: string;
   doNotContact: boolean;
   /** How the household arrived. Blank when it predates the field. */
-  source: "granola" | "manual" | "import" | "";
+  source: "granola" | "manual" | "import" | "gis" | "";
+  /**
+   * Kent County permanent parcel number, when the household arrived from the
+   * GIS ingestion. Empty for every other origin. This is the key the upstream
+   * ledger deduplicates on, so it must never be edited or reused.
+   */
+  parcelId: string;
   lines: LineId[];
   /** Household-level contact details, kept from v3. */
   phone: string;

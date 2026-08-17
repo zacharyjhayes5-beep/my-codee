@@ -203,6 +203,6 @@ describe("detecting work to do", () => {
   });
 
   it("reports the schema version the app is on", () => {
-    expect(PROSPECT_SCHEMA_VERSION).toBe(6);
+    expect(PROSPECT_SCHEMA_VERSION).toBe(7);
   });
 });
