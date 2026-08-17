@@ -197,6 +197,13 @@ export interface ProspectNote {
  * name — both kept under their existing keys so the Granola importer, the
  * search box and the Lead Map did not have to be rewritten for a rename.
  */
+export interface ProspectTag {
+  id: string;
+  label: string;
+  /** A palette id from `lib/tags.ts` — "navy", "cognac", and so on. */
+  color: string;
+}
+
 export interface Prospect {
   id: string;
   /** Household display name — "Tom & Linda Vargas". */
@@ -243,6 +250,12 @@ export interface Prospect {
   doNotContact: boolean;
   /** How the household arrived. Blank when it predates the field. */
   source: "granola" | "manual" | "import" | "gis" | "";
+  /**
+   * Free-form marks the agent puts on a household — "High value", "Referral".
+   * `color` holds a palette id from `lib/tags.ts`, not a hex value, so the
+   * colours can be retuned without rewriting stored records.
+   */
+  tags: ProspectTag[];
   /**
    * Kent County permanent parcel number, when the household arrived from the
    * GIS ingestion. Empty for every other origin. This is the key the upstream

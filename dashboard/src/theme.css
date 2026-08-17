@@ -1279,3 +1279,127 @@ th,
   color: var(--danger);
   background: var(--danger-soft);
 }
+
+/* ============================================================
+   11. Lead tags
+
+   A tag is a mark the agent puts on a household by hand. It has to be
+   readable at a glance in a dense table without competing with the name it
+   sits beside, so it is small, square-ish and quiet — a label, not a badge.
+   ============================================================ */
+
+.lead-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* The name and its tags share a line and wrap together, so a household with
+   several tags grows the row rather than widening the column. */
+.lead-name-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* ---------- The editor, inside the expanded card ---------- */
+
+.tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tag-editor h5 {
+  margin: 0;
+}
+
+.tag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Slightly roomier here than in the table, because it carries a control. */
+.tag-editor .lead-tag {
+  padding: 3px 4px 3px 8px;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  padding: 0 3px;
+  margin: 0;
+  color: inherit;
+  opacity: 0.7;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 3px;
+  min-height: 0;
+}
+
+.tag-remove:hover {
+  opacity: 1;
+  background: rgba(247, 244, 237, 0.18);
+}
+
+.tag-add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.tag-input {
+  flex: 1 1 180px;
+  min-width: 160px;
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.tag-colors {
+  display: flex;
+  gap: 5px;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tag-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  padding: 0;
+  min-height: 0;
+  transition: box-shadow var(--t-fast);
+}
+
+/* The chosen swatch is ringed rather than merely brightened, so the selection
+   does not depend on telling two similar tones apart. */
+.tag-swatch.is-chosen {
+  box-shadow:
+    0 0 0 2px var(--surface-1),
+    0 0 0 4px var(--navy);
+}
+
+.tag-add-btn {
+  min-height: 34px;
+  padding: 6px 14px;
+}

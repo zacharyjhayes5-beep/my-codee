@@ -8,6 +8,14 @@ import { newId, today } from "../lib/storage";
 import { CallHistory } from "./CallHistory";
 import { CallLogger } from "./CallLogger";
 import { OpportunityPanel } from "./OpportunityPanel";
+import {
+  DEFAULT_TAG_COLOR,
+  MAX_TAG_LENGTH,
+  TAG_COLORS,
+  addTag,
+  removeTag,
+  tagColor,
+} from "../lib/tags";
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -47,6 +55,16 @@ export function ProspectCard({
   onSaveOpportunity,
   onRemoveOpportunity,
 }: ProspectCardProps) {
+  const [tagDraft, setTagDraft] = useState("");
+  const [tagShade, setTagShade] = useState(DEFAULT_TAG_COLOR);
+
+  /** Add the typed tag, then clear the field but keep the chosen colour. */
+  function commitTag() {
+    const current = prospect.tags ?? [];
+    const next = addTag(current, tagDraft, tagShade);
+    if (next !== current) onChange({ tags: next });
+    setTagDraft("");
+  }
   const [newNote, setNewNote] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
   /** The call being written or corrected — null when the form is closed. */
@@ -119,6 +137,77 @@ export function ProspectCard({
           ))}
         </select>
       </header>
+
+      <section className="tag-editor">
+        <h5>Tags</h5>
+
+        {(prospect.tags ?? []).length > 0 && (
+          <ul className="tag-list">
+            {(prospect.tags ?? []).map((tag) => {
+              const c = tagColor(tag.color);
+              return (
+                <li key={tag.id}>
+                  <span
+                    className="lead-tag"
+                    style={{ background: c.background, color: c.foreground }}
+                  >
+                    {tag.label}
+                    <button
+                      className="tag-remove"
+                      onClick={() => onChange({ tags: removeTag(prospect.tags ?? [], tag.id) })}
+                      aria-label={`Remove tag ${tag.label}`}
+                      title={`Remove ${tag.label}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <div className="tag-add">
+          <label className="sr-only" htmlFor={`tag-label-${prospect.id}`}>
+            New tag
+          </label>
+          <input
+            id={`tag-label-${prospect.id}`}
+            className="tag-input"
+            value={tagDraft}
+            maxLength={MAX_TAG_LENGTH}
+            placeholder="High value, Referral…"
+            onChange={(e) => setTagDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter is the natural way to finish a short label.
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitTag();
+              }
+            }}
+          />
+
+          <fieldset className="tag-colors">
+            <legend className="sr-only">Tag colour</legend>
+            {TAG_COLORS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`tag-swatch${tagShade === c.id ? " is-chosen" : ""}`}
+                style={{ background: c.background }}
+                onClick={() => setTagShade(c.id)}
+                aria-pressed={tagShade === c.id}
+                aria-label={c.name}
+                title={c.name}
+              />
+            ))}
+          </fieldset>
+
+          <button className="ghost-btn tag-add-btn" onClick={commitTag} disabled={!tagDraft.trim()}>
+            Add
+          </button>
+        </div>
+      </section>
 
       <div className="chip-row">
         {lineOptions.map((l) => {

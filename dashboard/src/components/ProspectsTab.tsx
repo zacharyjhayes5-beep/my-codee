@@ -22,6 +22,7 @@ import { reconcileProspect } from "../lib/rules";
 import { today } from "../lib/storage";
 import { whenPersisted } from "../lib/repository";
 import { ProspectCard } from "./ProspectCard";
+import { tagColor } from "../lib/tags";
 import {
   DEFAULT_ENDPOINT,
   GisSyncError,
@@ -503,7 +504,23 @@ export function ProspectsTab({
                             ▶
                           </span>
                           <span>
-                            {p.name || "Untitled household"}
+                            <span className="lead-name-line">
+                              {p.name || "Untitled household"}
+                              {/* Tags read inline after the name, so the whole
+                                  table can be scanned without expanding rows. */}
+                              {(p.tags ?? []).map((tag) => {
+                                const c = tagColor(tag.color);
+                                return (
+                                  <span
+                                    key={tag.id}
+                                    className="lead-tag"
+                                    style={{ background: c.background, color: c.foreground }}
+                                  >
+                                    {tag.label}
+                                  </span>
+                                );
+                              })}
+                            </span>
                             {p.contacts.length > 0 && (
                               <span className="lead-sub">
                                 {p.contacts.length} contact

@@ -5,6 +5,7 @@ import type {
   Contact,
   Prospect,
   ProspectNote,
+  ProspectTag,
   Stage,
 } from "../types";
 import { newId } from "./storage";
@@ -26,9 +27,10 @@ import { newId } from "./storage";
  * 4 split the old `status`. 5 added `stageSource` / `stageCallId` so a stage
  * knows whether a rule or a person put it there. 6 added the intake and
  * research fields — names, lead source, Why They Fit, Important Notes and the
- * asset indicators.
+  * asset indicators. 7 added parcelId and the "gis" source for automated
+ * ingestion. 8 added tags.
  */
-export const PROSPECT_SCHEMA_VERSION = 7;
+export const PROSPECT_SCHEMA_VERSION = 8;
 
 /** The six statuses v3 could hold, and where each one lands. */
 export const STATUS_TO_STAGE: Record<string, Stage> = {
@@ -116,6 +118,7 @@ export function blankProspect(overrides: Partial<Prospect> = {}): Prospect {
     doNotContact: false,
     source: "",
     parcelId: "",
+    tags: [],
     lines: [],
     phone: "",
     email: "",
@@ -162,6 +165,25 @@ function isStage(value: unknown): value is Stage {
 function asNotes(value: unknown): ProspectNote[] {
   if (!Array.isArray(value)) return [];
   return value.filter((n): n is ProspectNote => Boolean(n) && typeof n === "object");
+}
+
+/**
+ * Tags off a stored record.
+ *
+ * Anything malformed is dropped rather than repaired — a tag with no label is
+ * not a tag, and inventing one would put a mark on a household that nobody
+ * chose. Records written before tags existed simply have none.
+ */
+function asTags(value: unknown): ProspectTag[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((t): t is Record<string, unknown> => typeof t === "object" && t !== null)
+    .map((t, i) => ({
+      id: typeof t.id === "string" && t.id ? t.id : `tag_${i}_${Math.random().toString(36).slice(2, 7)}`,
+      label: typeof t.label === "string" ? t.label.trim() : "",
+      color: typeof t.color === "string" && t.color ? t.color : "navy",
+    }))
+    .filter((t) => t.label.length > 0);
 }
 
 function asContacts(value: unknown): Contact[] {
@@ -277,6 +299,7 @@ export function normalizeProspect(input: unknown): Prospect {
     source: raw.source ?? "",
     // Blank for every record that predates GIS ingestion. Never invented.
     parcelId: raw.parcelId ?? "",
+    tags: asTags(raw.tags),
     lines,
     phone: raw.phone ?? "",
     email: raw.email ?? "",
