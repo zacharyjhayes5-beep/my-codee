@@ -1,5 +1,7 @@
 import { useState } from "react";
 import "./App.css";
+// Loaded last: the design system that governs the whole interface.
+import "./theme.css";
 import { BackupPanel } from "./components/BackupPanel";
 import { LeadMap } from "./components/LeadMap";
 import { OperatorTab, type CommandTarget } from "./components/OperatorTab";
@@ -15,13 +17,56 @@ import type { ReviewProposal } from "./types";
 
 type Tab = "operator" | "progress" | "todo" | "prospects" | "pipeline" | "map";
 
-const tabs: { id: Tab; label: string }[] = [
-  { id: "operator", label: "Operator" },
-  { id: "progress", label: "Progress" },
-  { id: "todo", label: "To-Do" },
-  { id: "prospects", label: "Prospects" },
-  { id: "pipeline", label: "Pipeline" },
-  { id: "map", label: "Lead Map" },
+/**
+ * Navigation, and the page header each destination writes.
+ *
+ * `title` and `standfirst` answer "where am I" and "what matters here" without
+ * a decorative heading. The icons are single-stroke paths drawn inline rather
+ * than pulled from a library — six glyphs did not justify a dependency.
+ */
+const tabs: { id: Tab; label: string; title: string; standfirst: string; icon: string }[] = [
+  {
+    id: "operator",
+    label: "Operator",
+    title: "Operator",
+    standfirst: "Today's brief, what needs you, and the next call.",
+    icon: "M3 12h4l2.5-7 5 14L17.5 12H21",
+  },
+  {
+    id: "prospects",
+    label: "Leads",
+    title: "Leads",
+    standfirst: "Every household, and what has to happen next on each.",
+    icon: "M4 6h16M4 12h16M4 18h10",
+  },
+  {
+    id: "pipeline",
+    label: "Pipeline",
+    title: "Pipeline",
+    standfirst: "Open opportunities by stage, and what has gone quiet.",
+    icon: "M4 19V9M10 19V5M16 19v-7M22 19H2",
+  },
+  {
+    id: "todo",
+    label: "To-Do",
+    title: "To-Do",
+    standfirst: "Tasks by urgency, the week ahead, and the review inbox.",
+    icon: "M4 7l2.5 2.5L11 5M4 17l2.5 2.5L11 13M14 7h6M14 17h6",
+  },
+  {
+    id: "progress",
+    label: "Progress",
+    title: "Progress",
+    standfirst: "The book of business against the period's goal.",
+    icon: "M4 18l5-6 4 3.5L20 6",
+  },
+  {
+    id: "map",
+    label: "Lead Map",
+    title: "Lead map",
+    standfirst: "How households connect to the lines they hold.",
+    icon: "M12 3v6m0 6v6M5.6 7.3l4.7 2.7m3.4 2 4.7 2.7M18.4 7.3l-4.7 2.7m-3.4 2-4.7 2.7",
+  },
 ];
 
 function App() {
@@ -80,33 +125,57 @@ function App() {
   }
   const [ownerName, setOwnerName] = useStored("owner");
 
+  const current = tabs.find((t) => t.id === tab) ?? tabs[0];
+
   return (
     <div className="app">
-      <header className="app-header">
-        <div>
-          <h1>Agency Dashboard</h1>
-          <p>Farm Bureau Michigan — book of business tracker</p>
+      <nav className="sidenav" aria-label="Sections">
+        <div className="sidenav-brand">
+          <span className="brand-mark" aria-hidden="true" />
+          <span className="brand-text">
+            <strong>Agency</strong>
+            <span>Farm Bureau Michigan</span>
+          </span>
         </div>
-        <div className="header-controls">
-          <nav className="tab-bar">
-            {tabs.map((t) => (
-              <button key={t.id} className={t.id === tab ? "active" : ""} onClick={() => setTab(t.id)}>
+
+        <ul className="sidenav-list">
+          {tabs.map((t) => (
+            <li key={t.id}>
+              <button
+                className={`sidenav-link${t.id === tab ? " is-current" : ""}`}
+                onClick={() => setTab(t.id)}
+                aria-current={t.id === tab ? "page" : undefined}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d={t.icon} />
+                </svg>
                 {t.label}
               </button>
-            ))}
-          </nav>
+            </li>
+          ))}
+        </ul>
+
+        <div className="sidenav-foot">
           <BackupPanel onExported={() => setLastBackupAt(new Date().toISOString())} />
         </div>
-      </header>
+      </nav>
 
-      <StorageNotice
-        prospects={prospects}
-        lastBackupAt={lastBackupAt}
-        dismissed={noticeSeen}
-        onDismissed={() => setNoticeSeen(true)}
-      />
+      <div className="workspace">
+        <header className="page-head">
+          <div className="page-head-text">
+            <h1>{current.title}</h1>
+            <p>{current.standfirst}</p>
+          </div>
+        </header>
 
-      <main>
+        <StorageNotice
+          prospects={prospects}
+          lastBackupAt={lastBackupAt}
+          dismissed={noticeSeen}
+          onDismissed={() => setNoticeSeen(true)}
+        />
+
+        <main>
         {tab === "operator" && (
           <OperatorTab
             entries={entries}
@@ -180,7 +249,8 @@ function App() {
             onOwnerNameChange={setOwnerName}
           />
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import type {
   AuditEntry,
   Call,
@@ -21,6 +21,33 @@ import { blankProspect } from "../lib/prospectSchema";
 import { reconcileProspect } from "../lib/rules";
 import { today } from "../lib/storage";
 import { ProspectCard } from "./ProspectCard";
+
+type SortKey = "name" | "stage" | "area" | "next" | "touched";
+
+const columns: { key: SortKey; label: string }[] = [
+  { key: "name", label: "Household" },
+  { key: "stage", label: "Stage" },
+  { key: "area", label: "Area" },
+  { key: "next", label: "Next action" },
+];
+
+/**
+ * The working state of a lead, read from fields the record already carries.
+ *
+ * This is a display derivation and nothing more — no state is stored, and the
+ * order of the checks is the priority order: a household that is closed is
+ * closed regardless of what else is true, and an overdue follow-up outranks
+ * the fact that somebody has been contacted before.
+ */
+function leadStatus(p: Prospect, now: string): { label: string; tone: string } {
+  if (p.stage === "Closed") return { label: "Closed", tone: "is-neutral" };
+  if (p.needsPhoneNumber) return { label: "Needs research", tone: "is-warning" };
+  if (p.nextActionDate && p.nextActionDate < now) return { label: "Follow-up due", tone: "is-critical" };
+  if (p.needsReview) return { label: "Needs review", tone: "is-warning" };
+  if (!p.lastContactedAt) return { label: "New", tone: "is-new" };
+  if (p.nextActionDate) return { label: "Scheduled", tone: "is-active" };
+  return { label: "Contacted", tone: "is-good" };
+}
 
 interface ProspectsTabProps {
   prospects: Prospect[];
@@ -71,6 +98,7 @@ export function ProspectsTab({
 
   const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "touched", dir: -1 });
 
   const counts = useMemo(() => {
     const map = new Map<Stage, number>();
@@ -95,6 +123,33 @@ export function ProspectsTab({
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.name.localeCompare(b.name));
   }, [prospects, search, stageFilter]);
+
+  const sorted = useMemo(() => {
+    const read = (p: Prospect) => {
+      switch (sort.key) {
+        case "name":
+          return p.name.toLowerCase();
+        case "stage":
+          return p.stage;
+        case "area":
+          return p.area.toLowerCase();
+        case "next":
+          // Undated work sorts last either way rather than leading the list.
+          return p.nextActionDate || "9999-12-31";
+        default:
+          return p.updatedAt;
+      }
+    };
+    return [...visible].sort((a, b) => {
+      const x = read(a);
+      const y = read(b);
+      return x === y ? a.name.localeCompare(b.name) : (x < y ? -1 : 1) * sort.dir;
+    });
+  }, [visible, sort]);
+
+  function toggleSort(key: SortKey) {
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
+  }
 
   function patchProspect(id: string, patch: Partial<Prospect>) {
     const before = prospects.find((p) => p.id === id);
@@ -302,57 +357,149 @@ export function ProspectsTab({
             </button>
           ))}
         </div>
-        <div className="toolbar-right">
+      </div>
+
+      <div className="lead-toolbar">
+        <div className="lead-toolbar-left">
+          <label className="sr-only" htmlFor="lead-search">
+            Search leads
+          </label>
           <input
+            id="lead-search"
             className="search-input"
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search names, areas, notes…"
           />
-          <button className="primary-btn" onClick={addBlank}>
-            Blank profile
-          </button>
+          <span className="lead-count">
+            {sorted.length} of {prospects.length} households
+          </span>
         </div>
+        <button className="primary-btn" onClick={addBlank}>
+          Blank profile
+        </button>
       </div>
 
-      {visible.length === 0 ? (
-        <p className="empty">
+      {sorted.length === 0 ? (
+        <p className="lead-empty">
           {prospects.length === 0
             ? "No households yet — add one with Quick add above, or bring a list in with Bulk import."
             : "Nothing matches that filter."}
         </p>
       ) : (
-        <div className="prospect-grid">
-          {visible.map((p) => (
-            <ProspectCard
-              key={p.id}
-              prospect={p}
-              calls={callsFor(calls, p.id)}
-              expanded={expandedId === p.id}
-              onToggle={() => setExpandedId(expandedId === p.id ? null : p.id)}
-              onChange={(patch) => patchProspect(p.id, patch)}
-              onRemove={() => {
-                onCallsChange((prev) => prev.filter((c) => c.prospectId !== p.id));
-                // Rule-made tasks go with the household; hand-typed ones stay.
-                onTasksChange(tasks.filter((t) => !(t.prospectId === p.id && t.ruleId)));
-                onChange((prev) => prev.filter((x) => x.id !== p.id));
-              }}
-              onSaveCall={saveCall}
-              onDeleteCall={deleteCall}
-              onSetScore={(score) => patchProspect(p.id, { conversionScore: score })}
-              opportunities={opportunitiesFor(opportunities, p.id)}
-              onSaveOpportunity={(o, isNew) =>
-                onOpportunitiesChange(
-                  isNew
-                    ? [...opportunities, o]
-                    : opportunities.map((x) => (x.id === o.id ? patchOpportunity(x, o) : x)),
-                )
-              }
-              onRemoveOpportunity={(id) =>
-                onOpportunitiesChange(opportunities.filter((x) => x.id !== id))
-              }
-            />
-          ))}
+        <div className="lead-table-wrap">
+          <table className="lead-table">
+            <caption className="sr-only">
+              Households, with stage, area, next action and working status.
+            </caption>
+            <thead>
+              <tr>
+                {columns.map((c) => (
+                  <th
+                    key={c.key}
+                    scope="col"
+                    aria-sort={
+                      sort.key === c.key ? (sort.dir === 1 ? "ascending" : "descending") : "none"
+                    }
+                  >
+                    <button onClick={() => toggleSort(c.key)}>
+                      {c.label}
+                      {sort.key === c.key && (
+                        <span className="sort-caret" aria-hidden="true">
+                          {sort.dir === 1 ? "▲" : "▼"}
+                        </span>
+                      )}
+                    </button>
+                  </th>
+                ))}
+                <th scope="col">Status</th>
+                <th scope="col">Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((p) => {
+                const status = leadStatus(p, today());
+                const open = expandedId === p.id;
+                return (
+                  <Fragment key={p.id}>
+                    <tr className={`lead-row${open ? " is-open" : ""}`}>
+                      <td>
+                        <button
+                          className="lead-name"
+                          aria-expanded={open}
+                          onClick={() => setExpandedId(open ? null : p.id)}
+                        >
+                          <span className="lead-disclosure" aria-hidden="true">
+                            ▶
+                          </span>
+                          <span>
+                            {p.name || "Untitled household"}
+                            {p.contacts.length > 0 && (
+                              <span className="lead-sub">
+                                {p.contacts.length} contact
+                                {p.contacts.length === 1 ? "" : "s"}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      </td>
+                      <td>{p.stage}</td>
+                      <td>{p.area || "—"}</td>
+                      <td>
+                        {p.nextAction || "—"}
+                        {p.nextActionDate && <span className="lead-sub">{p.nextActionDate}</span>}
+                      </td>
+                      <td>
+                        <span className={`lead-status ${status.tone}`}>{status.label}</span>
+                      </td>
+                      <td>
+                        {p.phone || p.email || "—"}
+                        {p.phone && p.email && <span className="lead-sub">{p.email}</span>}
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr className="lead-detail-row">
+                        <td colSpan={6}>
+                          <ProspectCard
+                            prospect={p}
+                            calls={callsFor(calls, p.id)}
+                            expanded
+                            onToggle={() => setExpandedId(null)}
+                            onChange={(patch) => patchProspect(p.id, patch)}
+                            onRemove={() => {
+                              onCallsChange((prev) => prev.filter((c) => c.prospectId !== p.id));
+                              // Rule-made tasks go with the household; hand-typed ones stay.
+                              onTasksChange(
+                                tasks.filter((t) => !(t.prospectId === p.id && t.ruleId)),
+                              );
+                              onChange((prev) => prev.filter((x) => x.id !== p.id));
+                            }}
+                            onSaveCall={saveCall}
+                            onDeleteCall={deleteCall}
+                            onSetScore={(score) => patchProspect(p.id, { conversionScore: score })}
+                            opportunities={opportunitiesFor(opportunities, p.id)}
+                            onSaveOpportunity={(o, isNew) =>
+                              onOpportunitiesChange(
+                                isNew
+                                  ? [...opportunities, o]
+                                  : opportunities.map((x) =>
+                                      x.id === o.id ? patchOpportunity(x, o) : x,
+                                    ),
+                              )
+                            }
+                            onRemoveOpportunity={(id) =>
+                              onOpportunitiesChange(opportunities.filter((x) => x.id !== id))
+                            }
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

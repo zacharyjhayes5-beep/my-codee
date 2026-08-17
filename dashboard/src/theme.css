@@ -1,0 +1,1103 @@
+/**
+ * The design system.
+ *
+ * Loaded after App.css, which carries the application's older component rules.
+ * Those rules are now materially correct — they read from tokens — but they
+ * were written for a dense dark console. This file supplies what tokens alone
+ * cannot: structure, proportion, density, and typographic hierarchy.
+ *
+ * The governing idea is that hierarchy comes from space, weight and alignment,
+ * and a container is the last resort rather than the first. Most of the rules
+ * below therefore *remove* something — a border, a background, a shadow, a
+ * radius — so that the few surfaces that remain mean something.
+ */
+
+/* ============================================================
+   1. Shell — a permanent navy spine and an ivory workspace
+   ============================================================ */
+
+.app {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  min-height: 100vh;
+  padding: 0;
+  gap: 0;
+  background: var(--page);
+  /* The old shell was a centred 1200px column. The navy spine has to reach
+     both edges of the window, so the cap and the auto margins go. */
+  max-width: none;
+  margin: 0;
+  width: 100%;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidenav {
+  display: flex;
+  flex-direction: column;
+  background: var(--navy);
+  color: rgba(247, 244, 237, 0.72);
+  padding: var(--space-5) 0 var(--space-4);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidenav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 var(--space-5) var(--space-6);
+}
+
+/* The one deliberate piece of cognac in the permanent chrome. */
+.brand-mark {
+  width: 3px;
+  height: 26px;
+  border-radius: 2px;
+  background: var(--cognac);
+  flex: none;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.brand-text strong {
+  color: #f7f4ed;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brand-text span {
+  font-size: 0.75rem;
+  color: rgba(247, 244, 237, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidenav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sidenav-link {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(247, 244, 237, 0.72);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+
+.sidenav-link svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
+}
+
+.sidenav-link:hover {
+  background: rgba(247, 244, 237, 0.06);
+  color: #f7f4ed;
+}
+
+/* Selected state: ivory text and a cognac rule, not a glowing pill. */
+.sidenav-link.is-current {
+  background: rgba(247, 244, 237, 0.09);
+  color: #f7f4ed;
+  font-weight: 600;
+}
+
+.sidenav-link.is-current svg {
+  opacity: 1;
+}
+
+.sidenav-link.is-current::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--cognac);
+}
+
+.sidenav-link:focus-visible {
+  outline: 2px solid rgba(247, 244, 237, 0.85);
+  outline-offset: -2px;
+}
+
+.sidenav-foot {
+  padding: var(--space-4) var(--space-5) 0;
+  margin-top: var(--space-4);
+  border-top: 1px solid rgba(247, 244, 237, 0.1);
+}
+
+/* Backup lives in the sidebar, so its controls wear the dark surface. */
+.sidenav-foot .backup-panel {
+  background: none;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+.sidenav-foot .backup-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sidenav-foot .ghost-btn {
+  flex: 1;
+  background: rgba(247, 244, 237, 0.07);
+  border: 1px solid rgba(247, 244, 237, 0.14);
+  color: rgba(247, 244, 237, 0.88);
+  font-size: 0.8rem;
+  padding: 7px 10px;
+}
+
+.sidenav-foot .ghost-btn:hover:not(:disabled) {
+  background: rgba(247, 244, 237, 0.12);
+  color: #f7f4ed;
+}
+
+.sidenav-foot .backup-status {
+  color: rgba(247, 244, 237, 0.6);
+  font-size: 0.75rem;
+  margin: var(--space-3) 0 0;
+}
+
+/* ---------- Workspace ---------- */
+
+.workspace {
+  min-width: 0;
+  padding: var(--space-6) var(--space-7) var(--space-8);
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.page-head-text h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-transform: none;
+  animation: none;
+  text-shadow: none;
+}
+
+.page-head-text p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+main {
+  min-width: 0;
+}
+
+/* ============================================================
+   2. Typography
+   ============================================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: -0.01em;
+  text-shadow: none;
+  font-weight: 600;
+}
+
+h2 {
+  font-size: 1.15rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+h4 {
+  font-size: 0.95rem;
+}
+
+h5 {
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Section headings across the older components. Sentence case, quiet, and
+   without the rule underneath that used to box every group in. */
+.op-panel-head,
+.snapshot-heading,
+.up-next h4,
+.review-queue h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: -0.01em;
+  border-bottom: none;
+  padding-bottom: 0;
+  background: none;
+  font-family: var(--font-sans);
+}
+
+/* The seven small uppercase metric labels the old design leaned on. Kept as
+   labels, but sized and coloured so they read as captions. */
+.aa-req-label,
+.eod-label,
+.pipe-stat-label,
+.context-label,
+.call-history-head,
+.op-vital-label,
+.orb-label,
+.tank-label,
+.meter-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+/* Figures. Tabular so columns of numbers line up. */
+.op-vital-value,
+.orb-pct,
+.stat-value,
+.meter-value,
+.tank-value,
+.pipe-stat-value,
+.book-totals strong,
+td.num,
+.lead-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   3. Surfaces — fewer of them
+
+   The old interface put nearly everything in a bordered, shadowed, rounded
+   box. Most of those groups are better expressed as a heading with space
+   under it, so the default here is no container at all.
+   ============================================================ */
+
+.tab-panel,
+.command-center,
+.operator,
+.op-grid,
+.progress-tab,
+.todo-tab,
+.pipeline-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Groups that used to be cards become open sections separated by space. */
+.op-panel,
+.snapshot,
+.up-next,
+.review-queue,
+.week-agenda,
+.eod-panel,
+.pipe-summary,
+.aa-section,
+.tier-section,
+.intake-panel,
+.transcript-panel,
+.opportunity-panel,
+.call-history,
+.backup-panel,
+.book-of-business,
+.goal-panel {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* When a container genuinely is the right answer — something you act inside,
+   or a record that needs an edge — it is a quiet ivory plate. */
+.prospect-card,
+.call-logger,
+.lead-detail,
+.storage-notice,
+.op-cmd,
+.stat-tile,
+.review-item {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+}
+
+.prospect-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ============================================================
+   4. Controls
+   ============================================================ */
+
+button {
+  font-family: var(--font-sans);
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    color var(--t-fast);
+}
+
+.primary-btn,
+.next-call-btn {
+  background: var(--navy);
+  color: var(--on-accent);
+  border: 1px solid var(--navy);
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 0.875rem;
+  font-weight: 550;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  box-shadow: none;
+  animation: none;
+  min-height: 38px;
+}
+
+.primary-btn:hover:not(:disabled),
+.next-call-btn:hover:not(:disabled) {
+  background: var(--navy-3);
+  border-color: var(--navy-3);
+}
+
+.primary-btn:disabled,
+.next-call-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ghost-btn,
+.mode-switch button,
+.filter-chip {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+  text-transform: none;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.ghost-btn:hover:not(:disabled),
+.mode-switch button:hover:not(:disabled),
+.filter-chip:hover {
+  background: var(--surface-2);
+  border-color: var(--baseline);
+}
+
+/* Selected secondary control: navy fill, not a bright pill. */
+.mode-switch button.active,
+.filter-chip.on {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--on-accent);
+}
+
+.filter-chip span {
+  opacity: 0.65;
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A text action. Underlined, so it is not identified by colour alone. */
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--baseline);
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration-color: var(--cognac);
+  color: var(--cognac);
+}
+
+.danger-btn,
+.remove-btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.danger-btn:hover,
+.remove-btn:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+/* ---------- Inputs ---------- */
+
+input,
+select,
+textarea {
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 9px 11px;
+  min-height: 38px;
+  transition:
+    border-color var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: var(--focus-ring);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.mini-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-secondary);
+}
+
+.mini-field input,
+.mini-field select,
+.mini-field textarea {
+  color: var(--text-primary);
+}
+
+.required-mark,
+.optional-mark {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.78rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.search-input {
+  min-width: 260px;
+}
+
+/* ============================================================
+   5. The leads table
+
+   Managing leads is the reason this application exists, so this is the one
+   surface built rather than tidied. Rows are dense but not cramped, the
+   household name outweighs its metadata, and status carries a word.
+   ============================================================ */
+
+.lead-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.lead-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.lead-count {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.lead-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+}
+
+.lead-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 880px;
+}
+
+.lead-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  padding: 10px 16px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Sortable headers are buttons, so they are reachable from the keyboard. */
+.lead-table thead th button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.lead-table thead th button:hover {
+  color: var(--text-primary);
+}
+
+.sort-caret {
+  color: var(--cognac);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.lead-table tbody tr {
+  border-bottom: 1px solid var(--gridline);
+  transition: background var(--t-fast);
+}
+
+.lead-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.lead-row:hover {
+  background: var(--surface-2);
+}
+
+.lead-row.is-open {
+  background: var(--surface-2);
+}
+
+.lead-table td {
+  padding: 12px 16px;
+  vertical-align: middle;
+  color: var(--text-secondary);
+}
+
+/* The name is the thing you are looking for; everything else supports it. */
+.lead-name {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 550;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lead-name:hover {
+  color: var(--cognac);
+}
+
+.lead-disclosure {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  transition: transform var(--t-fast);
+  display: inline-block;
+  flex: none;
+}
+
+.lead-row.is-open .lead-disclosure {
+  transform: rotate(90deg);
+}
+
+.lead-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+.lead-detail-row > td {
+  padding: 0 0 var(--space-4);
+  background: var(--surface-2);
+}
+
+.lead-detail-row .prospect-card {
+  margin: 0 var(--space-4);
+  box-shadow: none;
+}
+
+.lead-empty {
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   6. Status — muted, and never colour alone
+
+   Every chip below carries its own word, so hue is reinforcement rather than
+   the message. The palette is four muted tones, not a rainbow.
+   ============================================================ */
+
+.status-chip,
+.temp-chip,
+.tier-badge,
+.stage-chip,
+.outcome-chip,
+.grade-chip,
+.score-chip,
+.src-chip,
+.source-tag,
+.fu-priority,
+.task-origin-chip,
+.overdue-pill,
+.tier-pill,
+.dup-strength,
+.edited-chip,
+.proposed-label,
+.call-direction,
+.op-flag,
+.lead-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 550;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: none;
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  box-shadow: none;
+  animation: none;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+
+.badge-muted,
+.lead-status.is-neutral {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.badge-info,
+.lead-status.is-active {
+  background: var(--navy-soft);
+  color: var(--navy);
+}
+
+.badge-good,
+.lead-status.is-good {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-warning,
+.badge-serious,
+.lead-status.is-warning {
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+
+.badge-critical,
+.lead-status.is-critical,
+.fu-priority.overdue,
+.op-flag.alert {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.fu-priority.today,
+.op-flag.ok {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+/* New leads are the one thing marked with cognac — the newest work in. */
+.lead-status.is-new {
+  background: var(--cognac-soft);
+  color: var(--cognac);
+}
+
+/* ============================================================
+   7. Retiring the console
+
+   Progress bars, meters and the orb were built to glow on black. They are
+   kept — they carry real numbers — but rendered as flat measured bars.
+   ============================================================ */
+
+.meter-track,
+.op-bhag-track,
+.goal-track,
+.pace-track {
+  background: var(--surface-3);
+  border: none;
+  border-radius: 999px;
+  overflow: hidden;
+  height: 6px;
+  box-shadow: none;
+}
+
+.meter-fill,
+.op-bhag-fill,
+.goal-fill,
+.orb-progress {
+  box-shadow: none;
+  border-radius: 999px;
+}
+
+.orb-halo,
+.tank-svg,
+.orb-svg {
+  filter: none;
+}
+
+/* The Operator command grid: six quiet plates, not a console launcher. */
+.op-cmd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  padding: var(--space-4);
+  cursor: pointer;
+}
+
+.op-cmd:hover {
+  border-color: var(--baseline);
+  background: var(--surface-2);
+}
+
+.op-cmd-label {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-primary);
+}
+
+.op-cmd-hint {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Tables elsewhere in the app inherit the same quiet treatment. */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-sans);
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gridline);
+}
+
+.scroller,
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* ============================================================
+   8. Responsive
+
+   Desktop is the working environment; these are graceful fallbacks, not a
+   mobile-first inversion.
+   ============================================================ */
+
+@media (max-width: 1180px) {
+  .workspace {
+    padding: var(--space-5) var(--space-5) var(--space-8);
+  }
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .sidenav {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    overflow-x: auto;
+  }
+
+  .sidenav-brand {
+    padding: 0;
+    flex: none;
+  }
+
+  .brand-text {
+    display: none;
+  }
+
+  .sidenav-list {
+    flex-direction: row;
+    padding: 0;
+    flex: 1;
+    gap: var(--space-1);
+  }
+
+  .sidenav-link {
+    white-space: nowrap;
+    padding: 8px 11px;
+  }
+
+  .sidenav-link.is-current::before {
+    left: 8px;
+    right: 8px;
+    top: auto;
+    bottom: -4px;
+    width: auto;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .sidenav-foot {
+    margin: 0;
+    padding: 0;
+    border-top: none;
+    border-left: 1px solid rgba(247, 244, 237, 0.1);
+    padding-left: var(--space-4);
+    flex: none;
+  }
+
+  .sidenav-foot .backup-status {
+    display: none;
+  }
+
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace {
+    padding: var(--space-4) var(--space-4) var(--space-7);
+  }
+
+  .search-input {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+/* Visually hidden, still announced. Used for table captions and the labels
+   tied to controls whose purpose is obvious to a sighted user. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================
+   9. Contrast corrections
+
+   Measured against the rendered pages rather than assumed. Each rule below
+   fixes a pairing that fell short of 4.5:1 on ivory.
+   ============================================================ */
+
+/* Cognac on a label has to be the darker ink, not the marker tone. */
+.lead-status.is-new,
+.link-btn:hover,
+.lead-name:hover,
+.sort-caret {
+  color: var(--cognac-ink);
+}
+
+/* --baseline is a rule colour. It was being used as text here, at 1.77:1. */
+.agenda-clear {
+  color: var(--text-secondary);
+}
+
+/* The hero figure was white, left from when it sat on a black orb. */
+.orb-pct {
+  color: var(--text-primary);
+}
+
+/* Table headings across the older components were using the muted tone at
+   12px; secondary is the correct weight for a column label. */
+th,
+.todo-stat-label,
+.stat-sub,
+.meter-goal,
+.meter-pct,
+.agenda-num,
+.section-blurb,
+.lead-sub,
+.map-hint,
+.muted-note,
+.empty,
+.orb-caption,
+.op-bhag-meta,
+.cc-yesterday,
+.goal-stretch {
+  color: var(--text-secondary);
+}
+
+/* The count inside a filter chip must follow the chip's own text colour.
+   On the selected (navy) chip an inherited dark value left it at 1.15:1. */
+.filter-chip span {
+  color: inherit;
+  opacity: 0.72;
+}
+
+/* Matches the older rule's specificity so it actually applies. */
+.filter-chip.on span {
+  color: inherit;
+  opacity: 0.72;
+}
+
+/* ---------- Hit targets ----------
+   WCAG 2.2 asks for 24x24 CSS pixels. The two controls below were 19px and
+   21px tall because their padding lived on the cell rather than the control. */
+.lead-table thead th {
+  padding: 0;
+}
+
+.lead-table thead th button {
+  width: 100%;
+  padding: 11px 16px;
+  min-height: 40px;
+}
+
+.lead-table thead th:not(:has(button)) {
+  padding: 11px 16px;
+}
+
+.lead-name {
+  min-height: 26px;
+  padding: 2px 0;
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}

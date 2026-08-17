@@ -39,11 +39,24 @@ npm run lint       # oxlint
 
 | Tab | File | What it does |
 | --- | --- | --- |
-| Operator | `OperatorTab.tsx` | Console-style home: vitals, progress orb, command deck, big goal |
-| Progress | `ProgressTab.tsx` | Book of business, earnings, goals, pace, NADP tiers |
+| Operator | `OperatorTab.tsx` | Home: vitals, progress orb, command deck, big goal |
+| Leads | `ProspectsTab.tsx` | Household profiles built from Granola call notes |
+| Pipeline | `PipelineTab.tsx` | Opportunities by stage, what's due, what's gone quiet |
 | To-Do | `TodoTab.tsx` | Tasks in four urgency buckets, with Obsidian/Gmail import |
-| Prospects | `ProspectsTab.tsx` | Household profiles built from Granola call notes |
+| Progress | `ProgressTab.tsx` | Book of business, earnings, goals, pace, NADP tiers |
 | Lead Map | `LeadMap.tsx` | Force-directed graph of prospects, lines and areas |
+
+Navigation is a permanent navy sidebar in `App.tsx`; the tab ids are unchanged
+(`prospects` still backs the Leads item, so nothing in the data or the routing
+moved when the label changed). Each entry carries the page title and standfirst
+that `.page-head` renders.
+
+**Leads is a table, not a grid of cards.** `ProspectsTab` renders a sortable
+`<table>`; a row expands into the full `ProspectCard` in a detail row, so every
+control the card ever had is still there. `leadStatus()` derives the working
+state — New, Needs research, Follow-up due, Needs review, Scheduled, Contacted,
+Closed — from fields the record already carries. It stores nothing, and the
+order of its checks is the priority order.
 
 ## Decisions already made — don't relitigate these
 
@@ -94,11 +107,34 @@ own requirement; `annuity: true` in `lib/policies.ts` marks them, and
 `lifeBreakdown()` does the split. This is deliberately *not* how the goal
 meters and tier gauges count life, which keep annuities in.
 
-**Theme.** Single dark theme, neon blue (`--accent`) and neon red
-(`--neon-red`). No light mode. Console styling on the Operator tab: monospace
-labels, bracketed panel corners, uppercase headers. Pulsing animation is
-rationed to things worth looking at and must stay behind
-`prefers-reduced-motion`.
+**Theme.** Warm ivory ground, deep midnight navy structure, cognac as a rare
+accent. This replaced the original neon-on-black console; there is no dark
+mode and no neon anywhere.
+
+- **`src/index.css` is the token layer** — ground, surfaces, navy, cognac,
+  warm neutrals, text, borders, radius, shadows, spacing, type, motion, focus.
+  The older neon names (`--accent`, `--neon-red`, `--status-*`) survive as
+  aliases pointing at the new values, which is what let 3,900 lines of
+  component CSS re-material without being rewritten. Change colour here, never
+  in a component.
+- **`src/theme.css` is the design system**, loaded *after* App.css. It owns
+  structure: the shell grid, the navy sidebar, the page header, typographic
+  hierarchy, the leads table, controls, and the rules that strip the old
+  console decoration. App.css is legacy and should shrink over time; put new
+  visual work in theme.css.
+- **Colour must carry meaning.** Navy = interactive, selected, primary.
+  Cognac = the current nav item and newly-arrived leads, and nothing else — if
+  the interface looks orange something is misusing it. Amber = needs
+  attention, red = overdue or failed, sage = good. Anything neutral stays
+  neutral. Status never depends on hue alone; every chip carries its word.
+- **Accessibility is measured, not assumed.** Every text/background pair on
+  all six pages was computed against its *composited* background and clears
+  4.5:1 (3:1 for large text); controls are ≥24px; focus is a visible navy
+  ring. `--text-muted` is deliberately dark — the lighter taupe it replaced
+  measured 4.05 and was the most common failure in the app. `--cognac-ink`
+  exists because cognac that reads well as a 3px marker fails as a label.
+- Motion is 120–180ms, functional only, and still behind
+  `prefers-reduced-motion`.
 
 **No new dependencies** unless there's a real reason. The force-directed
 graph, the gas tanks and the progress orb are all hand-rolled SVG.

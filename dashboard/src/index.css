@@ -1,93 +1,138 @@
 /**
  * Design tokens.
  *
- * Everything visual is defined here. Components reference tokens, never raw
- * colour — changing the look of the whole application should mean editing this
- * file, not three thousand lines of component CSS.
+ * The whole interface is built from this file. Component CSS references tokens
+ * and never raw colour, so the application's material can change here without
+ * three thousand lines being edited rule by rule.
  *
- * The intent is a calm, understated command centre: near-black charcoal
- * ground, quiet graphite surfaces, and colour reserved for meaning. The
- * interface should look settled when nothing needs attention.
+ * The material: a warm ivory cabin flooded with daylight, deep midnight-navy
+ * structure, and cognac used the way stitching is used on a door card — rarely,
+ * and only where the eye should land. Neutrals are warm throughout; there is no
+ * cold blue-grey anywhere in this palette.
  */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* ---------- Ground and surfaces ----------
-     Three steps only: the page, a panel, and something lifted above a panel.
-     More steps than that and the hierarchy stops reading. */
-  --page: #0b0f14;
-  --surface-1: #121820;
-  --surface-2: #19212b;
-  --surface-3: #1e2731;
+     Ivory is the room. Panels are *lighter* than the page, not darker, so the
+     page reads as a surface with objects resting on it rather than as a set of
+     windows cut into a dark ground. */
+  --page: #f2eee4;
+  --surface-1: #f9f7f1;
+  --surface-2: #efeadf;
+  --surface-3: #e7e1d4;
 
-  /* Hairlines. Steel at low opacity so panels separate without being outlined. */
-  --gridline: rgba(139, 152, 169, 0.1);
-  --border: rgba(139, 152, 169, 0.14);
-  --border-strong: rgba(139, 152, 169, 0.24);
-  --baseline: rgba(139, 152, 169, 0.3);
+  /* Navy — the structural colour. Sidebar, primary actions, headings. */
+  --navy: #131e2b;
+  --navy-2: #1b2a3a;
+  --navy-3: #24384c;
+  --navy-soft: rgba(19, 30, 43, 0.06);
+  --navy-line: rgba(19, 30, 43, 0.1);
+
+  /* Cognac — an accent, never a theme. If the interface looks orange,
+     something is using this that should not be. */
+  --cognac: #a9663a;
+  --cognac-2: #b87548;
+  --cognac-soft: rgba(169, 102, 58, 0.1);
+  /* Cognac as *text* has to be darker than cognac as a 3px marker — the mid
+     tone reads beautifully on a rule and fails AA on a label. */
+  --cognac-ink: #854d2c;
+
+  /* Brushed metal — borders, dividers, quiet icons. */
+  --metal: #a8adb2;
+  --metal-light: #c3c6c7;
+
+  /* Hairlines, warm so they sit in the ivory rather than on top of it. */
+  --gridline: rgba(19, 30, 43, 0.06);
+  --border: rgba(19, 30, 43, 0.11);
+  --border-strong: rgba(19, 30, 43, 0.18);
+  --baseline: rgba(19, 30, 43, 0.28);
 
   /* ---------- Text ----------
-     Off-white rather than pure white; the ground is soft, so the text is too. */
-  --text-primary: #e6edf3;
-  --text-secondary: #8b98a9;
-  --text-muted: #6b7684;
+     Primary text is deep navy, never pure black. Secondary is a warm taupe
+     that still clears AA on ivory — no grey-on-grey. */
+  --text-primary: #131e2b;
+  --text-secondary: #5d5648;
+  /* Darkened to clear 4.5:1 on surface-3, the darkest ivory a caption sits on.
+     The lighter taupe this used to be measured 4.05 and was the single most
+     common contrast failure in the interface. */
+  --text-muted: #635b4c;
 
   /* ---------- Meaning ----------
-     Colour is a signal, not decoration. Accent marks what is interactive or
-     selected. The other three say something is good, wants attention, or is
-     wrong. Anything neutral stays neutral. */
-  --accent: #45c7c7;
-  --accent-hover: #5ad4d4;
-  --accent-soft: rgba(69, 199, 199, 0.1);
-  --accent-track: rgba(69, 199, 199, 0.16);
-  --on-accent: #06181c;
+     Four signals, all muted. Status never depends on hue alone; these are
+     paired with a label everywhere they appear. */
+  --accent: var(--navy);
+  --accent-hover: var(--navy-3);
+  --accent-soft: var(--navy-soft);
+  --accent-track: rgba(19, 30, 43, 0.12);
+  --on-accent: #f7f4ed;
 
-  --success: #4faf94;
-  --success-soft: rgba(79, 175, 148, 0.12);
+  --success: #4a6b52;
+  --success-soft: rgba(74, 107, 82, 0.11);
 
-  --attention: #d3a04b;
-  --attention-soft: rgba(211, 160, 75, 0.12);
+  --attention: #7a5820;
+  --attention-soft: rgba(138, 101, 36, 0.11);
 
-  --danger: #d4696b;
-  --danger-soft: rgba(212, 105, 107, 0.12);
+  --danger: #9b3f38;
+  --danger-soft: rgba(155, 63, 56, 0.1);
 
   /* ---------- Legacy aliases ----------
-     The component sheet grew up with these names. Mapping them here retunes
-     the whole application without touching every rule that uses them. */
+     The component sheet grew up on these names. Mapping them here re-materials
+     the entire application without touching the rules that use them. */
   --neon-red: var(--danger);
   --neon-red-soft: var(--danger-soft);
   --status-good: var(--success);
   --status-warning: var(--attention);
-  --status-serious: #c8834f;
+  --status-serious: var(--cognac);
   --status-critical: var(--danger);
 
-  /* Chart series — distinct enough to tell apart, quiet enough to sit together. */
-  --series-1: #5b9fc9; /* Property */
-  --series-2: #c8834f; /* Casualty */
-  --series-3: #8f88c4; /* Life */
+  /* Chart series — navy, cognac, sage. Distinguishable without being loud. */
+  --series-1: #2c445e; /* Property */
+  --series-2: #a9663a; /* Casualty */
+  --series-3: #5f6f5a; /* Life */
 
   /* ---------- Depth ----------
-     Panels lift off the ground with shadow, not with a bright outline. The old
-     glow tokens now resolve to the same restrained shadows. */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.4);
+     Warm-tinted and shallow. Nothing floats; things rest. */
+  --shadow-1: 0 1px 2px rgba(35, 26, 12, 0.06);
+  --shadow-2: 0 2px 6px rgba(35, 26, 12, 0.07);
+  --shadow-3: 0 10px 28px rgba(35, 26, 12, 0.1);
   --glow-blue: var(--shadow-2);
   --glow-red: var(--shadow-2);
 
-  /* ---------- Shape ---------- */
+  /* ---------- Shape ----------
+     Restrained. Nothing bubbly. */
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 14px;
 
-  /* ---------- Type ----------
-     Sans for everything a person reads. Mono kept for figures and short
-     metadata, where aligned digits genuinely help. */
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* ---------- Spacing ----------
+     A 4px base. Layout uses the larger steps so the page breathes. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---------- Type ---------- */
+  --font-sans:
+    "Inter", "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  /* Small uppercase labels only — normal headings get no extra tracking. */
+  --mono: var(--font-mono);
   --tracking-label: 0.06em;
+
+  /* ---------- Motion ----------
+     Functional only. Nothing bounces, nothing floats. */
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+  --t-fast: 120ms var(--ease);
+  --t-base: 160ms var(--ease);
+
+  /* ---------- Focus ----------
+     One ring, defined once, used everywhere. */
+  --focus-ring: 0 0 0 2px var(--surface-1), 0 0 0 4px var(--navy);
 
   font-family: var(--font-sans);
 }
@@ -108,7 +153,8 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 button,
@@ -123,36 +169,35 @@ textarea {
 input,
 select,
 textarea {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 ::selection {
   background: var(--accent-track);
 }
 
-/* Visible keyboard focus, without the neon. */
+/* Keyboard focus is always visible and always the same shape. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--navy);
   outline-offset: 2px;
   border-radius: 3px;
 }
 
 /* ---------- Motion ----------
-   The pulsing rings this file used to carry are gone. The selectors that
-   referenced them still resolve, so nothing breaks — they now settle on a
-   quiet ring instead of breathing at you all day. */
+   These keyframes are referenced by older rules. They resolve to nothing so
+   the selectors stay valid without anything moving. */
 
 @keyframes pulse-blue {
   0%,
   100% {
-    box-shadow: 0 0 0 1px var(--accent-track);
+    box-shadow: none;
   }
 }
 
 @keyframes pulse-red {
   0%,
   100% {
-    box-shadow: 0 0 0 1px var(--danger-soft);
+    box-shadow: none;
   }
 }
 
@@ -184,5 +229,6 @@ textarea {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
