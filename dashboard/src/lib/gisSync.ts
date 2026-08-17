@@ -40,6 +40,15 @@ export interface SyncSettings {
   token: string;
 }
 
+/**
+ * The deployed ingestion Worker.
+ *
+ * The address is not a secret — it is useless without the token — so baking it
+ * in removes one thing to configure. The token is a secret and is never in
+ * this bundle; it is read from the browser at run time.
+ */
+export const DEFAULT_ENDPOINT = "https://gis-ingest.zh-agency-ops.workers.dev";
+
 export interface SyncResult {
   fetched: number;
   added: number;
@@ -189,11 +198,17 @@ export function mergeLeads(
 const ENDPOINT_KEY = "gis-sync-endpoint";
 const TOKEN_KEY = "gis-sync-token";
 
+/**
+ * The connection, or null when there is no token.
+ *
+ * Only the token is genuinely required — the endpoint falls back to the
+ * deployed Worker, so nothing has to be configured for the normal case.
+ */
 export function readSyncSettings(): SyncSettings | null {
   try {
-    const endpoint = window.localStorage.getItem(ENDPOINT_KEY) ?? "";
+    const endpoint = window.localStorage.getItem(ENDPOINT_KEY) || DEFAULT_ENDPOINT;
     const token = window.localStorage.getItem(TOKEN_KEY) ?? "";
-    return endpoint && token ? { endpoint, token } : null;
+    return token ? { endpoint, token } : null;
   } catch {
     return null;
   }
@@ -215,4 +230,48 @@ export function clearSyncSettings(): void {
   } catch {
     // Nothing to do.
   }
+}
+
+/* ---------------------------------------------------------------------------
+   One sync, used by both triggers
+
+   Startup runs this automatically; the manual control runs the identical code
+   for troubleshooting. Having one implementation is what keeps the two from
+   drifting apart.
+   --------------------------------------------------------------------------- */
+
+/**
+ * Pull, store, then acknowledge — strictly in that order.
+ *
+ * `commit` must not resolve until the records are durably written. Only then
+ * is the Worker told the leads were taken. A failure anywhere before that
+ * point leaves them unacknowledged upstream, so the next run delivers them
+ * again rather than dropping them on the floor.
+ */
+export async function runSync(
+  settings: SyncSettings,
+  existing: Prospect[],
+  commit: (added: Prospect[]) => Promise<void>,
+): Promise<SyncResult> {
+  const leads = await fetchNewLeads(settings);
+  if (leads.length === 0) {
+    return { fetched: 0, added: 0, duplicates: 0, acknowledged: 0 };
+  }
+
+  const { added, duplicates } = mergeLeads(existing, leads);
+  if (added.length > 0) await commit(added);
+
+  // Duplicates are acknowledged too. They are already held locally, so leaving
+  // them unsynced would make every future sync re-deliver the same records.
+  const acknowledged = await acknowledgeLeads(
+    settings,
+    leads.map((l) => l.id),
+  );
+
+  return {
+    fetched: leads.length,
+    added: added.length,
+    duplicates: duplicates.length,
+    acknowledged,
+  };
 }

@@ -16,12 +16,11 @@ database_name = "gis_leads"
 database_id = "a2cf8737-159f-4cd7-8c1d-198a4ef3b071"
 
 [vars]
-# Development batch size. The spec calls for proving the pipeline end to end
-# with three leads — one per municipality — before this becomes 25.
-BATCH_MODE = "dev"
+# Production batch: 25 per weekday run, quota'd 9 Ada / 8 Cascade / 8 East
+# Grand Rapids, with any shortfall filled from the other two.
+BATCH_MODE = "full"
 
-# Cron is deliberately left commented out. Enabling it is the last step, after
-# the full GIS -> Worker -> D1 -> API -> dashboard path has been proved by hand.
-# Weekdays at 11:00 UTC (7am Eastern in summer, 6am in winter).
-# [triggers]
-# crons = ["0 11 * * 1-5"]
+# Weekdays at 11:00 UTC — 7am Eastern in summer, 6am in winter. The batch is
+# waiting before the working day starts either way.
+[triggers]
+crons = ["0 11 * * 1-5"]

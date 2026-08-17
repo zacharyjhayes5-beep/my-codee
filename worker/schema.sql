@@ -99,3 +99,19 @@ CREATE TABLE IF NOT EXISTS ingestion_runs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_runs_started ON ingestion_runs (started_at);
+
+-- ---------------------------------------------------------------------------
+-- One-time setup codes
+--
+-- Getting the API token into a browser is the one step that cannot be done
+-- over an ordinary channel without writing the token somewhere it should not
+-- be. A setup code is single-use and short-lived: it is exchanged once for the
+-- token and is dead immediately afterwards, so a code that leaks is worthless
+-- within minutes and cannot be replayed.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS setup_codes (
+  code        TEXT PRIMARY KEY,
+  created_at  TEXT NOT NULL,
+  expires_at  TEXT NOT NULL,
+  used_at     TEXT
+);

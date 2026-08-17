@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 // Loaded last: the design system that governs the whole interface.
 import "./theme.css";
@@ -10,7 +10,8 @@ import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
 import { PipelineTab } from "./components/PipelineTab";
 import { StorageNotice } from "./components/StorageNotice";
-import { useStored } from "./lib/repository";
+import { useStored, whenPersisted } from "./lib/repository";
+import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
 import type { ReviewProposal } from "./types";
@@ -79,6 +80,11 @@ function App() {
   const [tasks, setTasks] = useStored("tasks");
   const [dismissed, setDismissed] = useStored("dismissed");
   const [prospects, setProspects] = useStored("prospects");
+  /** Lets the startup sync read the current list without depending on it. */
+  const prospectsRef = useRef(prospects);
+  prospectsRef.current = prospects;
+  /** One sync per load, even under StrictMode's double-invoke. */
+  const syncedOnce = useRef(false);
   const [calls, setCalls] = useStored("calls");
   const [reviews, setReviews] = useStored("reviews");
   const [audit, setAudit] = useStored("audit");
@@ -124,6 +130,44 @@ function App() {
     );
   }
   const [ownerName, setOwnerName] = useStored("owner");
+
+  /**
+   * Bring in whatever the ingestion Worker has ready, once per load.
+   *
+   * This is the normal path — the weekday cron builds the batch overnight and
+   * it is simply here when the dashboard is opened. Nothing about it is
+   * allowed to affect the application:
+   *
+   *   - it runs after the repository has initialised, because main.tsx does
+   *     not render until then;
+   *   - every failure is swallowed, so an unreachable Worker is invisible;
+   *   - leads are acknowledged only after the write has been persisted, so a
+   *     failure part-way leaves them upstream for the next attempt;
+   *   - `syncedOnce` guards against StrictMode's double-invoke in development,
+   *     which would otherwise fetch twice on every load.
+   */
+  useEffect(() => {
+    if (syncedOnce.current) return;
+    syncedOnce.current = true;
+
+    const settings = readSyncSettings();
+    if (!settings) return;
+
+    void (async () => {
+      try {
+        await runSync(settings, prospectsRef.current, async (added) => {
+          setProspects((prev) => [...prev, ...added]);
+          // Acknowledge only once the write has actually landed.
+          await whenPersisted();
+        });
+      } catch {
+        // A lead service that is down must never be something the user sees on
+        // open. The manual control on the Leads page reports the real error.
+      }
+    })();
+    // Deliberately once per load: the batch is built daily, not continuously.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const current = tabs.find((t) => t.id === tab) ?? tabs[0];
 

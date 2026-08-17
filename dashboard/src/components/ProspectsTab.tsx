@@ -20,13 +20,13 @@ import { callsFor, withLatestCallFields } from "../lib/calls";
 import { blankProspect } from "../lib/prospectSchema";
 import { reconcileProspect } from "../lib/rules";
 import { today } from "../lib/storage";
+import { whenPersisted } from "../lib/repository";
 import { ProspectCard } from "./ProspectCard";
 import {
+  DEFAULT_ENDPOINT,
   GisSyncError,
-  acknowledgeLeads,
-  fetchNewLeads,
-  mergeLeads,
   readSyncSettings,
+  runSync,
   writeSyncSettings,
 } from "../lib/gisSync";
 
@@ -111,48 +111,41 @@ export function ProspectsTab({
   const [syncNote, setSyncNote] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
 
   /**
-   * Pull whatever the ingestion service has ready.
+   * Manual retry.
    *
-   * The order is deliberate: records are committed locally *before* the server
-   * is told they were taken. A failure between the two leaves the leads
-   * unsynced upstream, so the next sync delivers them again rather than losing
-   * them. Parcel number is checked again here, so a restored backup or a reset
-   * database cannot reintroduce a household that already exists.
+   * The dashboard already syncs on every load, so this is not part of the
+   * normal workflow — it exists to force an attempt after a failure and to
+   * show the error, which the silent startup sync deliberately swallows. It
+   * runs exactly the same `runSync` the startup path does.
    */
   async function syncGis() {
     setSyncNote(null);
 
     let settings = readSyncSettings();
     if (!settings) {
-      const endpoint = window.prompt("Lead service address (https://…workers.dev)")?.trim();
-      if (!endpoint) return;
       const token = window.prompt("Access token for the lead service")?.trim();
       if (!token) return;
-      settings = { endpoint, token };
+      settings = { endpoint: DEFAULT_ENDPOINT, token };
       writeSyncSettings(settings);
     }
 
     setSyncing(true);
     try {
-      const leads = await fetchNewLeads(settings);
-      if (leads.length === 0) {
+      const result = await runSync(settings, prospects, async (added) => {
+        onChange((prev) => [...prev, ...added]);
+        await whenPersisted();
+      });
+
+      if (result.fetched === 0) {
         setSyncNote({ tone: "good", text: "No new leads waiting." });
         return;
       }
 
-      const { added, duplicates } = mergeLeads(prospects, leads);
-      if (added.length > 0) onChange((prev) => [...prev, ...added]);
-
-      const acknowledged = await acknowledgeLeads(
-        settings,
-        leads.map((l) => l.id),
-      );
-
-      const parts = [`Added ${added.length} lead${added.length === 1 ? "" : "s"}`];
-      if (duplicates.length > 0) parts.push(`${duplicates.length} already here`);
+      const parts = [`Added ${result.added} lead${result.added === 1 ? "" : "s"}`];
+      if (result.duplicates > 0) parts.push(`${result.duplicates} already here`);
       setSyncNote({
         tone: "good",
-        text: `${parts.join(" · ")}. They need a phone number before they can be called. (${acknowledged} confirmed upstream.)`,
+        text: `${parts.join(" · ")}. They need a phone number before they can be called.`,
       });
     } catch (cause) {
       setSyncNote({
@@ -441,8 +434,13 @@ export function ProspectsTab({
           </span>
         </div>
         <div className="lead-toolbar-actions">
-          <button className="ghost-btn" onClick={() => void syncGis()} disabled={syncing}>
-            {syncing ? "Syncing…" : "Sync GIS leads"}
+          <button
+            className="ghost-btn"
+            onClick={() => void syncGis()}
+            disabled={syncing}
+            title="New leads arrive on their own when the dashboard opens. Use this only to retry after a failure."
+          >
+            {syncing ? "Syncing…" : "Retry lead sync"}
           </button>
           <button className="primary-btn" onClick={addBlank}>
             Blank profile
