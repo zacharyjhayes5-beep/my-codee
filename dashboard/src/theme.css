@@ -1101,3 +1101,158 @@ th,
   align-items: center;
   min-height: 24px;
 }
+
+/* ============================================================
+   10. Section architecture — navy rules with a cognac tab
+
+   Flattening the old cards removed the boxes and, with them, every trace of
+   division: eleven sections stacked with nothing but a gap between them.
+
+   Division comes back as horizontal structure rather than containers. Each
+   section opens with a hairline navy rule carrying a short cognac tab at its
+   left edge — the trim line, not the box. The eye gets a clear entry point
+   per section and the page keeps its air.
+   ============================================================ */
+
+.op-panel,
+.up-next,
+.review-queue,
+.week-agenda,
+.eod-panel,
+.pipe-summary,
+.aa-section,
+.tier-section,
+.intake-panel,
+.transcript-panel,
+.opportunity-panel,
+.call-history,
+.book-of-business,
+.goal-panel {
+  position: relative;
+  border-top: 1px solid var(--navy-line);
+  padding-top: 16px;
+}
+
+.op-panel::before,
+.up-next::before,
+.review-queue::before,
+.week-agenda::before,
+.eod-panel::before,
+.pipe-summary::before,
+.aa-section::before,
+.tier-section::before,
+.intake-panel::before,
+.transcript-panel::before,
+.opportunity-panel::before,
+.call-history::before,
+.book-of-business::before,
+.goal-panel::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--cognac);
+}
+
+/* The heading sits tight under its rule so the two read as one unit. */
+.op-panel-head {
+  margin-bottom: 10px;
+}
+
+/* ---------- One dominant area ----------
+   The daily brief is what the page is for, so it is the one section given a
+   surface. Everything else stays open and subordinate to it. */
+.command-center > .op-panel:first-child {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-1);
+}
+
+.command-center > .op-panel:first-child::before {
+  top: -1px;
+  left: var(--space-5);
+  width: 34px;
+  height: 3px;
+  border-radius: 0 0 2px 2px;
+}
+
+.command-center > .op-panel:first-child .cc-headline-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Major break ----------
+   Business snapshot divides the day's work from the book's figures. It gets a
+   heavier navy rule and real space, so it reads as a change of subject. */
+.snapshot-heading {
+  margin-top: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 2px solid var(--navy);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.snapshot-heading::before {
+  display: none;
+}
+
+/* Side-by-side sections need a column gutter, or their rules run together. */
+.cc-grid,
+.op-grid,
+.goal-grid {
+  gap: var(--space-6);
+}
+
+/* A vital row reads as a list, so it gets list rules rather than a card. */
+.op-vital {
+  border-bottom: 1px solid var(--gridline);
+}
+
+.op-vital:last-child {
+  border-bottom: none;
+}
+
+/* Sections the first pass missed — Pipeline's board and summary strip, and
+   To-Do's stat strip and task buckets. Same rule, same cognac tab. */
+.stage-board,
+.pipeline-head,
+.stat-row,
+.todo-stats,
+.task-sections,
+.quick-add {
+  position: relative;
+  border-top: 1px solid var(--navy-line);
+  padding-top: 16px;
+}
+
+.stage-board::before,
+.pipeline-head::before,
+.stat-row::before,
+.todo-stats::before,
+.task-sections::before,
+.quick-add::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--cognac);
+}
+
+/* The four urgency buckets each need their own entry point, but a full rule
+   per bucket would stripe the page — a cognac tick against the heading is
+   enough to separate them. */
+.task-section + .task-section {
+  border-top: 1px solid var(--gridline);
+  padding-top: var(--space-4);
+  margin-top: var(--space-4);
+}
