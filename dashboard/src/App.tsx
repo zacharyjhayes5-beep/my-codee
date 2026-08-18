@@ -14,7 +14,7 @@ import { useStored, whenPersisted } from "./lib/repository";
 import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
-import type { ReviewProposal } from "./types";
+import type { Prospect, ReviewProposal } from "./types";
 
 type Tab = "operator" | "progress" | "todo" | "prospects" | "pipeline" | "map";
 
@@ -169,6 +169,36 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+
+  /**
+   * A research edit — a found phone number, or closing a household nobody can
+   * be reached at. Goes through the same prospect state everything else uses,
+   * so it persists exactly like any other edit and the queue recomputes on the
+   * spot without a reload.
+   */
+  function patchProspectFromResearch(id: string, patch: Partial<Prospect>) {
+    const before = prospects.find((p) => p.id === id);
+    setProspects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+    // Finding a number is data entry. Closing a household is a decision, and
+    // the audit log is where decisions are recorded.
+    if (before && patch.stage === "Closed") {
+      setAudit(
+        appendAudit(audit, [
+          auditEntry({
+            entity: "prospect",
+            entityId: id,
+            field: "stage",
+            from: before.stage,
+            to: "Closed",
+            actor: "user",
+            summary: `Closed ${before.name || "a household"} as unreachable — no phone number found`,
+          }),
+        ]),
+      );
+    }
+  }
+
   const current = tabs.find((t) => t.id === tab) ?? tabs[0];
 
   return (
@@ -233,6 +263,7 @@ function App() {
             correspondence={correspondence}
             onCorrespondenceChange={setCorrespondence}
             onCommand={(target: CommandTarget) => setTab(target)}
+            onPatchProspect={patchProspectFromResearch}
             onGo={(target, prospectId) => {
               setTab(target);
               if (prospectId) setFocusProspectId(prospectId);

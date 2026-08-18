@@ -1,4 +1,5 @@
 import type { LineId } from "../types";
+import { formatPhone } from "./phone";
 
 export interface ParsedNote {
   title: string;
@@ -181,10 +182,9 @@ function findEmail(raw: string, ownerName: string): string {
 
 function findPhone(raw: string): string {
   const m = raw.match(/(?:\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/);
-  if (!m) return "";
-  const digits = m[0].replace(/\D/g, "").slice(-10);
-  if (digits.length !== 10) return "";
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  // Formatting lives in lib/phone.ts, so a number researched by hand and one
+  // read off a transcript are stored in exactly the same shape.
+  return m ? formatPhone(m[0]) : "";
 }
 
 /** Phrases that mean "they said no to this" — the sentence gets skipped. */

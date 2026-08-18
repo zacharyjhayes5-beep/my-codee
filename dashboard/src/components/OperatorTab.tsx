@@ -30,6 +30,8 @@ interface OperatorTabProps {
   onCorrespondenceChange: (notes: CorrespondenceNote[]) => void;
   onCommand: (target: CommandTarget) => void;
   onGo: (target: "prospects" | "todo" | "pipeline", prospectId?: string) => void;
+  /** Used by the research queue to write a found phone number. */
+  onPatchProspect: (id: string, patch: Partial<Prospect>) => void;
 }
 
 function parseDay(iso: string) {
@@ -73,6 +75,7 @@ export function OperatorTab({
   onCorrespondenceChange,
   onCommand,
   onGo,
+  onPatchProspect,
 }: OperatorTabProps) {
   const stats = useMemo(() => {
     const inPeriod = entries.filter(
@@ -135,6 +138,7 @@ export function OperatorTab({
         correspondence={correspondence}
         onCorrespondenceChange={onCorrespondenceChange}
         onGo={onGo}
+        onPatchProspect={onPatchProspect}
       />
 
       <h2 className="snapshot-heading">Business snapshot</h2>

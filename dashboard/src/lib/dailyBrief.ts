@@ -2,6 +2,7 @@ import type { Call, Opportunity, Prospect, ReviewProposal, Task } from "../types
 import { localDay } from "./calls";
 import { countDay, readGoals, type GoalReading } from "./goals";
 import { buildQueue } from "./queue";
+import { researchCount } from "./research";
 
 /**
  * The Daily Brief.
@@ -183,6 +184,15 @@ export function buildDailyBrief(input: {
   const quoteWork = followUps.filter((f) => f.recommended.toLowerCase().includes("quote")).length;
   if (quoteWork > 0) {
     focus.push(`${quoteWork} quote${quoteWork === 1 ? "" : "s"} waiting — these close, cold calls do not`);
+  }
+
+  // Research feeds tomorrow's dialling, so it sits with the dialling advice
+  // rather than ahead of quote work that is already live.
+  const research = researchCount(prospects);
+  if (research > 0) {
+    focus.push(
+      `${research} new propert${research === 1 ? "y needs" : "ies need"} a phone number before you can call them`,
+    );
   }
 
   const coldCalls = goals.find((g) => g.id === "coldCalls");

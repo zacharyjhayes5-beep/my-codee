@@ -14,6 +14,7 @@ import {
 } from "../lib/dailyBrief";
 import { countDay, endOfDay, readGoals } from "../lib/goals";
 import { newId, today } from "../lib/storage";
+import { ResearchQueue } from "./ResearchQueue";
 
 interface CommandCenterProps {
   prospects: Prospect[];
@@ -24,6 +25,7 @@ interface CommandCenterProps {
   correspondence: CorrespondenceNote[];
   onCorrespondenceChange: (notes: CorrespondenceNote[]) => void;
   onGo: (target: AttentionItem["target"], prospectId?: string) => void;
+  onPatchProspect: (id: string, patch: Partial<Prospect>) => void;
 }
 
 /**
@@ -39,6 +41,7 @@ export function CommandCenter({
   correspondence,
   onCorrespondenceChange,
   onGo,
+  onPatchProspect,
 }: CommandCenterProps) {
   const now = useMemo(() => new Date(), []);
   const day = today();
@@ -143,6 +146,12 @@ export function CommandCenter({
           )}
         </section>
       </div>
+
+      <ResearchQueue
+        prospects={prospects}
+        onPatchProspect={onPatchProspect}
+        onSeeAll={() => onGo("prospects")}
+      />
 
       {/* 4 — follow-ups */}
       <section className="op-panel">

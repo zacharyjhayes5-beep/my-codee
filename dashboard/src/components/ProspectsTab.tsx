@@ -23,6 +23,7 @@ import { today } from "../lib/storage";
 import { whenPersisted } from "../lib/repository";
 import { ProspectCard } from "./ProspectCard";
 import { tagColor } from "../lib/tags";
+import { needsResearch, researchCount } from "../lib/research";
 import {
   DEFAULT_ENDPOINT,
   GisSyncError,
@@ -105,7 +106,7 @@ export function ProspectsTab({
     onFocusHandled();
   }, [focusProspectId, onFocusHandled]);
 
-  const [stageFilter, setStageFilter] = useState<Stage | "All">("All");
+  const [stageFilter, setStageFilter] = useState<Stage | "All" | "Needs research">("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "touched", dir: -1 });
   const [syncing, setSyncing] = useState(false);
@@ -158,6 +159,8 @@ export function ProspectsTab({
     }
   }
 
+  const researchTotal = useMemo(() => researchCount(prospects), [prospects]);
+
   const counts = useMemo(() => {
     const map = new Map<Stage, number>();
     for (const p of prospects) map.set(p.stage, (map.get(p.stage) ?? 0) + 1);
@@ -167,7 +170,13 @@ export function ProspectsTab({
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return prospects
-      .filter((p) => stageFilter === "All" || p.stage === stageFilter)
+      .filter((p) =>
+        stageFilter === "All"
+          ? true
+          : stageFilter === "Needs research"
+            ? needsResearch(p)
+            : p.stage === stageFilter,
+      )
       .filter((p) => {
         if (!q) return true;
         return (
@@ -405,6 +414,14 @@ export function ProspectsTab({
           >
             All <span>{prospects.length}</span>
           </button>
+          {researchTotal > 0 && (
+            <button
+              className={`filter-chip${stageFilter === "Needs research" ? " on" : ""}`}
+              onClick={() => setStageFilter("Needs research")}
+            >
+              Needs research <span>{researchTotal}</span>
+            </button>
+          )}
           {prospectStages.map((s) => (
             <button
               key={s}

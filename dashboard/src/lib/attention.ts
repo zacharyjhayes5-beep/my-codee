@@ -1,6 +1,7 @@
 import type { Opportunity, Prospect, ReviewProposal, Task } from "../types";
 import { localDay } from "./calls";
 import { isStalled } from "./opportunities";
+import { researchCount } from "./research";
 
 /**
  * What Needs Me.
@@ -16,6 +17,7 @@ export type AttentionKind =
   | "quote-due"
   | "stalled-quote"
   | "attempt-review"
+  | "needs-research"
   | "pending-review";
 
 export interface AttentionItem {
@@ -37,7 +39,11 @@ const RANKS: Record<AttentionKind, number> = {
   "quote-due": 4,
   "stalled-quote": 5,
   "attempt-review": 6,
-  "pending-review": 7,
+  // Below the work that closes business, above housekeeping. Research is how
+  // tomorrow's calls get made, so it belongs on the list — but never ahead of
+  // a quote that is already live.
+  "needs-research": 7,
+  "pending-review": 8,
 };
 
 export interface AttentionInput {
@@ -124,6 +130,18 @@ export function whatNeedsMe(input: AttentionInput, limit = 5): AttentionItem[] {
       rank: RANKS["attempt-review"],
       title: `${flagged.length} household${flagged.length === 1 ? "" : "s"} hit the attempt cap`,
       detail: "Keep calling or close them — nothing was closed automatically",
+      target: "prospects",
+    });
+  }
+
+  const research = researchCount(prospects);
+  if (research > 0) {
+    items.push({
+      id: "needs-research",
+      kind: "needs-research",
+      rank: RANKS["needs-research"],
+      title: `${research} propert${research === 1 ? "y" : "ies"} need a phone number`,
+      detail: "Found on the county roll. Add a number and they join the call queue.",
       target: "prospects",
     });
   }

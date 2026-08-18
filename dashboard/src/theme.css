@@ -1403,3 +1403,116 @@ th,
   min-height: 34px;
   padding: 6px 14px;
 }
+
+/* ============================================================
+   12. Research queue
+
+   The bridge between the nightly GIS batch and the call queue. It is a work
+   list, not a feature area — same panel rule and cognac tab as every other
+   section, with rows quiet enough that the count is what draws the eye.
+   ============================================================ */
+
+.research-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--cognac-soft);
+  color: var(--cognac-ink);
+  font-size: 0.75rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.research-blurb {
+  margin: 0 0 var(--space-3);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+.research-list {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Rows are separated by a hairline rather than boxed, so a long queue reads as
+   one list instead of a stack of cards. */
+.research-item {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--gridline);
+}
+
+.research-item:last-child {
+  border-bottom: none;
+}
+
+.research-who {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.research-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.research-where {
+  margin: 2px 0 var(--space-2);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* The parcel number is an identifier, so it gets the mono treatment figures
+   get elsewhere — it is for matching against a county record, not reading. */
+.research-parcel {
+  margin-left: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.research-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.research-phone {
+  flex: 0 1 190px;
+  min-width: 150px;
+  min-height: 36px;
+}
+
+.research-email {
+  flex: 1 1 220px;
+  min-width: 170px;
+  min-height: 36px;
+}
+
+.research-save {
+  min-height: 36px;
+  padding: 7px 16px;
+}
+
+.research-skip {
+  margin-left: var(--space-1);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .research-phone,
+  .research-email {
+    flex: 1 1 100%;
+  }
+}
