@@ -25,6 +25,7 @@ interface Script {
     width: number,
   ): unknown[];
   secretMatches(supplied: unknown, expected: unknown): boolean;
+  findHeaderRow(rows: unknown[][]): number;
   COLUMNS: { key: string; header: string }[];
 }
 
@@ -128,6 +129,28 @@ describe("finding an existing parcel", () => {
   it("refuses to match when there is no parcel to match on", () => {
     expect(script.findParcelRow(rows, 7, "")).toBe(-1);
     expect(script.findParcelRow(rows, -1, "41-15-01-100-005")).toBe(-1);
+  });
+});
+
+describe("findHeaderRow", () => {
+  /** The exact defect found in production: row 1 of the real sheet was blank. */
+  it("finds a header below a blank first row", () => {
+    const rows = [["", "", ""], ["Address", "City", "Parcel #"]];
+    expect(script.findHeaderRow(rows)).toBe(2);
+  });
+
+  it("finds a header below a title line", () => {
+    const rows = [["Thursday, August 13 — 25 leads"], ["Owner Name", "Parcel Number"]];
+    expect(script.findHeaderRow(rows)).toBe(2);
+  });
+
+  it("still finds it in row 1", () => {
+    expect(script.findHeaderRow([["Parcel Number", "Owner Name"]])).toBe(1);
+  });
+
+  it("reports none rather than guessing", () => {
+    expect(script.findHeaderRow([["a", "b"], ["c", "d"]])).toBe(-1);
+    expect(script.findHeaderRow([])).toBe(-1);
   });
 });
 
@@ -240,9 +263,9 @@ describe("the committed script itself", () => {
     expect(source).not.toMatch(/WEBHOOK_SECRET\s*=\s*["'][^"']{6,}["']/);
   });
 
-  it("writes only to the BSA Leads tab", () => {
+  it("writes to one configurable tab", () => {
     const source = readFileSync(join(__dirname, "..", "apps-script", "Code.gs"), "utf8");
-    expect(source).toContain('var SHEET_NAME = "BSA Leads"');
+    expect(source).toContain('var DEFAULT_SHEET_NAME = "GIS Leads"');
   });
 
   /** Nothing in this integration may remove a row somebody is relying on. */

@@ -145,3 +145,67 @@ export async function postSheetRow(
 
   return { ok: true };
 }
+
+export interface BatchOutcome {
+  /** Per-row results, in the order the rows were sent. */
+  results: { ok: boolean; error?: string }[];
+  /** Set when the whole request failed, so every row in it failed. */
+  error?: string;
+}
+
+/**
+ * Deliver a batch of parcels in one request.
+ *
+ * Batching is not an optimisation here, it is a requirement. Cloudflare permits
+ * 50 outbound calls per run and Apps Script answers a POST with a redirect, so
+ * each request costs two. One request per parcel could carry only about 25
+ * leads before the run was cut off — which is exactly what happened the first
+ * time this ran against production.
+ */
+export async function postSheetRows(
+  config: SheetConfig,
+  rows: SheetRow[],
+  fetcher: Fetcher = fetch,
+): Promise<BatchOutcome> {
+  const fail = (error: string): BatchOutcome => ({
+    results: rows.map(() => ({ ok: false, error })),
+    error,
+  });
+
+  let response: Response;
+  try {
+    response = await fetcher(config.url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ secret: config.secret, rows }),
+    });
+  } catch {
+    return fail("Could not reach the sheet endpoint");
+  }
+
+  if (!response.ok) return fail(`Sheet endpoint returned HTTP ${response.status}`);
+
+  let body: { ok?: boolean; error?: string; results?: { ok?: boolean; error?: string }[] };
+  try {
+    body = (await response.json()) as typeof body;
+  } catch {
+    return fail("Sheet endpoint returned a non-JSON response");
+  }
+
+  if (!body.ok) {
+    return fail(
+      redact(String(body.error ?? "Sheet rejected the batch").slice(0, 200), config.secret),
+    );
+  }
+
+  const results = body.results ?? [];
+  return {
+    results: rows.map((_, i) => {
+      const r = results[i];
+      if (!r) return { ok: false, error: "Sheet returned no result for this row" };
+      return r.ok
+        ? { ok: true }
+        : { ok: false, error: redact(String(r.error ?? "Rejected").slice(0, 200), config.secret) };
+    }),
+  };
+}

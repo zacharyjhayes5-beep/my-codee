@@ -55,13 +55,25 @@ function fakeStore(pending: OutboxRow[], missingLeads: string[] = []) {
   return { store, exported, failed };
 }
 
-const ok = () =>
-  new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } });
-const rejected = () =>
-  new Response(JSON.stringify({ ok: false, error: "nope" }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
+const json = (body: unknown) =>
+  new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+
+/** The sheet accepting every row in the batch. */
+const okFor = (init: RequestInit) => {
+  const sent = JSON.parse(String(init.body)) as { rows: { parcelNumber: string }[] };
+  return json({ ok: true, results: sent.rows.map(() => ({ ok: true })) });
+};
+
+/** The sheet accepting every row except the named parcels. */
+const okExcept = (init: RequestInit, bad: string[]) => {
+  const sent = JSON.parse(String(init.body)) as { rows: { parcelNumber: string }[] };
+  return json({
+    ok: true,
+    results: sent.rows.map((r) =>
+      bad.includes(r.parcelNumber) ? { ok: false, error: "nope" } : { ok: true },
+    ),
   });
+};
 
 describe("drainOutbox without configuration", () => {
   /**
@@ -86,7 +98,7 @@ describe("drainOutbox without configuration", () => {
 describe("drainOutbox delivery", () => {
   it("marks a delivered parcel exported", async () => {
     const { store, exported, failed } = fakeStore([row("41-15-01-100-005")]);
-    const result = await drainOutbox(store, config, new Date(), async () => ok());
+    const result = await drainOutbox(store, config, new Date(), async (_u, i) => okFor(i));
 
     expect(result).toMatchObject({ attempted: 1, exported: 1, failed: 0 });
     expect(exported).toEqual(["41-15-01-100-005"]);
@@ -96,7 +108,7 @@ describe("drainOutbox delivery", () => {
   /** A rejected row stays pending — markExported is never called for it. */
   it("leaves a rejected parcel pending with the reason recorded", async () => {
     const { store, exported, failed } = fakeStore([row("a")]);
-    const result = await drainOutbox(store, config, new Date(), async () => rejected());
+    const result = await drainOutbox(store, config, new Date(), async (_u, i) => okExcept(i, ["a"]));
 
     expect(result).toMatchObject({ attempted: 1, exported: 0, failed: 1 });
     expect(exported).toEqual([]);
@@ -120,34 +132,48 @@ describe("drainOutbox delivery", () => {
     const rows = ["a", "b", "c", "d", "e"].map((p) => row(p));
     const { store, exported, failed } = fakeStore(rows);
 
-    const result = await drainOutbox(store, config, new Date(), async (_url, init) => {
-      const sent = JSON.parse(String((init as RequestInit).body));
-      return sent.row.parcelNumber === "c" ? rejected() : ok();
-    });
+    const result = await drainOutbox(store, config, new Date(), async (_url, init) =>
+      okExcept(init, ["c"]),
+    );
 
     expect(result).toMatchObject({ attempted: 5, exported: 4, failed: 1 });
     expect(exported).toEqual(["a", "b", "d", "e"]);
     expect(failed.map((f) => f.pnum)).toEqual(["c"]);
   });
 
-  it("survives one parcel throwing outright", async () => {
+  /**
+   * Rows travel in one request now, so a transport failure costs the whole
+   * batch. That is safe rather than lossy — none are marked exported, so all
+   * of them stay pending and go again on the next run.
+   */
+  it("leaves the whole batch pending when the request itself throws", async () => {
     const rows = ["a", "b", "c"].map((p) => row(p));
     const { store, exported, failed } = fakeStore(rows);
 
-    const result = await drainOutbox(store, config, new Date(), async (_url, init) => {
-      const sent = JSON.parse(String((init as RequestInit).body));
-      if (sent.row.parcelNumber === "b") throw new Error("boom");
-      return ok();
+    const result = await drainOutbox(store, config, new Date(), async () => {
+      throw new Error("boom");
     });
 
-    expect(result.exported).toBe(2);
-    expect(exported).toEqual(["a", "c"]);
-    expect(failed.map((f) => f.pnum)).toEqual(["b"]);
+    expect(result.exported).toBe(0);
+    expect(exported).toEqual([]);
+    expect(failed.map((f) => f.pnum).sort()).toEqual(["a", "b", "c"]);
+  });
+
+  /** A batch of 25 costs two outbound calls, not fifty. */
+  it("sends one request for the whole batch", async () => {
+    const rows = Array.from({ length: 25 }, (_, i) => row(`p${i}`));
+    const { store, exported } = fakeStore(rows);
+    const fetcher = vi.fn(async (_u: string, i: RequestInit) => okFor(i));
+
+    await drainOutbox(store, config, new Date(), fetcher);
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(exported).toHaveLength(25);
   });
 
   it("fails a parcel whose lead has vanished rather than looping on it", async () => {
     const { store, exported, failed } = fakeStore([row("gone")], ["gone"]);
-    await drainOutbox(store, config, new Date(), async () => ok());
+    await drainOutbox(store, config, new Date(), async (_u, i) => okFor(i));
     expect(exported).toEqual([]);
     expect(failed[0].error).toContain("No lead found");
   });
@@ -161,7 +187,7 @@ describe("drainOutbox delivery", () => {
       markExported: async () => {},
       markFailed: async () => {},
     };
-    const result = await drainOutbox(store, config, new Date(), async () => ok());
+    const result = await drainOutbox(store, config, new Date(), async (_u, i) => okFor(i));
     expect(result.skipped).toBe("outbox unavailable");
   });
 
@@ -181,7 +207,7 @@ describe("drainOutbox delivery", () => {
     const bodies: string[] = [];
     const capture = async (_url: string, init: RequestInit) => {
       bodies.push(String(init.body));
-      return ok();
+      return okFor(init);
     };
     const fixed = new Date("2026-08-19T09:00:00.000Z");
 
@@ -211,7 +237,9 @@ describe("retry timing", () => {
     });
     const { store, exported } = fakeStore([stale]);
 
-    const result = await drainOutbox(store, config, new Date("2026-08-19T11:00:00.000Z"), async () => ok());
+    const result = await drainOutbox(store, config, new Date("2026-08-19T11:00:00.000Z"), async (_u, i) =>
+      okFor(i),
+    );
 
     expect(result.exported).toBe(1);
     expect(exported).toEqual(["a"]);

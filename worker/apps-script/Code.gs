@@ -13,8 +13,21 @@
  * which you set once in the Apps Script editor — see README.md.
  */
 
-var SHEET_NAME = "BSA Leads";
+/**
+ * The tab this script writes to.
+ *
+ * Defaults to a dedicated tab so machine rows never interleave with a
+ * hand-maintained worksheet. Override it by adding a Script Property named
+ * SHEET_NAME if you want the rows somewhere else.
+ */
+var DEFAULT_SHEET_NAME = "GIS Leads";
 var SECRET_PROPERTY = "WEBHOOK_SECRET";
+var SHEET_NAME_PROPERTY = "SHEET_NAME";
+
+function targetSheetName() {
+  var configured = PropertiesService.getScriptProperties().getProperty(SHEET_NAME_PROPERTY);
+  return configured && configured.trim() ? configured.trim() : DEFAULT_SHEET_NAME;
+}
 
 /**
  * The columns this script maintains, in the order it would create them.
@@ -77,6 +90,20 @@ function findParcelColumn(headerRow) {
   for (var i = 0; i < PARCEL_ALIASES.length; i++) {
     var at = normalized.indexOf(PARCEL_ALIASES[i]);
     if (at !== -1) return at;
+  }
+  return -1;
+}
+
+/**
+ * Which row holds the header.
+ *
+ * A sheet whose first row is blank, or which opens with a title line, is
+ * completely ordinary — assuming row 1 is what made this refuse a real sheet.
+ * Returns a 1-based row number, or -1 when no header is found.
+ */
+function findHeaderRow(rowsFromTop) {
+  for (var i = 0; i < rowsFromTop.length; i++) {
+    if (findParcelColumn(rowsFromTop[i]) !== -1) return i + 1;
   }
   return -1;
 }
@@ -164,9 +191,12 @@ function doPost(e) {
     return jsonOut({ ok: false, error: "Unauthorized" });
   }
 
-  var row = body.row;
-  if (!row || !row.parcelNumber) {
-    return jsonOut({ ok: false, error: "No parcel number supplied" });
+  // Accepts a batch, or a single row for compatibility. Batching matters:
+  // Cloudflare allows only 50 outbound calls per run and each POST costs two,
+  // so one request per parcel could not carry a full day of leads.
+  var rows = Array.isArray(body.rows) ? body.rows : body.row ? [body.row] : [];
+  if (rows.length === 0) {
+    return jsonOut({ ok: false, error: "No rows supplied" });
   }
 
   // One writer at a time: two overlapping requests for the same parcel would
@@ -179,7 +209,32 @@ function doPost(e) {
   }
 
   try {
-    return jsonOut(writeRow(row));
+    var sheet = openTargetSheet();
+    var layout = readLayout(sheet);
+    if (layout.error) return jsonOut({ ok: false, error: layout.error });
+
+    var results = [];
+    for (var i = 0; i < rows.length; i++) {
+      var one = rows[i];
+      if (!one || !one.parcelNumber) {
+        results.push({ ok: false, error: "No parcel number supplied" });
+        continue;
+      }
+      try {
+        results.push(writeOne(sheet, layout, one));
+        // Keep the in-memory view current so two rows in the same batch for
+        // one parcel cannot both append.
+        layout = readLayout(sheet);
+      } catch (err) {
+        results.push({
+          ok: false,
+          parcel: String(one.parcelNumber),
+          error: String((err && err.message) || err),
+        });
+      }
+    }
+
+    return jsonOut({ ok: true, results: results });
   } catch (err) {
     return jsonOut({ ok: false, error: String((err && err.message) || err) });
   } finally {
@@ -187,16 +242,13 @@ function doPost(e) {
   }
 }
 
-/** Upsert one parcel. Returns the structured result the Worker reads. */
-function writeRow(row) {
+/** The tab to write to, created with the standard header if it is missing. */
+function openTargetSheet() {
   var book = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = book.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = book.insertSheet(SHEET_NAME);
-  }
+  var name = targetSheetName();
+  var sheet = book.getSheetByName(name);
+  if (!sheet) sheet = book.insertSheet(name);
 
-  // A brand new or empty sheet gets the standard header. An existing one is
-  // left exactly as it is.
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(
       COLUMNS.map(function (c) {
@@ -204,40 +256,63 @@ function writeRow(row) {
       }),
     );
   }
+  return sheet;
+}
 
+/**
+ * Where the header is and what it contains.
+ *
+ * The header is searched for rather than assumed to be row 1 — a leading blank
+ * row or a title line is completely ordinary, and assuming row 1 is what made
+ * this refuse a perfectly good sheet.
+ */
+function readLayout(sheet) {
   var lastRow = sheet.getLastRow();
   var width = Math.max(sheet.getLastColumn(), COLUMNS.length);
-  var header = sheet.getRange(1, 1, 1, width).getValues()[0];
+  var scanDepth = Math.min(lastRow, 10);
+  if (scanDepth < 1) return { error: "Sheet is empty" };
 
-  var columnMap = mapColumns(header);
-  var parcelColumn = findParcelColumn(header);
-
-  // An existing sheet with no recognisable parcel column cannot be deduplicated
-  // safely, and appending blindly would create the duplicates this exists to
-  // prevent. Refusing is the safe answer; the row stays pending in the outbox.
-  if (parcelColumn < 0) {
-    return { ok: false, error: 'No "Parcel Number" column found in ' + SHEET_NAME };
+  var top = sheet.getRange(1, 1, scanDepth, width).getValues();
+  var headerRow = findHeaderRow(top);
+  if (headerRow === -1) {
+    return { error: "No parcel-number column found in " + sheet.getName() };
   }
 
+  var header = top[headerRow - 1];
+  var dataStart = headerRow + 1;
   var rows =
-    lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, width).getValues() : [];
-  var at = findParcelRow(rows, parcelColumn, row.parcelNumber);
+    lastRow >= dataStart
+      ? sheet.getRange(dataStart, 1, lastRow - dataStart + 1, width).getValues()
+      : [];
+
+  return {
+    width: width,
+    headerRow: headerRow,
+    dataStart: dataStart,
+    columnMap: mapColumns(header),
+    parcelColumn: findParcelColumn(header),
+    rows: rows,
+  };
+}
+
+/** Upsert one parcel into an already-opened sheet. */
+function writeOne(sheet, layout, row) {
+  var at = findParcelRow(layout.rows, layout.parcelColumn, row.parcelNumber);
 
   if (at === -1) {
-    var fresh = buildRowValues(null, columnMap, row, width);
-    // Make sure the parcel lands even if the header uses an alias name.
-    fresh[parcelColumn] = String(row.parcelNumber);
+    var fresh = buildRowValues(null, layout.columnMap, row, layout.width);
+    fresh[layout.parcelColumn] = String(row.parcelNumber);
     sheet.appendRow(fresh);
     return { ok: true, action: "inserted", parcel: String(row.parcelNumber) };
   }
 
-  var updated = buildRowValues(rows[at], columnMap, row, width);
-  updated[parcelColumn] = String(row.parcelNumber);
-  sheet.getRange(at + 2, 1, 1, width).setValues([updated]);
+  var updated = buildRowValues(layout.rows[at], layout.columnMap, row, layout.width);
+  updated[layout.parcelColumn] = String(row.parcelNumber);
+  sheet.getRange(layout.dataStart + at, 1, 1, layout.width).setValues([updated]);
   return { ok: true, action: "updated", parcel: String(row.parcelNumber) };
 }
 
 /** A browser visiting the URL gets a harmless answer, never data. */
 function doGet() {
-  return jsonOut({ ok: true, service: "BSA Leads mirror" });
+  return jsonOut({ ok: true, service: "BSA Leads mirror", sheet: targetSheetName() });
 }

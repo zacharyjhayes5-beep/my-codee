@@ -6,7 +6,7 @@
  * twenty-four — can be tested without a database.
  */
 
-import { buildSheetRow, postSheetRow, type Fetcher, type SheetConfig } from "./sheets";
+import { buildSheetRow, postSheetRows, type Fetcher, type SheetConfig } from "./sheets";
 import type { LeadRow } from "./store";
 
 export interface OutboxRow {
@@ -81,33 +81,47 @@ export async function drainOutbox(
   let exported = 0;
   let failed = 0;
 
+  // Gather the rows first. A parcel whose lead has vanished cannot be sent and
+  // is failed here rather than holding up the batch.
+  const sendable: { pnum: string; row: ReturnType<typeof buildSheetRow> }[] = [];
   for (const row of pending) {
     try {
       const lead = await store.leadFor(row.pnum);
       if (!lead) {
-        // The parcel is queued but its lead is gone. Nothing can be sent, and
-        // retrying forever helps nobody.
         await store.markFailed(row.pnum, iso, "No lead found for this parcel");
         failed++;
         continue;
       }
-
-      const result = await postSheetRow(config, buildSheetRow(lead, iso), fetcher);
-      if (result.ok) {
-        await store.markExported(row.pnum, iso);
-        exported++;
-      } else {
-        await store.markFailed(row.pnum, iso, result.error ?? "Unknown sheet error");
-        failed++;
-      }
+      sendable.push({ pnum: row.pnum, row: buildSheetRow(lead, iso) });
     } catch {
-      // A thrown error on one parcel must not end the loop.
       try {
-        await store.markFailed(row.pnum, iso, "Unexpected error during export");
+        await store.markFailed(row.pnum, iso, "Unexpected error preparing this parcel");
       } catch {
-        // Even the bookkeeping failing is survivable — it stays pending.
+        // Still pending; the next run will retry it.
       }
       failed++;
+    }
+  }
+
+  // One request carries the whole batch, so a full day of leads fits inside
+  // Cloudflare's outbound-call budget.
+  if (sendable.length > 0) {
+    const outcome = await postSheetRows(config, sendable.map((s) => s.row), fetcher);
+    for (let i = 0; i < sendable.length; i++) {
+      const { pnum } = sendable[i];
+      const result = outcome.results[i];
+      try {
+        if (result?.ok) {
+          await store.markExported(pnum, iso);
+          exported++;
+        } else {
+          await store.markFailed(pnum, iso, result?.error ?? "Unknown sheet error");
+          failed++;
+        }
+      } catch {
+        // Bookkeeping failing leaves the row pending, which is safe.
+        failed++;
+      }
     }
   }
 
