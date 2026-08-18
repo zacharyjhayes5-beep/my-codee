@@ -84,12 +84,6 @@ export function buildSheetRow(lead: LeadRow, now: string): SheetRow {
   };
 }
 
-export interface SheetResponse {
-  ok: boolean;
-  /** Short, safe message for the outbox. Never contains the URL or secret. */
-  error?: string;
-}
-
 export type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
 
 /**
@@ -104,46 +98,6 @@ export type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
 /** Remove the shared secret from anything that will be stored or logged. */
 function redact(message: string, secret: string): string {
   return secret ? message.split(secret).join("***") : message;
-}
-
-export async function postSheetRow(
-  config: SheetConfig,
-  row: SheetRow,
-  fetcher: Fetcher = fetch,
-): Promise<SheetResponse> {
-  let response: Response;
-  try {
-    response = await fetcher(config.url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ secret: config.secret, row }),
-    });
-  } catch {
-    // Deliberately not interpolating the cause: fetch errors can echo the URL.
-    return { ok: false, error: "Could not reach the sheet endpoint" };
-  }
-
-  if (!response.ok) {
-    return { ok: false, error: `Sheet endpoint returned HTTP ${response.status}` };
-  }
-
-  let body: { ok?: boolean; error?: string };
-  try {
-    body = (await response.json()) as { ok?: boolean; error?: string };
-  } catch {
-    // Apps Script answers HTML when a deployment is misconfigured.
-    return { ok: false, error: "Sheet endpoint returned a non-JSON response" };
-  }
-
-  if (!body.ok) {
-    // The remote message is passed through for troubleshooting, but redacted
-    // first: the outbox is readable through the API, so anything echoed back
-    // must not be able to publish the shared secret.
-    const message = String(body.error ?? "Sheet rejected the row").slice(0, 200);
-    return { ok: false, error: redact(message, config.secret) };
-  }
-
-  return { ok: true };
 }
 
 export interface BatchOutcome {

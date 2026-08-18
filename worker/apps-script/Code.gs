@@ -1,158 +1,81 @@
 /**
- * BSA Lead List — sheet mirror endpoint.
+ * GIS Leads mirror for the BSA Lead List spreadsheet.
  *
- * Receives one parcel at a time from the Cloudflare Worker and upserts it into
- * the "BSA Leads" tab. The parcel number is the permanent key: the same parcel
- * arriving twice updates its row rather than adding another, which is what
- * makes the Worker's retries safe.
+ * Receives a batch of parcels from the Cloudflare Worker and writes them to
+ * the "GIS Leads" tab. The parcel number is the key: a parcel already present
+ * is updated in place rather than added again, which is what makes the
+ * Worker's retries safe.
  *
- * Nothing here deletes. An unrecognised column is left alone, and a row whose
- * parcel is not in the payload is never touched.
+ * This tab is written only by this script, so its layout is known and fixed.
+ * Nothing here deletes, and no other tab is touched.
  *
- * The shared secret is NOT in this file. It is read from Script Properties,
- * which you set once in the Apps Script editor — see README.md.
+ * The shared secret is not in this file — it is read from Script Properties.
  */
 
-/**
- * The tab this script writes to.
- *
- * Defaults to a dedicated tab so machine rows never interleave with a
- * hand-maintained worksheet. Override it by adding a Script Property named
- * SHEET_NAME if you want the rows somewhere else.
- */
-var DEFAULT_SHEET_NAME = "GIS Leads";
+var SHEET_NAME = "GIS Leads";
 var SECRET_PROPERTY = "WEBHOOK_SECRET";
-var SHEET_NAME_PROPERTY = "SHEET_NAME";
 
-function targetSheetName() {
-  var configured = PropertiesService.getScriptProperties().getProperty(SHEET_NAME_PROPERTY);
-  return configured && configured.trim() ? configured.trim() : DEFAULT_SHEET_NAME;
-}
-
-/**
- * The columns this script maintains, in the order it would create them.
- *
- * If the sheet already has a header with these names in any order, that
- * existing layout wins — headers are matched by name, never by position, so an
- * existing sheet is never restructured.
- */
-var COLUMNS = [
-  { key: "dateAdded", header: "Date Added" },
-  { key: "ownerName", header: "Owner Name" },
-  { key: "propertyAddress", header: "Property Address" },
-  { key: "propertyCity", header: "Property City" },
-  { key: "mailingAddress", header: "Mailing Address" },
-  { key: "mailingCity", header: "Mailing City" },
-  { key: "municipality", header: "Municipality" },
-  { key: "parcelNumber", header: "Parcel Number" },
-  { key: "source", header: "Source" },
-  { key: "phone", header: "Phone" },
-  { key: "email", header: "Email" },
-  { key: "lastUpdated", header: "Last Updated" },
+var HEADERS = [
+  "Date Added",
+  "Owner Name",
+  "Property Address",
+  "Property City",
+  "Mailing Address",
+  "Mailing City",
+  "Municipality",
+  "Parcel Number",
+  "Source",
+  "Phone",
+  "Email",
+  "Last Updated",
 ];
 
-/** Header names that already mean "parcel number" in an existing sheet. */
-var PARCEL_ALIASES = ["parcel number", "parcel", "pnum", "parcel #", "parcel no"];
+/** The payload field for each column, in the same order. */
+var KEYS = [
+  "dateAdded",
+  "ownerName",
+  "propertyAddress",
+  "propertyCity",
+  "mailingAddress",
+  "mailingCity",
+  "municipality",
+  "parcelNumber",
+  "source",
+  "phone",
+  "email",
+  "lastUpdated",
+];
 
-/* ---------------------------------------------------------------------------
-   Pure helpers — these are unit tested from the repository.
-   --------------------------------------------------------------------------- */
+/** Zero-based position of "Parcel Number" above. */
+var PARCEL_COL = 7;
 
-function normalizeHeader(value) {
-  return String(value == null ? "" : value).trim().toLowerCase();
-}
+/* --------------------------------------------------------------------------
+   Pure helpers — unit tested from the repository.
+   -------------------------------------------------------------------------- */
 
 /**
- * A parcel number reduced to something comparable.
+ * A parcel number reduced to digits.
  *
- * Sheets happily turns "41-15-01-100-005" into text but a hand-typed one may
- * carry stray spaces, and a number that lost its dashes still identifies the
- * same parcel. Comparing on digits alone makes the match reliable.
+ * Sheets can render the same parcel with or without dashes, and a hand-typed
+ * one may carry stray spaces. Comparing digits alone makes the match reliable.
  */
 function parcelKey(value) {
   return String(value == null ? "" : value).replace(/\D/g, "");
 }
 
-/** Where each maintained column lives in an existing header row. */
-function mapColumns(headerRow) {
-  var normalized = (headerRow || []).map(normalizeHeader);
-  var map = {};
-  for (var i = 0; i < COLUMNS.length; i++) {
-    var col = COLUMNS[i];
-    map[col.key] = normalized.indexOf(normalizeHeader(col.header));
-  }
-  return map;
-}
-
-/** The parcel column, tolerating the names an existing sheet might use. */
-function findParcelColumn(headerRow) {
-  var normalized = (headerRow || []).map(normalizeHeader);
-  for (var i = 0; i < PARCEL_ALIASES.length; i++) {
-    var at = normalized.indexOf(PARCEL_ALIASES[i]);
-    if (at !== -1) return at;
-  }
-  return -1;
-}
-
 /**
- * Which row holds the header.
+ * The twelve values for a row.
  *
- * A sheet whose first row is blank, or which opens with a title line, is
- * completely ordinary — assuming row 1 is what made this refuse a real sheet.
- * Returns a 1-based row number, or -1 when no header is found.
+ * A blank incoming value never erases something already in the sheet. The
+ * Worker always sends empty phone and email because the county publishes
+ * neither, and that must not wipe a number typed in by hand.
  */
-function findHeaderRow(rowsFromTop) {
-  for (var i = 0; i < rowsFromTop.length; i++) {
-    if (findParcelColumn(rowsFromTop[i]) !== -1) return i + 1;
-  }
-  return -1;
-}
-
-/**
- * The 0-based data row for a parcel, or -1 when it is new.
- *
- * `rows` excludes the header.
- */
-function findParcelRow(rows, parcelColumn, parcel) {
-  var wanted = parcelKey(parcel);
-  if (!wanted || parcelColumn < 0) return -1;
-  for (var i = 0; i < rows.length; i++) {
-    if (parcelKey(rows[i][parcelColumn]) === wanted) return i;
-  }
-  return -1;
-}
-
-/**
- * Build the values to write, preserving anything the sheet already holds.
- *
- * Two rules matter. Columns this script does not maintain keep their existing
- * values untouched. And on an update, a blank incoming value does not erase
- * what is already there — the Worker sends empty phone and email because the
- * county publishes neither, and that must never wipe a number somebody typed
- * into the sheet by hand.
- */
-function buildRowValues(existingRow, columnMap, row, width) {
-  var out = [];
-  for (var i = 0; i < width; i++) {
-    out.push(existingRow ? existingRow[i] : "");
-  }
-
-  for (var key in columnMap) {
-    if (!Object.prototype.hasOwnProperty.call(columnMap, key)) continue;
-    var at = columnMap[key];
-    if (at < 0 || at >= width) continue;
-
-    var incoming = row[key];
-    if (incoming === undefined || incoming === null) continue;
-    incoming = String(incoming);
-
-    // Never overwrite something already in the sheet with a blank.
-    if (incoming === "" && existingRow && String(out[at]) !== "") continue;
-
-    out[at] = incoming;
-  }
-
-  return out;
+function rowValues(row, existing) {
+  return KEYS.map(function (key, i) {
+    var incoming = row[key] == null ? "" : String(row[key]);
+    if (incoming === "" && existing) return existing[i];
+    return incoming;
+  });
 }
 
 /** Whether the supplied secret matches, in constant time. */
@@ -165,14 +88,23 @@ function secretMatches(supplied, expected) {
   return diff === 0;
 }
 
-/* ---------------------------------------------------------------------------
-   The Web App entry point
-   --------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   The Web App
+   -------------------------------------------------------------------------- */
 
 function jsonOut(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(
     ContentService.MimeType.JSON,
   );
+}
+
+/** The GIS Leads tab, created with its header the first time. */
+function gisSheet() {
+  var book = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = book.getSheetByName(SHEET_NAME);
+  if (!sheet) sheet = book.insertSheet(SHEET_NAME);
+  if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
+  return sheet;
 }
 
 function doPost(e) {
@@ -184,23 +116,16 @@ function doPost(e) {
   }
 
   var expected = PropertiesService.getScriptProperties().getProperty(SECRET_PROPERTY);
-  if (!expected) {
-    return jsonOut({ ok: false, error: "Script is not configured with a secret yet" });
-  }
-  if (!secretMatches(body.secret, expected)) {
-    return jsonOut({ ok: false, error: "Unauthorized" });
-  }
+  if (!expected) return jsonOut({ ok: false, error: "No secret configured" });
+  if (!secretMatches(body.secret, expected)) return jsonOut({ ok: false, error: "Unauthorized" });
 
-  // Accepts a batch, or a single row for compatibility. Batching matters:
-  // Cloudflare allows only 50 outbound calls per run and each POST costs two,
-  // so one request per parcel could not carry a full day of leads.
-  var rows = Array.isArray(body.rows) ? body.rows : body.row ? [body.row] : [];
-  if (rows.length === 0) {
-    return jsonOut({ ok: false, error: "No rows supplied" });
-  }
+  // A batch per request. Cloudflare allows 50 outbound calls per run and each
+  // POST costs two, so one request per parcel could not carry a day of leads.
+  var rows = Array.isArray(body.rows) ? body.rows : [];
+  if (rows.length === 0) return jsonOut({ ok: false, error: "No rows supplied" });
 
-  // One writer at a time: two overlapping requests for the same parcel would
-  // otherwise both see "not present" and both append.
+  // One writer at a time, or two overlapping requests for the same parcel
+  // would both see "not present" and both append.
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(25000);
@@ -209,28 +134,41 @@ function doPost(e) {
   }
 
   try {
-    var sheet = openTargetSheet();
-    var layout = readLayout(sheet);
-    if (layout.error) return jsonOut({ ok: false, error: layout.error });
+    var sheet = gisSheet();
+    var last = sheet.getLastRow();
+    var existing = last > 1 ? sheet.getRange(2, 1, last - 1, HEADERS.length).getValues() : [];
+
+    // Parcel -> row number, built once for the whole batch.
+    var seen = {};
+    for (var i = 0; i < existing.length; i++) {
+      var key = parcelKey(existing[i][PARCEL_COL]);
+      if (key) seen[key] = i + 2;
+    }
 
     var results = [];
-    for (var i = 0; i < rows.length; i++) {
-      var one = rows[i];
-      if (!one || !one.parcelNumber) {
-        results.push({ ok: false, error: "No parcel number supplied" });
+    for (var r = 0; r < rows.length; r++) {
+      var row = rows[r];
+      if (!row || !row.parcelNumber) {
+        results.push({ ok: false, error: "No parcel number" });
         continue;
       }
+
       try {
-        results.push(writeOne(sheet, layout, one));
-        // Keep the in-memory view current so two rows in the same batch for
-        // one parcel cannot both append.
-        layout = readLayout(sheet);
+        var pk = parcelKey(row.parcelNumber);
+        var at = seen[pk];
+
+        if (at) {
+          var current = sheet.getRange(at, 1, 1, HEADERS.length).getValues()[0];
+          sheet.getRange(at, 1, 1, HEADERS.length).setValues([rowValues(row, current)]);
+          results.push({ ok: true, action: "updated" });
+        } else {
+          sheet.appendRow(rowValues(row, null));
+          // Remember it, so a repeat inside this same batch updates instead.
+          seen[pk] = sheet.getLastRow();
+          results.push({ ok: true, action: "inserted" });
+        }
       } catch (err) {
-        results.push({
-          ok: false,
-          parcel: String(one.parcelNumber),
-          error: String((err && err.message) || err),
-        });
+        results.push({ ok: false, error: String((err && err.message) || err) });
       }
     }
 
@@ -242,77 +180,7 @@ function doPost(e) {
   }
 }
 
-/** The tab to write to, created with the standard header if it is missing. */
-function openTargetSheet() {
-  var book = SpreadsheetApp.getActiveSpreadsheet();
-  var name = targetSheetName();
-  var sheet = book.getSheetByName(name);
-  if (!sheet) sheet = book.insertSheet(name);
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(
-      COLUMNS.map(function (c) {
-        return c.header;
-      }),
-    );
-  }
-  return sheet;
-}
-
-/**
- * Where the header is and what it contains.
- *
- * The header is searched for rather than assumed to be row 1 — a leading blank
- * row or a title line is completely ordinary, and assuming row 1 is what made
- * this refuse a perfectly good sheet.
- */
-function readLayout(sheet) {
-  var lastRow = sheet.getLastRow();
-  var width = Math.max(sheet.getLastColumn(), COLUMNS.length);
-  var scanDepth = Math.min(lastRow, 10);
-  if (scanDepth < 1) return { error: "Sheet is empty" };
-
-  var top = sheet.getRange(1, 1, scanDepth, width).getValues();
-  var headerRow = findHeaderRow(top);
-  if (headerRow === -1) {
-    return { error: "No parcel-number column found in " + sheet.getName() };
-  }
-
-  var header = top[headerRow - 1];
-  var dataStart = headerRow + 1;
-  var rows =
-    lastRow >= dataStart
-      ? sheet.getRange(dataStart, 1, lastRow - dataStart + 1, width).getValues()
-      : [];
-
-  return {
-    width: width,
-    headerRow: headerRow,
-    dataStart: dataStart,
-    columnMap: mapColumns(header),
-    parcelColumn: findParcelColumn(header),
-    rows: rows,
-  };
-}
-
-/** Upsert one parcel into an already-opened sheet. */
-function writeOne(sheet, layout, row) {
-  var at = findParcelRow(layout.rows, layout.parcelColumn, row.parcelNumber);
-
-  if (at === -1) {
-    var fresh = buildRowValues(null, layout.columnMap, row, layout.width);
-    fresh[layout.parcelColumn] = String(row.parcelNumber);
-    sheet.appendRow(fresh);
-    return { ok: true, action: "inserted", parcel: String(row.parcelNumber) };
-  }
-
-  var updated = buildRowValues(layout.rows[at], layout.columnMap, row, layout.width);
-  updated[layout.parcelColumn] = String(row.parcelNumber);
-  sheet.getRange(layout.dataStart + at, 1, 1, layout.width).setValues([updated]);
-  return { ok: true, action: "updated", parcel: String(row.parcelNumber) };
-}
-
 /** A browser visiting the URL gets a harmless answer, never data. */
 function doGet() {
-  return jsonOut({ ok: true, service: "BSA Leads mirror", sheet: targetSheetName() });
+  return jsonOut({ ok: true, service: "GIS Leads mirror" });
 }
