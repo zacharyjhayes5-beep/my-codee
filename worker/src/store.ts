@@ -141,6 +141,29 @@ export async function commitRun(
         )
         .bind(lead.pnum, lead.ownerNormalized, lead.ownerRaw, now),
     );
+
+    /**
+     * Queue the parcel for the spreadsheet mirror, in this same batch.
+     *
+     * Local write, no network — so it cannot fail the way a Google call can,
+     * and a lead can never exist without its export obligation. On a re-queue
+     * (an ownership change) the row returns to pending with the newer lead and
+     * a fresh attempt count; the sheet upserts on parcel, so it stays one row.
+     */
+    statements.push(
+      db
+        .prepare(
+          `INSERT INTO sheet_exports (pnum, lead_id, status, queued_at, attempts, last_error)
+           VALUES (?, ?, 'pending', ?, 0, NULL)
+           ON CONFLICT(pnum) DO UPDATE SET
+             lead_id = excluded.lead_id,
+             status = 'pending',
+             queued_at = excluded.queued_at,
+             attempts = 0,
+             last_error = NULL`,
+        )
+        .bind(lead.pnum, lead.id, now),
+    );
   }
 
   statements.push(

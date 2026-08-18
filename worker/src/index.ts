@@ -8,6 +8,9 @@
  *   POST /ingest         — run ingestion by hand (used to prove the pipeline)
  *   GET  /runs           — the last few ingestion runs
  *   GET  /health         — liveness, no auth, no data
+ *   POST /sheets/backfill — queue every lead the sheet mirror has not handled
+ *   POST /sheets/flush    — send pending sheet rows now
+ *   GET  /sheets/status   — mirror counts, never the URL or secret
  */
 
 import { authorize, type AuthEnv } from "./auth";
@@ -15,10 +18,16 @@ import type { BatchMode } from "./config";
 import { batchSize } from "./config";
 import { runIngestion } from "./ingest";
 import { markSynced, recentRuns, unsyncedLeads } from "./store";
+import { backfillOutbox, d1Outbox, drainOutbox, outboxSummary } from "./outbox";
+import { readSheetConfig } from "./sheets";
 
 export interface Env extends AuthEnv {
   DB: D1Database;
   BATCH_MODE?: string;
+  /** Apps Script Web App URL. Worker secret — never in the frontend. */
+  SHEETS_WEBHOOK_URL?: string;
+  /** Shared secret the Apps Script checks. Worker secret. */
+  SHEETS_WEBHOOK_SECRET?: string;
 }
 
 /**
@@ -132,6 +141,33 @@ export default {
         return json({ mode, batchTarget: batchSize(mode), ...result }, result.status === "ok" ? 200 : 500, request);
       }
 
+      /**
+       * Queue every GIS lead the mirror has never handled. Safe to run more
+       * than once — parcels already in the outbox are left untouched.
+       */
+      if (url.pathname === "/sheets/backfill" && request.method === "POST") {
+        const queued = await backfillOutbox(env.DB);
+        return json({ queued }, 200, request);
+      }
+
+      /** Send whatever is pending now, rather than waiting for the cron. */
+      if (url.pathname === "/sheets/flush" && request.method === "POST") {
+        const result = await drainOutbox(d1Outbox(env.DB), readSheetConfig(env));
+        return json(result, 200, request);
+      }
+
+      /** Counts only. Never the URL, the secret, or lead contents. */
+      if (url.pathname === "/sheets/status" && request.method === "GET") {
+        return json(
+          {
+            configured: readSheetConfig(env) !== null,
+            ...(await outboxSummary(env.DB) as Record<string, unknown>),
+          },
+          200,
+          request,
+        );
+      }
+
       if (url.pathname === "/runs" && request.method === "GET") {
         return json({ runs: await recentRuns(env.DB) }, 200, request);
       }
@@ -149,7 +185,7 @@ export default {
    */
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(
-      runIngestion(env.DB, modeOf(env), "cron").then((result) => {
+      runIngestion(env.DB, modeOf(env), "cron").then(async (result) => {
         if (result.status === "error") {
           console.error("ingestion failed", result.runId, result.error);
         } else {
@@ -159,6 +195,21 @@ export default {
               `ownerChanges=${result.ownerChanges} eligible=${result.eligible} ` +
               `inserted=${result.inserted}`,
           );
+        }
+
+        /**
+         * The mirror runs after ingestion and can never affect it. Any failure
+         * here leaves rows pending for the next scheduled run, and is caught
+         * so it cannot surface as a failed cron.
+         */
+        try {
+          const mirror = await drainOutbox(d1Outbox(env.DB), readSheetConfig(env));
+          console.log(
+            `sheet mirror attempted=${mirror.attempted} exported=${mirror.exported} ` +
+              `failed=${mirror.failed}${mirror.skipped ? ` skipped=${mirror.skipped}` : ""}`,
+          );
+        } catch {
+          console.error("sheet mirror failed; rows stay pending for the next run");
         }
       }),
     );

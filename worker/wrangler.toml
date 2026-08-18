@@ -15,6 +15,11 @@ binding = "DB"
 database_name = "gis_leads"
 database_id = "a2cf8737-159f-4cd7-8c1d-198a4ef3b071"
 
+# Sheet mirror secrets, set with `wrangler secret put` — never values here:
+#   SHEETS_WEBHOOK_URL     the Apps Script Web App URL
+#   SHEETS_WEBHOOK_SECRET  the password set in the script's Script Properties
+# Until both are set the mirror is a no-op and GIS ingestion is unaffected.
+
 [vars]
 # Production batch: 25 per weekday run, quota'd 9 Ada / 8 Cascade / 8 East
 # Grand Rapids, with any shortfall filled from the other two.

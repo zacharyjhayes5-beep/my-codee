@@ -115,3 +115,33 @@ CREATE TABLE IF NOT EXISTS setup_codes (
   expires_at  TEXT NOT NULL,
   used_at     TEXT
 );
+
+-- ---------------------------------------------------------------------------
+-- Google Sheet export outbox
+--
+-- The spreadsheet is a mirror, never a dependency. Nothing in the ingestion
+-- path waits on Google: a lead is written to `leads`, queued here in the same
+-- transaction, and delivered afterwards on a best-effort basis. If Google is
+-- down the row simply stays pending and the next scheduled run tries again.
+--
+-- Keyed on `pnum` rather than lead id, because the parcel is the permanent
+-- identity in this system and the spreadsheet holds one logical row per
+-- parcel. When ownership changes the same parcel is re-queued with the newer
+-- lead, and the sheet upserts rather than appending — a parcel that sells
+-- twice is still one row, updated.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sheet_exports (
+  pnum             TEXT PRIMARY KEY,
+  -- The lead whose contents should be sent. Updated on re-queue.
+  lead_id          TEXT NOT NULL,
+  -- 'pending' | 'done'
+  status           TEXT NOT NULL DEFAULT 'pending',
+  attempts         INTEGER NOT NULL DEFAULT 0,
+  queued_at        TEXT NOT NULL,
+  last_attempt_at  TEXT,
+  exported_at      TEXT,
+  -- Message only. Never a URL, header or secret.
+  last_error       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_sheet_exports_status ON sheet_exports (status);
