@@ -44,6 +44,7 @@ npm run lint       # oxlint
 | Pipeline | `PipelineTab.tsx` | Opportunities by stage, what's due, what's gone quiet |
 | To-Do | `TodoTab.tsx` | Tasks in four urgency buckets, with Obsidian/Gmail import |
 | Progress | `ProgressTab.tsx` | Book of business, earnings, goals, pace, NADP tiers |
+| Walkthrough | `WalkthroughTab.tsx` | The property in 3D, area by area, with underwriting detail |
 | Lead Map | `LeadMap.tsx` | Force-directed graph of prospects, lines and areas |
 
 Navigation is a permanent navy sidebar in `App.tsx`; the tab ids are unchanged
@@ -163,6 +164,61 @@ animation durations, and these write transforms directly.
 
 **No new dependencies** unless there's a real reason. The force-directed
 graph, the gas tanks and the progress orb are all hand-rolled SVG.
+
+**The walkthrough is the exception, and it is quarantined.** `three`,
+`@react-three/fiber` and `@react-three/drei` were added for it at his explicit
+request. They are ~257kB gzipped — twice the rest of the application — so
+`WalkthroughTab` loads the scene with `React.lazy`. Confirmed by the build:
+the main bundle grew 4kB gzipped and everything else sits in a separate
+`Scene` chunk that only downloads when the tab is opened. If that lazy boundary
+is ever removed, every other tab starts paying for it.
+
+The camera tween is hand-written (an eased lerp on two vectors in `useFrame`)
+rather than GSAP — one fewer dependency for about fifteen lines.
+
+## The walkthrough
+
+`lib/walkthrough.ts` is the whole contract and contains no 3D at all: the six
+areas, their camera waypoints, and what each panel reads off the household.
+`components/walkthrough/HouseModel.tsx` is the only file that knows what the
+building looks like. Swapping the placeholder for a real GLB is one component
+replacement — `useGLTF` and `<primitive>` — and nothing else changes, because
+no camera position, hotspot or panel refers to the geometry.
+
+- **No orbit controls and no scroll handler.** The only thing that moves the
+  camera is choosing an area. That is the difference between a configurator and
+  a game, and it was the explicit brief.
+- **Interior and Basement are framed from outside**, because the placeholder is
+  a solid shell on a ground plane — a camera indoors sees a closed box and one
+  below grade sees the underside of the ground. Re-aim those two when a model
+  with an interior arrives; they are the only ones that need it.
+- **Navigation sits above annotation.** The rail and the return control are
+  z-index 20; drei's `Html` tops out at 8. A floating hotspot label once
+  covered the rail and swallowed its clicks.
+- **Hotspots are fixed screen size, not `distanceFactor`.** Scaling a control
+  with camera distance shrank its hit area to ten pixels on the wide shots.
+  They are 26px so they clear the 24px minimum, and show their label only on
+  hover or when active.
+- Under reduced motion the camera **cuts** rather than travels.
+
+**Property detail lives on the household, not beside it.** Schema v9 added
+`assets.property` (`PropertyProfile`) — roof, structure, basement, garage and
+grounds. Every field starts blank on every existing record, because the county
+publishes none of it and an invented roof material reads as a fact somebody
+could quote a policy from.
+
+Two rules that are easy to get wrong:
+
+- **`dwellingReplacementCost` is not `estimatedPropertyValue`.** Market value
+  and cost to rebuild are different numbers. There is a test asserting the
+  panel never sources one from the other.
+- **Roof age is derived from `roofYearInstalled`, never stored** — the same
+  reason attempt counts and temperature are derived. A stored age is wrong by
+  next January.
+
+`readingsFor` tolerates a household with no `assets` and no `property` at all.
+That is not defensive habit: a record that bypassed normalisation crashed the
+whole application during this build, exactly as `tags` had before it.
 
 ## Storage
 
@@ -428,7 +484,7 @@ changes (`actor: "rule"`). **No history was reconstructed for records that
 predate this** — a fabricated "who changed this" is worse than an honest gap.
 `AUDIT_LIMIT` caps the log at 2000 entries.
 
-## Prospect schema v4
+## Prospect schema v4 (now at v9)
 
 `lib/prospectSchema.ts` holds `normalizeProspect()` — **the only place that
 decides what an old record becomes**. It runs from three directions: the

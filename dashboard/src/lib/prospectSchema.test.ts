@@ -203,6 +203,101 @@ describe("detecting work to do", () => {
   });
 
   it("reports the schema version the app is on", () => {
-    expect(PROSPECT_SCHEMA_VERSION).toBe(8);
+    // Bumped to 9 when the property profile was added. This assertion exists to
+    // make a version change deliberate rather than incidental — if it fails,
+    // confirm the migration was intended before moving the number.
+    expect(PROSPECT_SCHEMA_VERSION).toBe(9);
+  });
+});
+
+describe("property profile — schema v9", () => {
+  /**
+   * The whole migration promise in one test. A record written before v9 has no
+   * property at all; it must come back with every field present and every one
+   * of them empty. Inventing a roof material would read as a fact somebody
+   * could quote a policy from.
+   */
+  it("gives an older record a complete, entirely blank property", () => {
+    const p = normalizeProspect({ id: "x", name: "Olson", assets: { yearBuilt: "1994" } });
+
+    expect(p.assets.yearBuilt).toBe("1994");
+    expect(p.assets.property).toEqual({
+      constructionType: "",
+      squareFeet: null,
+      exteriorMaterial: "",
+      dwellingReplacementCost: null,
+      roofYearInstalled: "",
+      roofMaterial: "",
+      roofConcerns: "",
+      underwritingFlags: "",
+      basementType: "",
+      basementFinishedPct: null,
+      waterBackupNotes: "",
+      garageType: "",
+      garageStalls: null,
+      acreage: null,
+      otherStructures: "",
+      pool: "",
+    });
+  });
+
+  it("keeps a record that has no assets object at all working", () => {
+    const p = normalizeProspect({ id: "x", name: "No assets" });
+    expect(p.assets.property.roofMaterial).toBe("");
+  });
+
+  it("carries real values through untouched", () => {
+    const p = normalizeProspect({
+      id: "x",
+      name: "Filled in",
+      assets: {
+        property: {
+          roofYearInstalled: "2016",
+          roofMaterial: "Architectural shingle",
+          squareFeet: 2400,
+          basementFinishedPct: 60,
+          acreage: 1.4,
+        },
+      },
+    });
+    expect(p.assets.property.roofYearInstalled).toBe("2016");
+    expect(p.assets.property.roofMaterial).toBe("Architectural shingle");
+    expect(p.assets.property.squareFeet).toBe(2400);
+    expect(p.assets.property.basementFinishedPct).toBe(60);
+    expect(p.assets.property.acreage).toBe(1.4);
+  });
+
+  /** Idempotence is the property the whole migration rests on. */
+  it("is unchanged by a second pass", () => {
+    const once = normalizeProspect({ id: "x", name: "Twice", assets: { property: { squareFeet: 1800 } } });
+    const twice = normalizeProspect(once);
+    expect(twice.assets.property).toEqual(once.assets.property);
+  });
+
+  /** Garbage in a stored record must not become a number on screen. */
+  it("refuses non-finite and non-numeric values", () => {
+    const p = normalizeProspect({
+      id: "x",
+      name: "Bad numbers",
+      assets: {
+        property: {
+          squareFeet: "2400",
+          acreage: NaN,
+          garageStalls: Infinity,
+          dwellingReplacementCost: null,
+        },
+      },
+    });
+    expect(p.assets.property.squareFeet).toBeNull();
+    expect(p.assets.property.acreage).toBeNull();
+    expect(p.assets.property.garageStalls).toBeNull();
+    expect(p.assets.property.dwellingReplacementCost).toBeNull();
+  });
+
+  it("survives property being a string, a number or null", () => {
+    for (const junk of ["nonsense", 42, null, []]) {
+      const p = normalizeProspect({ id: "x", name: "Junk", assets: { property: junk } });
+      expect(p.assets.property.constructionType).toBe("");
+    }
   });
 });

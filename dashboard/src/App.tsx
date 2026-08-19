@@ -11,13 +11,14 @@ import { ProspectsTab } from "./components/ProspectsTab";
 import { PipelineTab } from "./components/PipelineTab";
 import { StorageNotice } from "./components/StorageNotice";
 import { CommandPalette } from "./components/CommandPalette";
+import { WalkthroughTab } from "./components/WalkthroughTab";
 import { useStored, whenPersisted } from "./lib/repository";
 import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
-import type { Prospect, ReviewProposal } from "./types";
+import type { PropertyProfile, Prospect, ReviewProposal } from "./types";
 
-type Tab = "operator" | "progress" | "todo" | "prospects" | "pipeline" | "map";
+type Tab = "operator" | "progress" | "todo" | "prospects" | "pipeline" | "map" | "walkthrough";
 
 /**
  * Navigation, and the page header each destination writes.
@@ -61,6 +62,13 @@ const tabs: { id: Tab; label: string; title: string; standfirst: string; icon: s
     title: "Progress",
     standfirst: "The book of business against the period's goal.",
     icon: "M4 18l5-6 4 3.5L20 6",
+  },
+  {
+    id: "walkthrough",
+    label: "Walkthrough",
+    title: "Property walkthrough",
+    standfirst: "The dwelling area by area, and what underwriting will ask about each.",
+    icon: "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",
   },
   {
     id: "map",
@@ -177,6 +185,19 @@ function App() {
    * so it persists exactly like any other edit and the queue recomputes on the
    * spot without a reload.
    */
+  /**
+   * Record what the walkthrough found.
+   *
+   * Property detail is data entry, not a decision, so it goes straight to the
+   * record and nothing is written to the audit log — the same treatment finding
+   * a phone number gets.
+   */
+  function patchProperty(id: string, property: PropertyProfile) {
+    setProspects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, assets: { ...p.assets, property } } : p)),
+    );
+  }
+
   function patchProspectFromResearch(id: string, patch: Partial<Prospect>) {
     const before = prospects.find((p) => p.id === id);
     setProspects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -338,6 +359,13 @@ function App() {
               setFocusProspectId(id);
               setTab("prospects");
             }}
+          />
+        )}
+        {tab === "walkthrough" && (
+          <WalkthroughTab
+            prospects={prospects}
+            focusId={focusProspectId}
+            onPatch={patchProperty}
           />
         )}
         {tab === "map" && (

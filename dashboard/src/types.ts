@@ -159,6 +159,47 @@ export interface Contact {
  * public records and research, not from a policy. Nothing here may be shown or
  * treated as confirmed coverage.
  */
+/**
+ * The physical property, as it matters to underwriting.
+ *
+ * Same caveat as the indicators it sits inside: these are researched or
+ * observed, never confirmed coverage. Every field starts blank — a guessed
+ * roof material reads as fact and is worse than an empty box.
+ *
+ * `roofYearInstalled` stores the year rather than the age, because age drifts
+ * and a stored age is wrong by next January. Age is derived where it is shown,
+ * the same way attempt counts and temperature already are.
+ */
+export interface PropertyProfile {
+  /* Structure */
+  constructionType: string;
+  squareFeet: number | null;
+  exteriorMaterial: string;
+  /** Cost to rebuild. Deliberately NOT estimatedPropertyValue, which is market
+   *  value and usually a different, lower number. */
+  dwellingReplacementCost: number | null;
+
+  /* Roof */
+  roofYearInstalled: string;
+  roofMaterial: string;
+  roofConcerns: string;
+  underwritingFlags: string;
+
+  /* Basement */
+  basementType: string;
+  basementFinishedPct: number | null;
+  waterBackupNotes: string;
+
+  /* Garage */
+  garageType: string;
+  garageStalls: number | null;
+
+  /* Grounds */
+  acreage: number | null;
+  otherStructures: string;
+  pool: string;
+}
+
 export interface AssetIndicators {
   ownership: "owner" | "renter" | "";
   estimatedPropertyValue: number | null;
@@ -172,6 +213,8 @@ export interface AssetIndicators {
   recreational: string;
   businessOwnership: string;
   other: string;
+  /** The physical property. Added in schema v9; blank on every older record. */
+  property: PropertyProfile;
 }
 
 /** Derived from status and conversion score — never maintained by hand. */

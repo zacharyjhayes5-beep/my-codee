@@ -1978,3 +1978,378 @@ kbd {
     transform: none;
   }
 }
+
+/* ==========================================================================
+   15. Property walkthrough
+   --------------------------------------------------------------------------
+   The one dark surface in the application, and it is dark for a reason: a 3D
+   viewport is a stage, and a pale ground would flatten the building against it.
+   The dark is the navy already in the palette taken further down, not a second
+   theme — everything around the canvas stays ivory and navy, so the tab reads
+   as part of the dashboard rather than a visitor from another product.
+   ========================================================================== */
+
+.walkthrough {
+  gap: var(--space-4);
+}
+
+.wt-bar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.wt-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.wt-picker select {
+  min-width: 260px;
+  font-size: 0.95rem;
+}
+
+.wt-address {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* The stage and its panel. The canvas takes the room; the panel is the width
+   of a column of prose and no wider. */
+.wt-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--space-4);
+  align-items: stretch;
+  min-height: 560px;
+}
+
+.wt-canvas {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #12161c;
+  border: 1px solid var(--navy);
+  box-shadow: var(--shadow-3);
+  min-height: 560px;
+}
+
+.wt-canvas canvas {
+  display: block;
+  touch-action: none;
+}
+
+.wt-loading {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 560px;
+  color: #9aa7b6;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation. A rail rather than a HUD: it sits in the corner, it does not
+   float over the building, and it never moves.
+   -------------------------------------------------------------------------- */
+
+.wt-rail {
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: rgba(10, 13, 18, 0.72);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius);
+  overflow: hidden;
+  /* Above the hotspot layer (drei tops out at 8). A floating label in the
+     scene once covered this rail and swallowed its clicks — navigation must
+     always sit above annotation. */
+  z-index: 20;
+}
+
+.wt-rail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 34px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: #c3cddb;
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.wt-rail-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.wt-rail-item.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--cognac);
+  color: #fff;
+}
+
+.wt-rail-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.74rem;
+  color: #8b98a8;
+}
+
+.wt-rail-item.is-active .wt-rail-count {
+  color: #b9c4d2;
+}
+
+.wt-return {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 20;
+  min-height: 32px;
+  padding: 6px 14px;
+  background: rgba(10, 13, 18, 0.72);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  color: #dbe3ec;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+
+.wt-return:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------------
+   Hotspots. An annotation on a drawing: a small ring and a label. No pulse,
+   no bob, no glow — nothing in this scene moves unless the camera is moving.
+   -------------------------------------------------------------------------- */
+
+.wt-hotspot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* 26px so the marker clears the 24px minimum every other control in the app
+     holds to, while the dot inside it stays visually small. */
+  min-width: 26px;
+  min-height: 26px;
+  padding: 4px;
+  background: rgba(10, 13, 18, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #dbe3ec;
+  font: inherit;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    color var(--t-fast),
+    padding var(--t-fast);
+}
+
+/* A marker is a dot. The name appears when you go near it, and on the area you
+   are already in — six labels shouting at once is the HUD clutter the brief
+   asked to avoid. */
+.wt-hotspot-label {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-width var(--t-base),
+    opacity var(--t-fast);
+}
+
+.wt-hotspot:hover .wt-hotspot-label,
+.wt-hotspot.is-hover .wt-hotspot-label,
+.wt-hotspot.is-active .wt-hotspot-label,
+.wt-hotspot:focus-visible .wt-hotspot-label {
+  max-width: 140px;
+  opacity: 1;
+}
+
+.wt-hotspot:hover,
+.wt-hotspot.is-hover,
+.wt-hotspot.is-active,
+.wt-hotspot:focus-visible {
+  padding-right: 10px;
+}
+
+.wt-hotspot:hover,
+.wt-hotspot.is-hover {
+  background: rgba(16, 21, 28, 0.9);
+  border-color: rgba(255, 255, 255, 0.34);
+  color: #fff;
+}
+
+.wt-hotspot.is-active {
+  border-color: var(--cognac);
+  color: #fff;
+}
+
+.wt-hotspot-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dbe3ec;
+  box-shadow: 0 0 0 3px rgba(219, 227, 236, 0.16);
+}
+
+.wt-hotspot.is-active .wt-hotspot-dot {
+  background: var(--cognac);
+  box-shadow: 0 0 0 3px rgba(169, 102, 58, 0.28);
+}
+
+/* --------------------------------------------------------------------------
+   The information panel. Back in the dashboard's own language entirely.
+   -------------------------------------------------------------------------- */
+
+.wt-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  overflow-y: auto;
+  max-height: 720px;
+}
+
+.wt-panel-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+
+.wt-panel-head p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.wt-recorded {
+  margin-top: 8px !important;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem !important;
+  color: var(--text-muted) !important;
+}
+
+.wt-readings {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wt-reading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.wt-reading dt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.wt-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.wt-reading dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.wt-reading input,
+.wt-reading textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+/* Blank is stated, never implied by an empty row. */
+.wt-blank {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.wt-panel-foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.wt-edit {
+  min-height: 34px;
+  padding: 7px 16px;
+  background: var(--navy);
+  border: 1px solid var(--navy);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
+}
+
+.wt-edit:hover {
+  opacity: 0.88;
+}
+
+.wt-caveat {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+/* At narrower widths the panel goes under the stage rather than squeezing it. */
+@media (max-width: 1180px) {
+  .wt-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wt-panel {
+    max-height: none;
+  }
+}

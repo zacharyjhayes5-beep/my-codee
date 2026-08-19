@@ -2,7 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Prospect } from "../types";
 import { needsResearch } from "../lib/research";
 
-export type PaletteTarget = "operator" | "progress" | "todo" | "prospects" | "pipeline" | "map";
+export type PaletteTarget =
+  | "operator"
+  | "progress"
+  | "todo"
+  | "prospects"
+  | "pipeline"
+  | "map"
+  | "walkthrough";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -62,6 +69,7 @@ export function CommandPalette({
       { id: "go-pipeline", label: "Pipeline", detail: "Open opportunities by stage", run: () => onGoTo("pipeline") },
       { id: "go-todo", label: "To-Do", detail: "Tasks and the review inbox", run: () => onGoTo("todo") },
       { id: "go-progress", label: "Progress", detail: "The book against the goal", run: () => onGoTo("progress") },
+      { id: "go-walkthrough", label: "Walkthrough", detail: "The property area by area", run: () => onGoTo("walkthrough") },
       { id: "go-map", label: "Lead Map", detail: "How households connect", run: () => onGoTo("map") },
     ],
     [onGoTo],

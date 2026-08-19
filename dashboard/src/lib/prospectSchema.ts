@@ -3,6 +3,7 @@ import type {
   AssetIndicators,
   ClosedReason,
   Contact,
+  PropertyProfile,
   Prospect,
   ProspectNote,
   ProspectTag,
@@ -30,7 +31,7 @@ import { newId } from "./storage";
   * asset indicators. 7 added parcelId and the "gis" source for automated
  * ingestion. 8 added tags.
  */
-export const PROSPECT_SCHEMA_VERSION = 8;
+export const PROSPECT_SCHEMA_VERSION = 9;
 
 /** The six statuses v3 could hold, and where each one lands. */
 export const STATUS_TO_STAGE: Record<string, Stage> = {
@@ -83,6 +84,35 @@ export function blankAssets(): AssetIndicators {
     recreational: "",
     businessOwnership: "",
     other: "",
+    property: blankPropertyProfile(),
+  };
+}
+
+/**
+ * The physical property, all empty.
+ *
+ * Added in v9. Every existing record gets this shape with nothing in it, which
+ * is the only honest outcome — the county publishes none of it and inventing a
+ * roof material would read as a fact somebody could quote a policy from.
+ */
+export function blankPropertyProfile(): PropertyProfile {
+  return {
+    constructionType: "",
+    squareFeet: null,
+    exteriorMaterial: "",
+    dwellingReplacementCost: null,
+    roofYearInstalled: "",
+    roofMaterial: "",
+    roofConcerns: "",
+    underwritingFlags: "",
+    basementType: "",
+    basementFinishedPct: null,
+    waterBackupNotes: "",
+    garageType: "",
+    garageStalls: null,
+    acreage: null,
+    otherStructures: "",
+    pool: "",
   };
 }
 
@@ -222,6 +252,32 @@ function asAssets(value: unknown): AssetIndicators {
     recreational: a.recreational ?? "",
     businessOwnership: a.businessOwnership ?? "",
     other: a.other ?? "",
+    property: asPropertyProfile(a.property),
+  };
+}
+
+/** Idempotent, like everything else here: a v9 record passes through intact. */
+function asPropertyProfile(value: unknown): PropertyProfile {
+  if (!value || typeof value !== "object") return blankPropertyProfile();
+  const p = value as Partial<PropertyProfile>;
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  return {
+    constructionType: p.constructionType ?? "",
+    squareFeet: num(p.squareFeet),
+    exteriorMaterial: p.exteriorMaterial ?? "",
+    dwellingReplacementCost: num(p.dwellingReplacementCost),
+    roofYearInstalled: p.roofYearInstalled ?? "",
+    roofMaterial: p.roofMaterial ?? "",
+    roofConcerns: p.roofConcerns ?? "",
+    underwritingFlags: p.underwritingFlags ?? "",
+    basementType: p.basementType ?? "",
+    basementFinishedPct: num(p.basementFinishedPct),
+    waterBackupNotes: p.waterBackupNotes ?? "",
+    garageType: p.garageType ?? "",
+    garageStalls: num(p.garageStalls),
+    acreage: num(p.acreage),
+    otherStructures: p.otherStructures ?? "",
+    pool: p.pool ?? "",
   };
 }
 
