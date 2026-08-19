@@ -8,6 +8,8 @@ import { BookOfBusiness } from "./BookOfBusiness";
 import { Meter } from "./Meter";
 import { StatTile } from "./StatTile";
 import { TierSection } from "./TierSection";
+import { useCameraTilt } from "../hooks/useCameraTilt";
+import { useDollyIn } from "../hooks/useDollyIn";
 
 function formatCount(n: number) {
   return n.toLocaleString("en-US");
@@ -37,9 +39,9 @@ export function ProgressTab({
   const inPeriod = useMemo(
     () =>
       entries.filter(
-        (e) => e.effectiveDate >= period.start && e.effectiveDate < period.end
+        (e) => e.effectiveDate >= period.start && e.effectiveDate < period.end,
       ),
-    [entries, period.start, period.end]
+    [entries, period.start, period.end],
   );
 
   const earnings = useMemo(() => totalsFor(inPeriod), [inPeriod]);
@@ -55,9 +57,9 @@ export function ProgressTab({
           acc.premiumGoal += l.premiumGoal;
           return acc;
         },
-        { policyCount: 0, policyGoal: 0, premium: 0, premiumGoal: 0 }
+        { policyCount: 0, policyGoal: 0, premium: 0, premiumGoal: 0 },
       ),
-    [lines, derived]
+    [lines, derived],
   );
 
   const pace = useMemo(() => {
@@ -65,7 +67,10 @@ export function ProgressTab({
     const end = parseDay(period.end);
     const now = new Date();
     const totalDays = Math.max(1, differenceInCalendarDays(end, start));
-    const elapsedDays = Math.min(totalDays, Math.max(0, differenceInCalendarDays(now, start)));
+    const elapsedDays = Math.min(
+      totalDays,
+      Math.max(0, differenceInCalendarDays(now, start)),
+    );
     const daysLeft = Math.max(0, differenceInCalendarDays(end, now));
     const elapsedPct = (elapsedDays / totalDays) * 100;
     const weeksLeft = daysLeft / 7;
@@ -85,132 +90,181 @@ export function ProgressTab({
       ? "On pace"
       : `${formatCount(Math.abs(Math.round(paceDelta)))} ${paceDelta > 0 ? "ahead" : "behind"}`;
 
+  // The scene holds the perspective and listens for the pointer. The decks are
+  // what actually rotate, and carry the panels at their various depths.
+  //
+  // There are two of them, with the book of business sitting flat between: a
+  // 300-row editable table has no business tilting under the cursor, and depth
+  // alone would not have saved it — a panel at translateZ(0) still inherits
+  // its parent's rotation.
+  const sceneRef = useCameraTilt<HTMLDivElement>();
+  useDollyIn(sceneRef, [lines.length]);
+
   function updateLine(id: string, patch: Partial<PolicyLine>) {
     onChange(lines.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   }
 
   return (
-    <div className="tab-panel">
-      <div className="period-bar">
-        <div className="period-dates">
-          <label>
-            Period start
-            <input
-              type="date"
-              value={period.start}
-              onChange={(e) => onPeriodChange({ ...period, start: e.target.value })}
-            />
-          </label>
-          <label>
-            Period end
-            <input
-              type="date"
-              value={period.end}
-              onChange={(e) => onPeriodChange({ ...period, end: e.target.value })}
-            />
-          </label>
+    <div className="tab-panel p3d-scene" ref={sceneRef}>
+      <div className="p3d-deck">
+        <div className="period-bar dolly">
+          <div className="period-dates">
+            <label>
+              Period start
+              <input
+                type="date"
+                value={period.start}
+                onChange={(e) =>
+                  onPeriodChange({ ...period, start: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Period end
+              <input
+                type="date"
+                value={period.end}
+                onChange={(e) =>
+                  onPeriodChange({ ...period, end: e.target.value })
+                }
+              />
+            </label>
+          </div>
+          {pace.valid ? (
+            <p className="period-summary">
+              {formatCount(pace.daysLeft)} days left ·{" "}
+              {pace.elapsedPct.toFixed(0)}% of the period elapsed · ends{" "}
+              {format(parseDay(period.end), "MMM d, yyyy")}
+            </p>
+          ) : (
+            <p className="period-summary warn">
+              Period end must come after the start date.
+            </p>
+          )}
         </div>
-        {pace.valid ? (
-          <p className="period-summary">
-            {formatCount(pace.daysLeft)} days left · {pace.elapsedPct.toFixed(0)}% of the period
-            elapsed · ends {format(parseDay(period.end), "MMM d, yyyy")}
-          </p>
-        ) : (
-          <p className="period-summary warn">Period end must come after the start date.</p>
-        )}
-      </div>
 
-      <div className="stat-row earnings-row">
-        <StatTile
-          label="Net commission"
-          value={currency(earnings.net, 0)}
-          sub="premium × rate, plus multiplier"
-          accent
-        />
-        <StatTile label="Gross commission" value={currency(earnings.gross, 0)} sub="before multiplier" />
-        <StatTile label="Total premium" value={currency(earnings.premium, 0)} sub={`${earnings.count} policies in period`} />
-        <StatTile
-          label="Pace"
-          value={paceLabel}
-          sub={`${formatCount(totals.policyCount)} of ${formatCount(totals.policyGoal)} · on pace today ${Math.round(pace.expectedTotal)}`}
-        />
-        <StatTile
-          label="Needed per week"
-          value={pace.daysLeft > 0 ? pace.perWeek.toFixed(1) : "—"}
-          sub={`${formatCount(Math.max(0, totals.policyGoal - totals.policyCount))} policies to go`}
-        />
+        <div className="stat-row earnings-row dolly">
+          <StatTile
+            label="Net commission"
+            value={currency(earnings.net, 0)}
+            sub="premium × rate, plus multiplier"
+            accent
+          />
+          <StatTile
+            label="Gross commission"
+            value={currency(earnings.gross, 0)}
+            sub="before multiplier"
+          />
+          <StatTile
+            label="Total premium"
+            value={currency(earnings.premium, 0)}
+            sub={`${earnings.count} policies in period`}
+          />
+          <StatTile
+            label="Pace"
+            value={paceLabel}
+            sub={`${formatCount(totals.policyCount)} of ${formatCount(totals.policyGoal)} · on pace today ${Math.round(pace.expectedTotal)}`}
+          />
+          <StatTile
+            label="Needed per week"
+            value={pace.daysLeft > 0 ? pace.perWeek.toFixed(1) : "—"}
+            sub={`${formatCount(Math.max(0, totals.policyGoal - totals.policyCount))} policies to go`}
+          />
+        </div>
       </div>
 
       <BookOfBusiness entries={entries} onChange={onEntriesChange} />
 
-      <section className="goals-section">
-        <div className="section-head">
-          <h2>Goals</h2>
-          <p>Counts come straight from the book of business — set the targets here.</p>
-        </div>
+      <div className="p3d-deck">
+        <section className="goals-section dolly">
+          <div className="section-head">
+            <h2>Goals</h2>
+            <p>
+              Counts come straight from the book of business — set the targets
+              here.
+            </p>
+          </div>
 
-        <div className="line-grid">
-          {lines.map((line) => {
-            const count = derived.counts[line.id];
-            const premium = derived.premium[line.id];
-            const expected = (line.policyGoal * pace.elapsedPct) / 100;
-            const delta = count - expected;
-            return (
-              <div className="line-card" key={line.id}>
-                <h3>
-                  <span className="meter-dot" style={{ background: seriesColors[line.id] }} />
-                  {line.name}
-                  <span className={`pace-pill ${delta >= -0.5 ? "good" : "behind"}`}>
-                    {Math.abs(delta) < 0.5
-                      ? "on pace"
-                      : `${Math.abs(Math.round(delta))} ${delta > 0 ? "ahead" : "behind"}`}
-                  </span>
-                </h3>
-
-                <Meter
-                  label="Policy count"
-                  value={count}
-                  goal={line.policyGoal}
-                  format={formatCount}
-                  pacePct={pace.elapsedPct}
-                />
-                <Meter
-                  label="Premium"
-                  value={premium}
-                  goal={line.premiumGoal}
-                  format={(n) => currency(n, 0)}
-                  pacePct={pace.elapsedPct}
-                />
-
-                <div className="line-inputs">
-                  <label>
-                    Policy goal
-                    <input
-                      type="number"
-                      min={0}
-                      value={line.policyGoal}
-                      onChange={(e) => updateLine(line.id, { policyGoal: Number(e.target.value) })}
+          <div className="line-grid">
+            {lines.map((line) => {
+              const count = derived.counts[line.id];
+              const premium = derived.premium[line.id];
+              const expected = (line.policyGoal * pace.elapsedPct) / 100;
+              const delta = count - expected;
+              return (
+                <div className="line-card" key={line.id}>
+                  <h3>
+                    <span
+                      className="meter-dot"
+                      style={{ background: seriesColors[line.id] }}
                     />
-                  </label>
-                  <label>
-                    Premium goal ($)
-                    <input
-                      type="number"
-                      min={0}
-                      value={line.premiumGoal}
-                      onChange={(e) => updateLine(line.id, { premiumGoal: Number(e.target.value) })}
-                    />
-                  </label>
+                    {line.name}
+                    <span
+                      className={`pace-pill ${delta >= -0.5 ? "good" : "behind"}`}
+                    >
+                      {Math.abs(delta) < 0.5
+                        ? "on pace"
+                        : `${Math.abs(Math.round(delta))} ${delta > 0 ? "ahead" : "behind"}`}
+                    </span>
+                  </h3>
+
+                  <Meter
+                    label="Policy count"
+                    value={count}
+                    goal={line.policyGoal}
+                    format={formatCount}
+                    pacePct={pace.elapsedPct}
+                  />
+                  <Meter
+                    label="Premium"
+                    value={premium}
+                    goal={line.premiumGoal}
+                    format={(n) => currency(n, 0)}
+                    pacePct={pace.elapsedPct}
+                  />
+
+                  <div className="line-inputs">
+                    <label>
+                      Policy goal
+                      <input
+                        type="number"
+                        min={0}
+                        value={line.policyGoal}
+                        onChange={(e) =>
+                          updateLine(line.id, {
+                            policyGoal: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Premium goal ($)
+                      <input
+                        type="number"
+                        min={0}
+                        value={line.premiumGoal}
+                        onChange={(e) =>
+                          updateLine(line.id, {
+                            premiumGoal: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </section>
+
+        <div className="dolly">
+          <TierSection counts={derived.counts} />
         </div>
-      </section>
 
-      <TierSection counts={derived.counts} />
-
-      <AllAmericanSection entries={inPeriod} />
+        <div className="dolly">
+          <AllAmericanSection entries={inPeriod} />
+        </div>
+      </div>
     </div>
   );
 }

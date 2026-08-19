@@ -1756,3 +1756,225 @@ kbd {
     display: none;
   }
 }
+
+/* ==========================================================================
+   14. The Progress tab as a physical object
+   --------------------------------------------------------------------------
+   The one place in the app that is genuinely three-dimensional, and it is
+   scoped so it can never leak: every rule below sits under .p3d-scene.
+
+   The idea is a machined instrument panel. A single perspective holds the
+   whole tab; panels sit at different depths inside it; a camera (useCameraTilt)
+   rotates the deck a few degrees toward the pointer. Because the panels are at
+   different depths, parallax falls out of the perspective for free rather than
+   being animated per element.
+
+   Motion here deliberately exceeds the 120–180ms rule the rest of the app
+   follows. A camera that snaps does not read as a camera. Nothing else on any
+   other page is affected.
+   ========================================================================== */
+
+/* --enter must be a registered property or it cannot be animated — an
+   unregistered custom property flips from 0 to 1 with no intermediate values. */
+@property --enter {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+.p3d-scene {
+  perspective: 1600px;
+  perspective-origin: 50% 35%;
+}
+
+.p3d-deck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  transform-style: preserve-3d;
+  /* --cam-x / --cam-y are written by useCameraTilt, which damps them itself.
+     No transition here: a transition on top of per-frame damping fights it. */
+  transform: rotateX(var(--cam-x, 0deg)) rotateY(var(--cam-y, 0deg));
+}
+
+/* Children must keep the 3D context alive or their depth collapses to zero. */
+.p3d-deck > *,
+.p3d-deck .stat-row,
+.p3d-deck .line-grid,
+.p3d-deck .tier-grid,
+.p3d-deck .aa-grid {
+  transform-style: preserve-3d;
+}
+
+/* --------------------------------------------------------------------------
+   Depth
+   Elevation states a genuine hierarchy: the figures you read at a glance sit
+   nearest, the reference material sits furthest back, and the table you type
+   into stays flat on the base where it belongs.
+   -------------------------------------------------------------------------- */
+
+.p3d-deck .stat-tile {
+  transform: translateZ(28px);
+  box-shadow: var(--shadow-3);
+}
+
+.p3d-deck .line-card {
+  transform: translateZ(18px);
+  box-shadow: var(--shadow-2);
+}
+
+.p3d-deck .tier-card {
+  transform: translateZ(12px);
+  box-shadow: var(--shadow-2);
+}
+
+.p3d-deck .aa-card {
+  transform: translateZ(8px);
+  box-shadow: var(--shadow-1);
+}
+
+/* The book of business is not here, and that is the point. It sits between the
+   two decks in the markup rather than inside either one, so the camera never
+   reaches it. Keeping it at translateZ(0) would not have been enough — depth
+   is not rotation, and a flat panel inside a rotating parent still rotates. */
+
+/* --------------------------------------------------------------------------
+   Material
+   A single key light travels across the panel, so exactly one card carries a
+   highlight at a time — the one under the pointer. The gradient sits behind
+   the text rather than over it, which is what keeps contrast intact.
+   -------------------------------------------------------------------------- */
+
+.p3d-deck .stat-tile,
+.p3d-deck .line-card,
+.p3d-deck .tier-card,
+.p3d-deck .aa-card {
+  position: relative;
+  isolation: isolate;
+  transition:
+    transform var(--t-base),
+    box-shadow var(--t-base);
+}
+
+.p3d-deck .stat-tile::after,
+.p3d-deck .line-card::after,
+.p3d-deck .tier-card::after,
+.p3d-deck .aa-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--t-base);
+  background: radial-gradient(
+    380px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0) 60%
+  );
+}
+
+.p3d-deck .is-lit::after {
+  opacity: 1;
+}
+
+/* The lit card rises slightly further, so the light and the elevation agree. */
+.p3d-deck .stat-tile.is-lit {
+  transform: translateZ(40px);
+}
+.p3d-deck .line-card.is-lit {
+  transform: translateZ(28px);
+}
+.p3d-deck .tier-card.is-lit {
+  transform: translateZ(22px);
+}
+.p3d-deck .aa-card.is-lit {
+  transform: translateZ(16px);
+}
+
+/* --------------------------------------------------------------------------
+   Dolly
+   Panels arrive from further back as the camera reaches them. Once only —
+   useDollyIn unobserves after the first crossing.
+   -------------------------------------------------------------------------- */
+
+.p3d-deck .dolly {
+  --enter: 0;
+  opacity: var(--enter);
+  transform: translateZ(calc((var(--enter) - 1) * 90px));
+  transition:
+    --enter 420ms var(--ease),
+    opacity 420ms var(--ease);
+}
+
+.p3d-deck .dolly.is-in {
+  --enter: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Working beats looking
+   Focus anywhere in the scene flattens it. A rotated input is worse to type
+   into, and every one of these panels contains real fields.
+   -------------------------------------------------------------------------- */
+
+.p3d-scene:focus-within .p3d-deck {
+  transform: none;
+  transition: transform 220ms var(--ease);
+}
+
+.p3d-scene:focus-within .stat-tile,
+.p3d-scene:focus-within .line-card,
+.p3d-scene:focus-within .tier-card,
+.p3d-scene:focus-within .aa-card {
+  transform: translateZ(0);
+}
+
+.p3d-scene:focus-within .is-lit::after {
+  opacity: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   The hooks already decline to attach, so nothing is written to --cam-x or
+   --enter. These rules make the resting state correct rather than merely fast:
+   flat, present, and with no pending reveal.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .p3d-scene {
+    perspective: none;
+  }
+
+  .p3d-deck,
+  .p3d-deck .stat-tile,
+  .p3d-deck .line-card,
+  .p3d-deck .tier-card,
+  .p3d-deck .aa-card,
+  .p3d-deck .dolly {
+    transform: none;
+  }
+
+  .p3d-deck .dolly {
+    --enter: 1;
+    opacity: 1;
+  }
+
+  .p3d-deck .stat-tile::after,
+  .p3d-deck .line-card::after,
+  .p3d-deck .tier-card::after,
+  .p3d-deck .aa-card::after {
+    display: none;
+  }
+}
+
+/* Touch has no cursor to follow, so the camera never attaches. Keep the
+   elevation, drop the perspective that only a moving camera would reveal. */
+@media (pointer: coarse) {
+  .p3d-scene {
+    perspective: none;
+  }
+  .p3d-deck {
+    transform: none;
+  }
+}

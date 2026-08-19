@@ -136,6 +136,31 @@ mode and no neon anywhere.
 - Motion is 120–180ms, functional only, and still behind
   `prefers-reduced-motion`.
 
+**The Progress tab is the one exception to "no 3D", and it is deliberate.**
+He asked for it directly and repeatedly — "like the dashboard is a 3d object
+and we are on a camera". Section 14 of `theme.css` holds all of it, scoped
+under `.p3d-scene` so it cannot leak to another page. `hooks/useCameraTilt.ts`
+rotates the deck up to 4° toward the pointer; panels sit at different
+`translateZ` depths, so the parallax falls out of one perspective rather than
+being animated per element. Its motion exceeds the 120–180ms rule above, which
+a camera has to. Three rules keep it honest:
+
+- **The book of business is outside the rotating decks.** There are two decks
+  with the table between them, because a 300-row editable grid must not tilt
+  under the cursor. Depth alone would not have saved it — a panel at
+  `translateZ(0)` still inherits its parent's rotation.
+- **Focus flattens the scene.** `:focus-within` returns the camera to zero, and
+  the hook refuses to move while an input has focus. A rotated text field is
+  worse to type into.
+- **The reveal can never hide a number.** `useDollyIn` sweeps positions on
+  scroll rather than using IntersectionObserver: the observer only fires when
+  intersection *changes*, so jumping straight past a panel left it at opacity 0
+  permanently. That was a real defect, caught in the browser, not in review.
+
+Both hooks check `prefers-reduced-motion` themselves and never attach. The
+global block in `index.css` cannot help them — it zeroes transition and
+animation durations, and these write transforms directly.
+
 **No new dependencies** unless there's a real reason. The force-directed
 graph, the gas tanks and the progress orb are all hand-rolled SVG.
 
