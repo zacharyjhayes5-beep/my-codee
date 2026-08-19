@@ -3579,31 +3579,10 @@
   padding: 14px 16px 16px;
 }
 
-/* Corner brackets */
-.op-panel::before,
-.op-panel::after {
-  content: "";
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-color: var(--accent);
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-.op-panel::before {
-  top: 5px;
-  left: 5px;
-  border-top: 1px solid;
-  border-left: 1px solid;
-}
-
-.op-panel::after {
-  bottom: 5px;
-  right: 5px;
-  border-bottom: 1px solid;
-  border-right: 1px solid;
-}
+/* The console's corner brackets were removed with the rest of that design.
+   The redesign repurposed .op-panel::before for the section rule, which hid
+   the top-left one, but nothing claimed ::after — so a stray bracket kept
+   drawing in the bottom-right of every panel. */
 
 .op-panel-head {
   display: flex;

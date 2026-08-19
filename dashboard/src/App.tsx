@@ -10,6 +10,7 @@ import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
 import { PipelineTab } from "./components/PipelineTab";
 import { StorageNotice } from "./components/StorageNotice";
+import { CommandPalette } from "./components/CommandPalette";
 import { useStored, whenPersisted } from "./lib/repository";
 import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
@@ -199,6 +200,31 @@ function App() {
     }
   }
 
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const paletteTrigger = useRef<HTMLButtonElement>(null);
+
+  /**
+   * Ctrl+K / Cmd+K from anywhere. Bound on the window rather than a element so
+   * it works wherever focus happens to be, and deliberately ignored while a
+   * field is focused only for Escape — the shortcut itself should always work.
+   */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /** Focus returns to the control that opened it. */
+  function closePalette() {
+    setPaletteOpen(false);
+    paletteTrigger.current?.focus();
+  }
+
   const current = tabs.find((t) => t.id === tab) ?? tabs[0];
 
   return (
@@ -240,6 +266,18 @@ function App() {
             <h1>{current.title}</h1>
             <p>{current.standfirst}</p>
           </div>
+
+          {/* Visible on purpose. A shortcut nobody finds is worth nothing. */}
+          <button
+            ref={paletteTrigger}
+            className="palette-trigger"
+            onClick={() => setPaletteOpen(true)}
+            aria-haspopup="dialog"
+          >
+            <span>Search</span>
+            <kbd>Ctrl</kbd>
+            <kbd>K</kbd>
+          </button>
         </header>
 
         <StorageNotice
@@ -326,6 +364,17 @@ function App() {
         )}
         </main>
       </div>
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={closePalette}
+        prospects={prospects}
+        onGoTo={(target) => setTab(target)}
+        onOpenProspect={(id) => {
+          setFocusProspectId(id);
+          setTab("prospects");
+        }}
+      />
     </div>
   );
 }

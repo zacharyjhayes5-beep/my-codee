@@ -42,6 +42,10 @@
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  /* The spine sits above the workspace rather than beside it. One shadow, and
+     the two surfaces stop reading as flat panels butted together. */
+  box-shadow: var(--shadow-3);
+  z-index: 2;
 }
 
 .sidenav-brand {
@@ -232,6 +236,52 @@
 
 main {
   min-width: 0;
+}
+
+/**
+ * Motion on change, not just on hover.
+ *
+ * The system already defined --t-fast and --t-base and then only ever used
+ * them for hover states, so nothing that actually *changed* ever moved: pages
+ * swapped instantly, rows snapped open, counts jumped. These are the shared
+ * entrances; everything stays inside the 120–180ms the design calls for, and
+ * the global prefers-reduced-motion block in index.css disables all of it.
+ */
+
+/* Switching section. A fade only — a slide would imply spatial direction the
+   navigation does not have. */
+main > * {
+  animation: page-in var(--t-base) both;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Something arriving in place: a queued row, a note, a freshly added chip. */
+.enter {
+  animation: rise-in var(--t-base) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+/* A figure that has just changed value. Re-keyed in the component so it
+   remounts, which is what replays this. */
+.tick {
+  animation: tick-in var(--t-fast) both;
+}
+
+@keyframes tick-in {
+  from {
+    opacity: 0.4;
+  }
 }
 
 /* ============================================================
@@ -722,9 +772,22 @@ label {
   background: var(--surface-2);
 }
 
+/**
+ * The opened household reads as sitting above the table it came out of, and
+ * arrives rather than appearing. Both are cheap; together they are most of
+ * what makes an expand feel considered instead of abrupt.
+ */
 .lead-detail-row .prospect-card {
   margin: 0 var(--space-4);
-  box-shadow: none;
+  box-shadow: var(--shadow-2);
+  animation: detail-in var(--t-base) both;
+}
+
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 .lead-empty {
@@ -1170,7 +1233,8 @@ th,
   border-top: 1px solid var(--border);
   border-radius: var(--radius);
   padding: var(--space-5);
-  box-shadow: var(--shadow-1);
+  /* The one dominant area on the page lifts further than an ordinary plate. */
+  box-shadow: var(--shadow-2);
 }
 
 .command-center > .op-panel:first-child::before {
@@ -1514,5 +1578,181 @@ th,
   .research-phone,
   .research-email {
     flex: 1 1 100%;
+  }
+}
+
+/* ============================================================
+   13. Search and jump
+
+   The one place --shadow-3 earns its keep: an overlay is a genuine layer
+   above the page, and depth is how that reads without a heavy scrim.
+
+   The trigger is visible in the page header rather than hidden behind a
+   shortcut, because a shortcut nobody discovers is worth nothing.
+   ============================================================ */
+
+.palette-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  min-height: 34px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  flex: none;
+  transition:
+    background var(--t-fast),
+    border-color var(--t-fast),
+    color var(--t-fast);
+}
+
+.palette-trigger:hover {
+  background: var(--surface-2);
+  border-color: var(--baseline);
+  color: var(--text-primary);
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+/* ---------- The overlay ---------- */
+
+.palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  /* Without this the panel stretches to the full height of the backdrop —
+     flex's default cross-axis behaviour — and trails empty space under the
+     results. It should hug its content and grow only as results arrive. */
+  align-items: flex-start;
+  /* Sat high rather than centred: the results grow downward, and a centred
+     panel would shift under the eye as they do. */
+  padding: 12vh var(--space-4) var(--space-4);
+  background: rgba(19, 30, 43, 0.28);
+  animation: page-in var(--t-fast) both;
+}
+
+.palette {
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  animation: palette-in var(--t-base) both;
+}
+
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.palette-input {
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  padding: var(--space-4) var(--space-5);
+  font-size: 1rem;
+  min-height: 56px;
+}
+
+.palette-input:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--border);
+}
+
+.palette-results {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.palette-item {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 9px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background var(--t-fast);
+}
+
+/* Keyboard and mouse share one highlight, so there are never two. */
+.palette-item.is-active {
+  background: var(--surface-2);
+}
+
+.palette-label {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 550;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.palette-detail {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-left: auto;
+  white-space: nowrap;
+  flex: none;
+}
+
+.palette-empty {
+  margin: 0;
+  padding: var(--space-5);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.palette-hint {
+  margin: 0;
+  padding: 10px var(--space-5);
+  border-top: 1px solid var(--gridline);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .palette-trigger span {
+    display: none;
+  }
+
+  .palette-backdrop {
+    padding-top: 6vh;
+  }
+
+  .palette-detail {
+    display: none;
   }
 }

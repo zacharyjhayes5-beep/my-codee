@@ -35,7 +35,10 @@ export function ResearchQueue({
     <section className="op-panel research-queue">
       <header className="op-panel-head">
         Needs research
-        <span className="research-count">{queue.length}</span>
+        {/* Re-keyed on the value so it remounts and replays the tick. */}
+        <span className="research-count tick" key={queue.length}>
+          {queue.length}
+        </span>
       </header>
 
       <p className="research-blurb">
@@ -79,7 +82,7 @@ function ResearchRow({
   const address = [prospect.address.line1, prospect.address.city].filter(Boolean).join(", ");
 
   return (
-    <li className="research-item">
+    <li className="research-item enter">
       <div className="research-who">
         <span className="research-name">{prospect.name || "Untitled household"}</span>
         {prospect.tags.map((tag) => {

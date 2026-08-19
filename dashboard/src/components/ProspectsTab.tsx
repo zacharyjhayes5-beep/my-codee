@@ -419,7 +419,10 @@ export function ProspectsTab({
               className={`filter-chip${stageFilter === "Needs research" ? " on" : ""}`}
               onClick={() => setStageFilter("Needs research")}
             >
-              Needs research <span>{researchTotal}</span>
+              Needs research{" "}
+              <span className="tick" key={researchTotal}>
+                {researchTotal}
+              </span>
             </button>
           )}
           {prospectStages.map((s) => (
@@ -466,7 +469,7 @@ export function ProspectsTab({
         </div>
       </div>
 
-      {syncNote && <p className={`sync-note ${syncNote.tone}`}>{syncNote.text}</p>}
+      {syncNote && <p className={`sync-note enter ${syncNote.tone}`}>{syncNote.text}</p>}
 
       {sorted.length === 0 ? (
         <p className="lead-empty">
