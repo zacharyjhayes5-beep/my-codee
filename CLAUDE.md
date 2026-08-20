@@ -45,6 +45,7 @@ npm run lint       # oxlint
 | To-Do | `TodoTab.tsx` | Tasks in four urgency buckets, with Obsidian/Gmail import |
 | Progress | `ProgressTab.tsx` | Book of business, earnings, goals, pace, NADP tiers |
 | Walkthrough | `WalkthroughTab.tsx` | The property in 3D, area by area, with underwriting detail |
+| Vault | `VaultTab.tsx` | The Obsidian vault as an orbital map, searched and read in place |
 | Lead Map | `LeadMap.tsx` | Force-directed graph of prospects, lines and areas |
 
 Navigation is a permanent navy sidebar in `App.tsx`; the tab ids are unchanged
@@ -219,6 +220,64 @@ Two rules that are easy to get wrong:
 `readingsFor` tolerates a household with no `assets` and no `property` at all.
 That is not defensive habit: a record that bypassed normalisation crashed the
 whole application during this build, exactly as `tags` had before it.
+
+## The vault tab
+
+The Obsidian vault at `OneDrive/Documents/Agency`, drawn as an orbital map and
+searchable in full text. It answers one question — "what did I write about
+this?" — so the search is the primary control and the map is what makes the
+answer navigable.
+
+**The data is built outside the app and fetched, never imported.**
+`build_orrery.py` (kept beside the vault, in `OneDrive/Documents/`) walks every
+`.md` file, converts it to HTML, resolves the `[[wikilinks]]`, and writes
+`dashboard/public/vault.json`. Refreshing the map is re-running that script and
+reloading the page:
+
+```sh
+python build_orrery.py "C:/Users/zacha/OneDrive/Documents/Agency" dashboard/public/vault.json
+```
+
+The same script writes a standalone page when the output ends in `.html`.
+Because the snapshot is fetched at runtime, 350kB of notes never enters the
+bundle and a new note does not require a rebuild — only the JSON has to be
+committed for the live site to see it.
+
+- **`lib/vault.ts` is the whole contract and contains no canvas at all** — the
+  same split the walkthrough uses. Flattening, ranking, snippets, related
+  notes. `lib/vault.test.ts` covers it.
+- **A tab that cannot find `vault.json` explains how to build one.** A missing
+  snapshot is the normal state on a fresh clone, not an error.
+- **Search is AND across terms** — every word has to appear in the note or it
+  is not a match, because anything looser returns half the vault for two words.
+  Title beats heading beats body; a well-linked note edges ahead on a tie. The
+  snippet centres on whichever occurrence has the other terms nearest it.
+- **Attachments are listed by name only.** CSV lead lists and PDFs are never
+  read into the snapshot, so household data does not end up in a file that gets
+  committed and deployed.
+- **The clusters are keyword rules**, at the top of `build_orrery.py`. A note
+  whose filename matches nothing lands in Unsorted; that is where a new topic
+  area shows up, and the fix is a rule, not a rename.
+
+**The dark viewport is the third exception to the ivory theme, scoped exactly
+like the other two.** Section 16 of `theme.css` holds it, all under `.vault-*`.
+A starfield has to be dark; everything the eye moves to afterwards — search,
+results, the note — is back in ivory and navy. Cognac marks search hits, which
+is consistent with cognac meaning "the thing you are looking at".
+
+`components/vault/Orrery.tsx` is the renderer, and is **lazily imported** for
+the same reason the walkthrough's scene is: it bakes sphere sprites on mount.
+It is hand-rolled on a 2D canvas rather than three.js — 6kB gzipped against the
+walkthrough's 257kB — so opening this tab does not pull the 3D stack in.
+
+Two things in it are easy to get wrong:
+
+- **The fourth axis is a real rotation, not a scale.** Each body carries a `w`
+  coordinate — its link depth — and `project()` rotates the xw and zw planes
+  before the camera ever sees a 3D point. That is why turning the dial swings
+  orphan notes past each other instead of merely resizing them.
+- **The loop reads live state through a ref**, so changing the search or a dial
+  never restarts it. Rebuilding the effect would re-bake every sprite.
 
 ## Storage
 

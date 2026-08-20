@@ -49,7 +49,7 @@ export const AREAS: Area[] = [
     id: "exterior",
     label: "Exterior",
     blurb: "The dwelling itself — how it is built, and what it would cost to rebuild.",
-    camera: { position: [11.5, 5.4, 14.5], target: [0, 1.9, 0] },
+    camera: { position: [13.5, 6.2, 17.5], target: [-1.6, 1.6, 3.2] },
     hotspot: [0, 2.4, 3.2],
   },
   {

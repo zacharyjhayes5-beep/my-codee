@@ -200,6 +200,29 @@ export interface PropertyProfile {
   pool: string;
 }
 
+/**
+ * One line of coverage on a household, and one object in the scene.
+ *
+ * Entered by hand, never inferred. The whole point of the walkthrough is that
+ * Zach states what a household holds and what it is missing — nothing here is
+ * derived from public records, so nothing here can contradict a policy they
+ * actually carry.
+ *
+ * `status` is the visual language: `held` renders solid, `needed` renders
+ * ghosted. There is deliberately no third "unknown" state — a line nobody has
+ * looked at simply has no item, and an absent item is not a claim.
+ */
+export interface CoverageItem {
+  id: string;
+  /** A catalog id from lib/policies.ts — "personal-auto", "term-life". */
+  line: string;
+  status: "held" | "needed";
+  /** What to call this one in the scene: "2021 Explorer", "Doug". */
+  label: string;
+  /** Anything else worth keeping: carrier, face amount, renewal. */
+  detail: string;
+}
+
 export interface AssetIndicators {
   ownership: "owner" | "renter" | "";
   estimatedPropertyValue: number | null;
@@ -215,6 +238,8 @@ export interface AssetIndicators {
   other: string;
   /** The physical property. Added in schema v9; blank on every older record. */
   property: PropertyProfile;
+  /** Lines of coverage. Added in schema v10; empty on every older record. */
+  coverage: CoverageItem[];
 }
 
 /** Derived from status and conversion score — never maintained by hand. */

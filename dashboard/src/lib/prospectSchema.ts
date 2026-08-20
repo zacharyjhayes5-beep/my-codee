@@ -3,6 +3,7 @@ import type {
   AssetIndicators,
   ClosedReason,
   Contact,
+  CoverageItem,
   PropertyProfile,
   Prospect,
   ProspectNote,
@@ -31,7 +32,7 @@ import { newId } from "./storage";
   * asset indicators. 7 added parcelId and the "gis" source for automated
  * ingestion. 8 added tags.
  */
-export const PROSPECT_SCHEMA_VERSION = 9;
+export const PROSPECT_SCHEMA_VERSION = 10;
 
 /** The six statuses v3 could hold, and where each one lands. */
 export const STATUS_TO_STAGE: Record<string, Stage> = {
@@ -85,6 +86,7 @@ export function blankAssets(): AssetIndicators {
     businessOwnership: "",
     other: "",
     property: blankPropertyProfile(),
+    coverage: [],
   };
 }
 
@@ -253,7 +255,38 @@ function asAssets(value: unknown): AssetIndicators {
     businessOwnership: a.businessOwnership ?? "",
     other: a.other ?? "",
     property: asPropertyProfile(a.property),
+    coverage: asCoverage(a.coverage),
   };
+}
+
+/**
+ * Coverage items, dropping anything malformed rather than rendering it.
+ *
+ * A bad row here would become a mesh floating in the scene with no label, so
+ * the bar for keeping one is that it has both an id and a line. Everything
+ * else is coerced to a safe default: an unrecognised status becomes "needed",
+ * which is the reading that cannot overstate what somebody owns.
+ */
+function asCoverage(value: unknown): CoverageItem[] {
+  if (!Array.isArray(value)) return [];
+  const out: CoverageItem[] = [];
+  const seen = new Set<string>();
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const c = raw as Partial<CoverageItem>;
+    const id = typeof c.id === "string" ? c.id.trim() : "";
+    const line = typeof c.line === "string" ? c.line.trim() : "";
+    if (!id || !line || seen.has(id)) continue;
+    seen.add(id);
+    out.push({
+      id,
+      line,
+      status: c.status === "held" ? "held" : "needed",
+      label: typeof c.label === "string" ? c.label : "",
+      detail: typeof c.detail === "string" ? c.detail : "",
+    });
+  }
+  return out;
 }
 
 /** Idempotent, like everything else here: a v9 record passes through intact. */

@@ -12,13 +12,22 @@ import { PipelineTab } from "./components/PipelineTab";
 import { StorageNotice } from "./components/StorageNotice";
 import { CommandPalette } from "./components/CommandPalette";
 import { WalkthroughTab } from "./components/WalkthroughTab";
+import { VaultTab } from "./components/VaultTab";
 import { useStored, whenPersisted } from "./lib/repository";
 import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
 import type { PropertyProfile, Prospect, ReviewProposal } from "./types";
 
-type Tab = "operator" | "progress" | "todo" | "prospects" | "pipeline" | "map" | "walkthrough";
+type Tab =
+  | "operator"
+  | "progress"
+  | "todo"
+  | "prospects"
+  | "pipeline"
+  | "map"
+  | "walkthrough"
+  | "vault";
 
 /**
  * Navigation, and the page header each destination writes.
@@ -69,6 +78,13 @@ const tabs: { id: Tab; label: string; title: string; standfirst: string; icon: s
     title: "Property walkthrough",
     standfirst: "The dwelling area by area, and what underwriting will ask about each.",
     icon: "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",
+  },
+  {
+    id: "vault",
+    label: "Vault",
+    title: "Knowledge vault",
+    standfirst: "Everything you have written, as an orbital map you can search and read.",
+    icon: "M12 3a9 9 0 100 18 9 9 0 000-18zM3.6 9h16.8M3.6 15h16.8M12 3a14 14 0 000 18M12 3a14 14 0 010 18",
   },
   {
     id: "map",
@@ -368,6 +384,7 @@ function App() {
             onPatch={patchProperty}
           />
         )}
+        {tab === "vault" && <VaultTab />}
         {tab === "map" && (
           <LeadMap prospects={prospects} onOpenProspect={() => setTab("prospects")} />
         )}

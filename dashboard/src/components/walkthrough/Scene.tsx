@@ -1,24 +1,24 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Environment, Html } from "@react-three/drei";
+import { ContactShadows, Environment, Html, OrbitControls } from "@react-three/drei";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { AREAS, areaById, type AreaId } from "../../lib/walkthrough";
 import { HouseModel } from "./HouseModel";
 
 /**
- * The camera rig.
+ * The property, and a camera you actually drive.
  *
- * No orbit controls and no scroll handler by design — the only thing that moves
- * the camera is choosing an area. That is the whole difference between a
- * configurator and a game: the shots are composed in advance, and every one of
- * them is a shot somebody chose.
+ * This reverses the original rule that there were no orbit controls. That rule
+ * was right when the tab was six composed shots; it is wrong now that the scene
+ * is a property with a household's coverage standing on it, because inspecting
+ * a thing means going and looking at it from where you want.
  *
- * The tween is hand-written rather than pulled from an animation library. It is
- * a critically-damped approach on two vectors, which is all a camera move
- * needs, and it keeps the dependency list to three.js and the renderer.
+ * The waypoints survive as *shortcuts*, not as the only way to move: choosing an
+ * area flies you there, and you are free from wherever you land.
  */
 
-/** Seconds to cover most of the distance. Slow enough to read as deliberate. */
+/** Seconds to cover the distance. Slow enough to read as deliberate. */
 const TRAVEL = 1.15;
 
 /** Ease-in-out. Cinematic means it starts and ends still, not that it is slow. */
@@ -26,48 +26,127 @@ function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-function CameraRig({ area, reduced }: { area: AreaId; reduced: boolean }) {
-  const { camera } = useThree();
+/**
+ * Flies to a waypoint, then gets out of the way.
+ *
+ * The controls own the camera the rest of the time, so the tween takes them
+ * offline for its duration and hands back cleanly — moving `controls.target`
+ * alongside the position, or the camera would arrive pointing at wherever you
+ * were last looking.
+ */
+function CameraRig({
+  area,
+  reduced,
+  controls,
+}: {
+  area: AreaId;
+  reduced: boolean;
+  controls: React.RefObject<OrbitControlsImpl | null>;
+}) {
+  const { camera, invalidate } = useThree();
 
   const from = useRef(new THREE.Vector3());
   const fromTarget = useRef(new THREE.Vector3());
   const to = useRef(new THREE.Vector3());
   const toTarget = useRef(new THREE.Vector3());
-  const current = useRef(new THREE.Vector3());
   const elapsed = useRef(Infinity);
+  // Skip the flight on first mount: the camera already starts on the waypoint,
+  // and a fly-in from nowhere on arrival reads as a loading artefact.
+  const mounted = useRef(false);
 
   useEffect(() => {
     const wp = areaById(area).camera;
-    from.current.copy(camera.position);
-    fromTarget.current.copy(current.current);
+    const c = controls.current;
+
+    if (!mounted.current) {
+      mounted.current = true;
+      if (c) {
+        c.target.set(...wp.target);
+        c.update();
+      }
+      return;
+    }
+
     to.current.set(...wp.position);
     toTarget.current.set(...wp.target);
 
-    if (reduced) {
-      // No travel at all: cut straight to the shot. A camera flying across the
-      // screen is exactly what someone asking for reduced motion is avoiding.
+    if (reduced || !c) {
       camera.position.copy(to.current);
-      current.current.copy(toTarget.current);
-      camera.lookAt(current.current);
+      c?.target.copy(toTarget.current);
+      c?.update();
+      camera.lookAt(toTarget.current);
       elapsed.current = Infinity;
+      invalidate();
       return;
     }
+
+    from.current.copy(camera.position);
+    fromTarget.current.copy(c.target);
     elapsed.current = 0;
-  }, [area, camera, reduced]);
+    c.enabled = false;
+  }, [area, camera, reduced, controls, invalidate]);
 
   useFrame((_, delta) => {
     if (elapsed.current === Infinity) return;
+    const c = controls.current;
+
     elapsed.current = Math.min(TRAVEL, elapsed.current + delta);
     const t = easeInOutCubic(elapsed.current / TRAVEL);
 
     camera.position.lerpVectors(from.current, to.current, t);
-    current.current.lerpVectors(fromTarget.current, toTarget.current, t);
-    camera.lookAt(current.current);
+    if (c) {
+      c.target.lerpVectors(fromTarget.current, toTarget.current, t);
+      c.update();
+    } else {
+      camera.lookAt(toTarget.current);
+    }
 
-    if (elapsed.current >= TRAVEL) elapsed.current = Infinity;
+    if (elapsed.current >= TRAVEL) {
+      elapsed.current = Infinity;
+      if (c) c.enabled = true;
+    }
   });
 
   return null;
+}
+
+/**
+ * Ambient life.
+ *
+ * One key light walking slowly around the property — the only thing in the
+ * scene that moves on its own. It carries no information; it exists so the
+ * render feels lit rather than rendered. Nothing spins, bobs or pulses.
+ */
+function DriftingSun({ reduced }: { reduced: boolean }) {
+  const light = useRef<THREE.DirectionalLight>(null);
+  const t = useRef(0);
+
+  useFrame((_, delta) => {
+    if (reduced || !light.current) return;
+    // A full circuit takes about three minutes: present when you watch for it,
+    // invisible when you are working.
+    t.current += delta * 0.035;
+    const r = 15;
+    light.current.position.set(Math.cos(t.current) * r, 11 + Math.sin(t.current * 0.6) * 2.5, Math.sin(t.current) * r);
+  });
+
+  return (
+    <directionalLight
+      ref={light}
+      position={[9, 12, 7]}
+      intensity={2.1}
+      color="#fff3e2"
+      castShadow
+      shadow-mapSize={[2048, 2048]}
+      shadow-bias={-0.0004}
+      shadow-normalBias={0.02}
+      shadow-camera-left={-20}
+      shadow-camera-right={20}
+      shadow-camera-top={20}
+      shadow-camera-bottom={-20}
+      shadow-camera-far={60}
+    />
+  );
 }
 
 /**
@@ -129,7 +208,7 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
   const [reduced] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
-
+  const controls = useRef<OrbitControlsImpl>(null);
   const start = areaById(area).camera;
 
   return (
@@ -138,31 +217,26 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
       // which three deprecated in 0.185 and warns about on every mount.
       shadows="percentage"
       dpr={[1, 2]}
-      camera={{ position: start.position, fov: 38, near: 0.1, far: 200 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
-      // Nothing in the scene animates on its own, so frames are rendered only
-      // when something actually changes. On a static shot this costs nothing.
-      frameloop="demand"
+      camera={{ position: start.position, fov: 38, near: 0.05, far: 300 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+      // The sun drifts, so there is always something to draw. Under reduced
+      // motion nothing moves by itself and frames are rendered on demand.
+      frameloop={reduced ? "demand" : "always"}
     >
-      <color attach="background" args={["#12161c"]} />
-      <fog attach="fog" args={["#12161c", 26, 62]} />
+      <color attach="background" args={["#0e1319"]} />
+      <fog attach="fog" args={["#0e1319", 34, 88]} />
 
-      {/* A low key light and a soft fill. One sun, one bounce, nothing else. */}
-      <hemisphereLight args={["#93a4b8", "#20242b", 0.55]} />
-      <directionalLight
-        position={[9, 12, 7]}
-        intensity={1.5}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-18}
-        shadow-camera-right={18}
-        shadow-camera-top={18}
-        shadow-camera-bottom={-18}
-      />
+      {/* No <SoftShadows>: it patches three's shadow shader chunk and the
+          version in three 0.185 no longer exposes `unpackRGBAToDepth` with the
+          signature it expects, so every standard material silently fails to
+          compile and the scene renders untextured. Softness comes from the
+          light's own radius plus the ContactShadows plane below. */}
+      <hemisphereLight args={["#8ea6c0", "#1b1f26", 0.5]} />
+      <DriftingSun reduced={reduced} />
 
       <Suspense fallback={null}>
         <HouseModel />
-        <ContactShadows position={[0, 0.01, 0]} opacity={0.5} scale={40} blur={2.4} far={9} />
+        <ContactShadows position={[0, 0.012, 0]} opacity={0.62} scale={46} blur={2.1} far={11} resolution={1024} />
         <Environment preset="city" />
       </Suspense>
 
@@ -178,28 +252,24 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
           />
         ))}
 
-      <CameraRig area={area} reduced={reduced} />
-      <FrameOnChange area={area} reduced={reduced} />
+      <OrbitControls
+        ref={controls}
+        makeDefault
+        enableDamping
+        dampingFactor={0.06}
+        // Close enough to step inside a room, far enough to see the whole lot.
+        minDistance={0.6}
+        maxDistance={46}
+        // Just above the horizon: you can crouch to the foundation line, but
+        // never end up underneath the ground looking up at nothing.
+        maxPolarAngle={Math.PI * 0.495}
+        panSpeed={0.7}
+        rotateSpeed={0.55}
+        zoomSpeed={0.75}
+        target={start.target}
+      />
+
+      <CameraRig area={area} reduced={reduced} controls={controls} />
     </Canvas>
   );
-}
-
-/**
- * `frameloop="demand"` renders only on invalidation, so a tween needs to keep
- * asking for frames for as long as it is running.
- */
-function FrameOnChange({ area, reduced }: { area: AreaId; reduced: boolean }) {
-  const invalidate = useThree((s) => s.invalidate);
-  const until = useRef(0);
-
-  useEffect(() => {
-    until.current = reduced ? 0 : performance.now() + TRAVEL * 1000 + 120;
-    invalidate();
-  }, [area, invalidate, reduced]);
-
-  useFrame(() => {
-    if (performance.now() < until.current) invalidate();
-  });
-
-  return null;
 }

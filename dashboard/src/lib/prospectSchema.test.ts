@@ -206,7 +206,7 @@ describe("detecting work to do", () => {
     // Bumped to 9 when the property profile was added. This assertion exists to
     // make a version change deliberate rather than incidental — if it fails,
     // confirm the migration was intended before moving the number.
-    expect(PROSPECT_SCHEMA_VERSION).toBe(9);
+    expect(PROSPECT_SCHEMA_VERSION).toBe(10);
   });
 });
 
@@ -299,5 +299,110 @@ describe("property profile — schema v9", () => {
       const p = normalizeProspect({ id: "x", name: "Junk", assets: { property: junk } });
       expect(p.assets.property.constructionType).toBe("");
     }
+  });
+});
+
+describe("coverage — schema v10", () => {
+  it("gives an older record an empty coverage list", () => {
+    const p = normalizeProspect({ id: "x", name: "Olson", assets: { yearBuilt: "1994" } });
+    expect(p.assets.coverage).toEqual([]);
+    // v9 is untouched by v10.
+    expect(p.assets.property.roofMaterial).toBe("");
+  });
+
+  it("carries real items through intact", () => {
+    const p = normalizeProspect({
+      id: "x",
+      name: "Filled",
+      assets: {
+        coverage: [
+          { id: "a", line: "personal-auto", status: "held", label: "2021 Explorer", detail: "Ford" },
+          { id: "b", line: "personal-umbrella", status: "needed", label: "", detail: "" },
+        ],
+      },
+    });
+    expect(p.assets.coverage).toHaveLength(2);
+    expect(p.assets.coverage[0]).toEqual({
+      id: "a",
+      line: "personal-auto",
+      status: "held",
+      label: "2021 Explorer",
+      detail: "Ford",
+    });
+    expect(p.assets.coverage[1].status).toBe("needed");
+  });
+
+  /**
+   * A malformed row would become an unlabelled mesh floating in the scene, so
+   * anything without both an id and a line is dropped rather than rendered.
+   */
+  it("drops rows that could not be rendered", () => {
+    const p = normalizeProspect({
+      id: "x",
+      name: "Junk",
+      assets: {
+        coverage: [
+          { id: "", line: "boat" },
+          { id: "ok", line: "" },
+          { line: "boat" },
+          null,
+          "nonsense",
+          42,
+          { id: "good", line: "boat" },
+        ],
+      },
+    });
+    expect(p.assets.coverage.map((c) => c.id)).toEqual(["good"]);
+  });
+
+  /** Two objects sharing an id would collide in the scene graph. */
+  it("keeps only the first of a duplicated id", () => {
+    const p = normalizeProspect({
+      id: "x",
+      name: "Dupes",
+      assets: {
+        coverage: [
+          { id: "a", line: "boat", label: "first" },
+          { id: "a", line: "personal-auto", label: "second" },
+        ],
+      },
+    });
+    expect(p.assets.coverage).toHaveLength(1);
+    expect(p.assets.coverage[0].label).toBe("first");
+  });
+
+  /**
+   * An unreadable status must never come back as "held". Ghosted overstates
+   * nothing; solid claims they own something.
+   */
+  it("falls back to needed rather than held", () => {
+    const p = normalizeProspect({
+      id: "x",
+      name: "Bad status",
+      assets: {
+        coverage: [
+          { id: "a", line: "boat", status: "owned" },
+          { id: "b", line: "boat", status: undefined },
+          { id: "c", line: "boat", status: 1 },
+        ],
+      },
+    });
+    expect(p.assets.coverage.every((c) => c.status === "needed")).toBe(true);
+  });
+
+  it("survives coverage being a string, a number, an object or null", () => {
+    for (const junk of ["nope", 7, null, { id: "a" }]) {
+      const p = normalizeProspect({ id: "x", name: "J", assets: { coverage: junk } });
+      expect(p.assets.coverage).toEqual([]);
+    }
+  });
+
+  it("is unchanged by a second pass", () => {
+    const once = normalizeProspect({
+      id: "x",
+      name: "Twice",
+      assets: { coverage: [{ id: "a", line: "boat", status: "held", label: "Lund" }] },
+    });
+    expect(normalizeProspect(once).assets.coverage).toEqual(once.assets.coverage);
   });
 });

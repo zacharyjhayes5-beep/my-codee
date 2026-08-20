@@ -2353,3 +2353,592 @@ kbd {
     max-height: none;
   }
 }
+
+/* ==========================================================================
+   16. THE VAULT
+   --------------------------------------------------------------------------
+   The second exception to "no dark surfaces", and quarantined the same way the
+   walkthrough is: everything here is scoped under .vault-*, so nothing leaks to
+   another page. The viewport is dark because a starfield has to be; the moment
+   the eye leaves it — search, results, the note itself — the interface is back
+   in ivory and navy.
+   ========================================================================== */
+
+.vault-tab {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.85fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.vault-stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* ---------- the viewport ---------- */
+
+.vault-viewport {
+  position: relative;
+  height: clamp(420px, 62vh, 680px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #03050c;
+  box-shadow: var(--shadow-2);
+}
+
+.vault-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.vault-canvas:active {
+  cursor: grabbing;
+}
+
+/* The ring sits inside the frame — an outline outside it is clipped away. */
+.vault-canvas:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--surface-1),
+    inset 0 0 0 4px var(--navy);
+}
+
+.vault-viewport-loading {
+  display: grid;
+  place-items: center;
+  color: var(--metal-light);
+  font-size: 0.86rem;
+}
+
+/* ---------- the dials ---------- */
+
+.vault-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+  padding: var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+.vault-dial {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vault-dial > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 0.72rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.vault-dial > span b {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-primary);
+}
+
+.vault-dial small {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.vault-toggles {
+  display: flex;
+  gap: var(--space-2);
+  align-self: end;
+}
+
+.vault-toggle {
+  flex: 1;
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast),
+    border-color var(--t-fast);
+}
+
+.vault-toggle:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* Navy for on, because navy is what "selected" means everywhere else. */
+.vault-toggle.is-on {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--on-accent);
+}
+
+/* ---------- search ---------- */
+
+.vault-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.vault-search input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.vault-scope {
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.vault-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.vault-noresult {
+  padding: var(--space-4);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.vault-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--gridline);
+  cursor: pointer;
+}
+
+.vault-results li:last-child .vault-result {
+  border-bottom: 0;
+}
+
+.vault-result:hover {
+  background: var(--navy-soft);
+}
+
+/* The keyboard cursor and the open note are different states and read
+   differently: a navy edge for where the keys are, a filled ground for what is
+   actually showing in the panel. */
+.vault-result.is-cursor {
+  box-shadow: inset 3px 0 0 var(--navy);
+}
+
+.vault-result.is-open {
+  background: var(--navy-soft);
+}
+
+.vault-result-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.vault-result-meta,
+.vault-jump small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vault-result-meta i,
+.vault-eyebrow i {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  /* Cluster colour, so a result is recognisable as the body just seen on the
+     map. Never the only signal — the cluster's name sits beside it. */
+  border: 1px solid var(--border);
+}
+
+.vault-result-snippet {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vault-result-snippet mark,
+.vault-note mark {
+  padding: 0 2px;
+  border-radius: 2px;
+  background: var(--cognac-soft);
+  color: var(--cognac-ink);
+}
+
+/* ---------- the note ---------- */
+
+.vault-reader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-height: 620px;
+  overflow-y: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.vault-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 6px;
+  font-size: 0.7rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vault-reader-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.vault-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--space-5);
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.vault-facts div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.vault-facts dt {
+  font-size: 0.7rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vault-facts dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.vault-facts .vault-file {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.vault-facts .vault-file dd {
+  word-break: break-all;
+}
+
+.vault-note {
+  font-size: 0.9rem;
+  line-height: 1.62;
+  color: var(--text-secondary);
+}
+
+.vault-note > *:first-child {
+  margin-top: 0;
+}
+
+.vault-note h2,
+.vault-note h3,
+.vault-note h4 {
+  margin: var(--space-5) 0 var(--space-2);
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.vault-note h2 {
+  font-size: 1.02rem;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.vault-note h3 {
+  font-size: 0.94rem;
+}
+
+.vault-note h4 {
+  font-size: 0.72rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vault-note p,
+.vault-note ul,
+.vault-note ol {
+  margin: 0 0 var(--space-3);
+}
+
+.vault-note ul,
+.vault-note ol {
+  padding-left: 20px;
+}
+
+.vault-note li {
+  margin-bottom: 4px;
+}
+
+.vault-note li.task {
+  list-style: none;
+  margin-left: -20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.vault-note li.task.done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--border-strong);
+}
+
+.vault-note .box {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  margin-top: 5px;
+  border: 1px solid var(--metal);
+  border-radius: 3px;
+  background: var(--surface-2);
+}
+
+.vault-note .box.on {
+  background: var(--navy);
+  border-color: var(--navy);
+}
+
+.vault-note strong {
+  color: var(--text-primary);
+}
+
+.vault-note code {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.vault-note pre {
+  margin: 0 0 var(--space-3);
+  padding: 12px 14px;
+  overflow-x: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.vault-note pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.78rem;
+}
+
+.vault-note blockquote {
+  margin: 0 0 var(--space-3);
+  padding: 2px 0 2px var(--space-3);
+  border-left: 3px solid var(--cognac);
+  color: var(--text-primary);
+}
+
+.vault-note hr {
+  margin: var(--space-4) 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Wide tables scroll inside their own wrapper — the rule that bit once. */
+.vault-note .tw {
+  margin: 0 0 var(--space-3);
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.vault-note table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.vault-note th,
+.vault-note td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--gridline);
+  font-variant-numeric: tabular-nums;
+}
+
+.vault-note th {
+  font-size: 0.68rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.vault-note tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* A resolved wikilink is a control; an unresolved one is a note that does not
+   exist yet, and says so rather than pretending to be a link. */
+.vault-note a.wl {
+  color: var(--navy);
+  cursor: pointer;
+  border-bottom: 1px dashed var(--baseline);
+}
+
+.vault-note a.wl:hover {
+  background: var(--navy-soft);
+  border-bottom-style: solid;
+}
+
+.vault-note .wl.dead {
+  color: var(--text-muted);
+  border-bottom: 1px dotted var(--metal);
+}
+
+.vault-note .dim {
+  color: var(--text-muted);
+}
+
+/* ---------- linked notes ---------- */
+
+.vault-related h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 0.7rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vault-related ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vault-jump {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 9px 11px;
+  text-align: left;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  transition:
+    border-color var(--t-fast),
+    background var(--t-fast);
+}
+
+.vault-jump:hover {
+  background: var(--surface-1);
+  border-color: var(--border-strong);
+}
+
+/* ---------- setup ---------- */
+
+.vault-setup {
+  max-width: 62ch;
+}
+
+.vault-setup pre {
+  padding: 12px 14px;
+  overflow-x: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+}
+
+.vault-setup-note {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 1100px) {
+  .vault-tab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vault-reader {
+    max-height: none;
+  }
+}
