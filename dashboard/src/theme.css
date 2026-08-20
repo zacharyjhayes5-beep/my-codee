@@ -2034,7 +2034,9 @@ kbd {
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: #12161c;
+  /* Sky, so the moment before the scene draws is the same colour as the scene
+     rather than a dark flash. */
+  background: linear-gradient(#93b6d8, #c3d6e6);
   border: 1px solid var(--navy);
   box-shadow: var(--shadow-3);
   min-height: 560px;
@@ -2050,7 +2052,7 @@ kbd {
   place-items: center;
   height: 100%;
   min-height: 560px;
-  color: #9aa7b6;
+  color: #1f3247;
   font-size: 0.9rem;
   letter-spacing: 0.02em;
 }
@@ -2155,13 +2157,16 @@ kbd {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  /* Reads against sky, siding and asphalt alike, which a translucent chip
+     tuned for a dark studio did not. */
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
   /* 26px so the marker clears the 24px minimum every other control in the app
      holds to, while the dot inside it stays visually small. */
   min-width: 26px;
   min-height: 26px;
   padding: 4px;
-  background: rgba(10, 13, 18, 0.66);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(12, 18, 26, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   color: #dbe3ec;
   font: inherit;

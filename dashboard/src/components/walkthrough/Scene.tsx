@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, Html, OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -111,6 +111,58 @@ function CameraRig({
 }
 
 /**
+ * The sky.
+ *
+ * Hand-rolled rather than drei's <Sky>, which renders a sphere at a default
+ * distance of 450,000 — far outside this camera's 300-unit far plane, so it was
+ * clipped away entirely and what looked like a washed-out sky was the flat
+ * clear colour behind it. A dome sized to the scene cannot be clipped, cannot
+ * fetch anything, and gives exact control over the horizon.
+ */
+function SkyDome() {
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        fog: false,
+        uniforms: {
+          top: { value: new THREE.Color("#3f7cc0") },
+          middle: { value: new THREE.Color("#9dc2e0") },
+          bottom: { value: new THREE.Color("#dfe8ee") },
+        },
+        vertexShader: `
+          varying vec3 vPos;
+          void main() {
+            vPos = position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 top;
+          uniform vec3 middle;
+          uniform vec3 bottom;
+          varying vec3 vPos;
+          void main() {
+            float h = normalize(vPos).y;
+            vec3 c = h > 0.0
+              ? mix(middle, top, pow(clamp(h, 0.0, 1.0), 0.65))
+              : mix(middle, bottom, clamp(-h * 3.0, 0.0, 1.0));
+            gl_FragColor = vec4(c, 1.0);
+          }
+        `,
+      }),
+    [],
+  );
+
+  return (
+    <mesh material={material} renderOrder={-1}>
+      <sphereGeometry args={[240, 32, 20]} />
+    </mesh>
+  );
+}
+
+/**
  * Ambient life.
  *
  * One key light walking slowly around the property — the only thing in the
@@ -126,25 +178,29 @@ function DriftingSun({ reduced }: { reduced: boolean }) {
     // A full circuit takes about three minutes: present when you watch for it,
     // invisible when you are working.
     t.current += delta * 0.035;
-    const r = 15;
-    light.current.position.set(Math.cos(t.current) * r, 11 + Math.sin(t.current * 0.6) * 2.5, Math.sin(t.current) * r);
+    // An arc across the sky rather than a full circle. A sun that travels all
+    // the way round passes below the lot and the whole property goes dark,
+    // which is not "ambient" — it is a light switch.
+    const a = Math.sin(t.current) * 0.85;
+    const r = 17;
+    light.current.position.set(Math.sin(a) * r, 12 + Math.cos(a) * 3, Math.cos(a) * r * 0.55 + 4);
   });
 
   return (
     <directionalLight
       ref={light}
       position={[9, 12, 7]}
-      intensity={2.1}
-      color="#fff3e2"
+      intensity={3.4}
+      color="#fff4e0"
       castShadow
       shadow-mapSize={[2048, 2048]}
       shadow-bias={-0.0004}
       shadow-normalBias={0.02}
-      shadow-camera-left={-20}
-      shadow-camera-right={20}
-      shadow-camera-top={20}
-      shadow-camera-bottom={-20}
-      shadow-camera-far={60}
+      shadow-camera-left={-26}
+      shadow-camera-right={26}
+      shadow-camera-top={26}
+      shadow-camera-bottom={-26}
+      shadow-camera-far={80}
     />
   );
 }
@@ -218,26 +274,35 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
       shadows="percentage"
       dpr={[1, 2]}
       camera={{ position: start.position, fov: 38, near: 0.05, far: 300 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9 }}
       // The sun drifts, so there is always something to draw. Under reduced
       // motion nothing moves by itself and frames are rendered on demand.
       frameloop={reduced ? "demand" : "always"}
     >
-      <color attach="background" args={["#0e1319"]} />
-      <fog attach="fog" args={["#0e1319", 34, 88]} />
+      {/* Daylight. The sky is procedural rather than an image, so the horizon
+          costs nothing to load and cannot fail on a bad network. Fog is tuned
+          to the sky's own colour so distant ground fades into it instead of
+          ending at a hard edge. */}
+      <color attach="background" args={["#9dc2e0"]} />
+      {/* Fog matched to the dome's horizon band, so distant ground dissolves
+          into the sky instead of ending at a visible edge. */}
+      <fog attach="fog" args={["#c7d9e6", 70, 210]} />
+      <SkyDome />
 
       {/* No <SoftShadows>: it patches three's shadow shader chunk and the
           version in three 0.185 no longer exposes `unpackRGBAToDepth` with the
           signature it expects, so every standard material silently fails to
           compile and the scene renders untextured. Softness comes from the
           light's own radius plus the ContactShadows plane below. */}
-      <hemisphereLight args={["#8ea6c0", "#1b1f26", 0.5]} />
+      {/* Sky above, bounced green from the lawn below. */}
+      <hemisphereLight args={["#a9c8e6", "#59613f", 0.8]} />
+      <ambientLight intensity={0.14} />
       <DriftingSun reduced={reduced} />
 
       <Suspense fallback={null}>
         <HouseModel />
-        <ContactShadows position={[0, 0.012, 0]} opacity={0.62} scale={46} blur={2.1} far={11} resolution={1024} />
-        <Environment preset="city" />
+        <ContactShadows position={[0, 0.014, 0]} opacity={0.55} scale={46} blur={2.2} far={12} resolution={1024} />
+        <Environment preset="park" environmentIntensity={0.5} />
       </Suspense>
 
       {showHotspots &&
