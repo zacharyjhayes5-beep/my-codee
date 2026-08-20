@@ -1,6 +1,8 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, Html, OrbitControls } from "@react-three/drei";
+import { EffectComposer, Noise, N8AO, SMAA, Vignette } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { AREAS, areaById, type AreaId } from "../../lib/walkthrough";
@@ -111,54 +113,24 @@ function CameraRig({
 }
 
 /**
- * The sky.
+ * A photographed sky, self-hosted.
  *
- * Hand-rolled rather than drei's <Sky>, which renders a sphere at a default
- * distance of 450,000 — far outside this camera's 300-unit far plane, so it was
- * clipped away entirely and what looked like a washed-out sky was the flat
- * clear colour behind it. A dome sized to the scene cannot be clipped, cannot
- * fetch anything, and gives exact control over the horizon.
+ * The gradient dome it replaced was honest but obviously synthetic, and an
+ * image-based environment does two jobs at once: it is the backdrop *and* it
+ * is the light, so every surface picks up colour from the real sky above it.
+ * That indirect light is most of the difference between "rendered" and "shot".
+ *
+ * The file lives in public/env rather than on drei's CDN. A remote HDRI is a
+ * scene that renders wrong the first time somebody's network has a bad day.
  */
-function SkyDome() {
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        fog: false,
-        uniforms: {
-          top: { value: new THREE.Color("#3f7cc0") },
-          middle: { value: new THREE.Color("#9dc2e0") },
-          bottom: { value: new THREE.Color("#dfe8ee") },
-        },
-        vertexShader: `
-          varying vec3 vPos;
-          void main() {
-            vPos = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 top;
-          uniform vec3 middle;
-          uniform vec3 bottom;
-          varying vec3 vPos;
-          void main() {
-            float h = normalize(vPos).y;
-            vec3 c = h > 0.0
-              ? mix(middle, top, pow(clamp(h, 0.0, 1.0), 0.65))
-              : mix(middle, bottom, clamp(-h * 3.0, 0.0, 1.0));
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-      }),
-    [],
-  );
-
+function Sky() {
   return (
-    <mesh material={material} renderOrder={-1}>
-      <sphereGeometry args={[240, 32, 20]} />
-    </mesh>
+    <Environment
+      files={`${import.meta.env.BASE_URL}env/sky.hdr`}
+      background
+      backgroundBlurriness={0}
+      environmentIntensity={1.25}
+    />
   );
 }
 
@@ -190,7 +162,7 @@ function DriftingSun({ reduced }: { reduced: boolean }) {
     <directionalLight
       ref={light}
       position={[9, 12, 7]}
-      intensity={3.4}
+      intensity={2.2}
       color="#fff4e0"
       castShadow
       shadow-mapSize={[2048, 2048]}
@@ -274,7 +246,7 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
       shadows="percentage"
       dpr={[1, 2]}
       camera={{ position: start.position, fov: 38, near: 0.05, far: 300 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
       // The sun drifts, so there is always something to draw. Under reduced
       // motion nothing moves by itself and frames are rendered on demand.
       frameloop={reduced ? "demand" : "always"}
@@ -284,10 +256,7 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
           to the sky's own colour so distant ground fades into it instead of
           ending at a hard edge. */}
       <color attach="background" args={["#9dc2e0"]} />
-      {/* Fog matched to the dome's horizon band, so distant ground dissolves
-          into the sky instead of ending at a visible edge. */}
-      <fog attach="fog" args={["#c7d9e6", 70, 210]} />
-      <SkyDome />
+      <fog attach="fog" args={["#cad9e4", 110, 260]} />
 
       {/* No <SoftShadows>: it patches three's shadow shader chunk and the
           version in three 0.185 no longer exposes `unpackRGBAToDepth` with the
@@ -295,14 +264,14 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
           compile and the scene renders untextured. Softness comes from the
           light's own radius plus the ContactShadows plane below. */}
       {/* Sky above, bounced green from the lawn below. */}
-      <hemisphereLight args={["#a9c8e6", "#59613f", 0.8]} />
-      <ambientLight intensity={0.14} />
+      <hemisphereLight args={["#a9c8e6", "#59613f", 0.28]} />
+      
       <DriftingSun reduced={reduced} />
 
       <Suspense fallback={null}>
+        <Sky />
         <HouseModel />
-        <ContactShadows position={[0, 0.014, 0]} opacity={0.55} scale={46} blur={2.2} far={12} resolution={1024} />
-        <Environment preset="park" environmentIntensity={0.5} />
+        <ContactShadows position={[0, 0.014, 0]} opacity={0.4} scale={48} blur={2.6} far={12} resolution={1024} />
       </Suspense>
 
       {showHotspots &&
@@ -333,6 +302,20 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
         zoomSpeed={0.75}
         target={start.target}
       />
+
+      {/* Post, kept to what earns its place.
+          The first pass of this had bloom, depth of field, heavy grain and a
+          deep vignette, and it looked far worse than no post at all — white
+          trim fringed like frost, the whole frame went soft, and the grain read
+          as noise rather than film. Ambient occlusion is the one effect that
+          genuinely moves a render toward a photograph; everything else here is
+          barely perceptible and that is the point. */}
+      <EffectComposer enableNormalPass multisampling={0}>
+        <N8AO aoRadius={0.9} intensity={1.9} distanceFalloff={0.8} halfRes />
+        <Vignette offset={0.35} darkness={0.2} blendFunction={BlendFunction.NORMAL} />
+        <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.055} />
+        <SMAA />
+      </EffectComposer>
 
       <CameraRig area={area} reduced={reduced} controls={controls} />
     </Canvas>
