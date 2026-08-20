@@ -5,8 +5,9 @@ import { EffectComposer, Noise, N8AO, SMAA, Vignette } from "@react-three/postpr
 import { BlendFunction } from "postprocessing";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
-import { AREAS, areaById, type AreaId } from "../../lib/walkthrough";
-import { HouseModel } from "./HouseModel";
+import { AREAS, areaById, hotspotAt, type AreaId } from "../../lib/walkthrough";
+import { Grounds, HouseModel } from "./HouseModel";
+import { HouseGLB, type HouseFit } from "./HouseGLB";
 import { CoverageObjects } from "./Props";
 import type { PlacedObject } from "../../lib/walkthrough";
 
@@ -232,6 +233,13 @@ interface SceneProps {
   onSelect: (id: AreaId) => void;
   /** Hotspots are hidden on the overhead shot, where they would crowd. */
   showHotspots: boolean;
+  /**
+   * A modelled house to stand on the lot. Undefined falls back to the
+   * hand-built one, which is what every household gets until one is chosen.
+   */
+  houseUrl?: string;
+  /** Radians about Y — generated models disagree on which way is "front". */
+  houseRotation?: number;
   /** The household's cover, already positioned. */
   placed: PlacedObject[];
   selectedId: string | null;
@@ -242,6 +250,8 @@ export default function Scene({
   area,
   onSelect,
   showHotspots,
+  houseUrl,
+  houseRotation = 0,
   placed,
   selectedId,
   onSelectObject,
@@ -251,6 +261,12 @@ export default function Scene({
   );
   const controls = useRef<OrbitControlsImpl>(null);
   const start = areaById(area).camera;
+  // The umbrella has to clear the actual ridge, and a ranch is not as tall as
+  // a two-storey colonial. Measured rather than assumed.
+  const [fit, setFit] = useState<HouseFit | null>(null);
+  const ridge = fit?.height ?? 5.6;
+  // Falls back to the hand-built house's own proportions when no model loaded.
+  const house = fit ?? { width: 8.6, depth: 7.6, height: 5.6 };
 
   return (
     <Canvas
@@ -283,8 +299,13 @@ export default function Scene({
 
       <Suspense fallback={null}>
         <Sky />
-        <HouseModel />
-        <CoverageObjects placed={placed} selectedId={selectedId} onSelect={onSelectObject} />
+        <Grounds />
+        {houseUrl ? (
+          <HouseGLB url={houseUrl} rotation={houseRotation} onFit={setFit} />
+        ) : (
+          <HouseModel />
+        )}
+        <CoverageObjects placed={placed} ridge={ridge} selectedId={selectedId} onSelect={onSelectObject} />
         <ContactShadows position={[0, 0.014, 0]} opacity={0.4} scale={48} blur={2.6} far={12} resolution={1024} />
       </Suspense>
 
@@ -294,7 +315,7 @@ export default function Scene({
             key={a.id}
             id={a.id}
             label={a.label}
-            position={a.hotspot}
+            position={hotspotAt(a, house)}
             active={a.id === area}
             onSelect={onSelect}
           />

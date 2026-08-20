@@ -244,14 +244,45 @@ without touching it. `components/walkthrough/Props.tsx` draws them.
   policies exist, because two canopies read as a modelling error.
 - Life lines become **figures**, because life cover insures a person.
 
-**Realism has a ceiling and it is the model, not the materials.** The house is
-procedural — textures are drawn onto canvases at module load rather than
-fetched, so nothing can fail to load. A photographed HDRI in `public/env`
-lights the scene. Path tracing was built, measured and removed: on the
-integrated graphics this actually runs on it managed ~4 samples/second, was
-still noise after two minutes, and crashed the tab twice when pushed. It needs
-a discrete GPU. The next real jump is a modelled house GLB, which remains a
-one-component swap in `HouseModel.tsx`.
+**The house is a modelled GLB now, and it was generated rather than bought.**
+`public/models/colonial.glb` came out of Higgsfield's text-to-3D for 20 credits
+and is streets ahead of what primitives could reach. Getting it usable took a
+compression pass, because it arrived at 50.76MB — three 4096² PNG textures were
+41MB of that:
+
+- base colour resized to 2048, normal and roughness to 1024 (Pillow, because
+  the standard toolchain choked on the PNG colourspace)
+- geometry compressed with **meshopt, not Draco** — drei fetches Draco's
+  decoder from a Google CDN and meshopt's ships in the bundle, which keeps the
+  rule that nothing the scene needs can fail on a bad network
+
+Result: **8MB, visually identical.** `useGLTF(url, false, true)` — Draco off,
+meshopt on — is what keeps that promise, so do not flip those flags.
+
+**Everything downstream is built for per-household models, which is the intent.**
+`HouseGLB` normalises whatever it is given: scaled so its larger footprint
+matches the lot, centred, and seated on the ground. It reports the fit back, and
+two things consume that rather than assuming:
+
+- **Hotspots are fractions, not metres.** `Area.hotspot` is expressed relative
+  to the house (`hotspotAt()` converts), so a taller model does not leave the
+  markers hanging in mid-air. That is exactly what happened with absolute
+  coordinates.
+- **The umbrella floats above the measured ridge**, so a ranch and a two-storey
+  colonial both get a canopy that clears the roof.
+
+`Grounds` is split from `HouseModel` because a modelled house arrives with no
+ground under it and no driveway to park on. `HouseModel` is still the fallback
+when no model is chosen.
+
+**Still to do:** the model is hardcoded as `HOUSE_MODEL` in `WalkthroughTab`;
+per-household selection needs a field on the record and a picker. The driveway
+does not line up perfectly with the garage door, and the Roof/Interior/Basement
+waypoints are still aimed at the old procedural proportions.
+
+Path tracing was built, measured and removed: on the integrated graphics this
+actually runs on it managed ~4 samples/second, was still noise after two
+minutes, and crashed the tab twice when pushed. It needs a discrete GPU.
 
 ## The vault tab
 

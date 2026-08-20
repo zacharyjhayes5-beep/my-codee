@@ -24,7 +24,15 @@ export interface Area {
   /** One line under the heading. What this area is for, not what it contains. */
   blurb: string;
   camera: Waypoint;
-  /** Where the marker sits on the house. */
+  /**
+   * Where the marker sits, as a fraction of the house rather than in metres.
+   *
+   * x and z are fractions of half the footprint (−1 is the left/front edge,
+   * +1 the right/back); y is a fraction of the total height, so 0 is the
+   * ground and 1 is the ridge. Absolute coordinates were fine while there was
+   * one hand-built house; the moment a household can pick a taller or wider
+   * model, fixed positions leave the markers hanging in mid-air.
+   */
   hotspot: [number, number, number];
 }
 
@@ -50,42 +58,42 @@ export const AREAS: Area[] = [
     label: "Exterior",
     blurb: "The dwelling itself — how it is built, and what it would cost to rebuild.",
     camera: { position: [16.5, 8.4, 21.5], target: [-2.2, 2.4, 4.5] },
-    hotspot: [0, 2.4, 3.2],
+    hotspot: [0, 0.42, 0.95],
   },
   {
     id: "roof",
     label: "Roof",
     blurb: "Usually the first thing an underwriter asks about, and the first thing to fail.",
     camera: { position: [5.5, 8.6, 6.5], target: [0, 4.1, 0] },
-    hotspot: [0, 5.1, 0],
+    hotspot: [0, 0.95, 0],
   },
   {
     id: "garage",
     label: "Garage",
     blurb: "What is parked here is often a second policy.",
     camera: { position: [-10.2, 3.6, 9.8], target: [-4.2, 1.2, 1.4] },
-    hotspot: [-4.1, 2.5, 2.1],
+    hotspot: [-0.72, 0.4, 0.62],
   },
   {
     id: "interior",
     label: "Interior",
     blurb: "Living space and how it is finished.",
     camera: { position: [3.6, 2.7, 9.2], target: [0.2, 1.7, 3.4] },
-    hotspot: [1.5, 1.8, 2.9],
+    hotspot: [0.3, 0.32, 0.9],
   },
   {
     id: "basement",
     label: "Basement",
     blurb: "Where water gets in, and where the coverage question actually lives.",
     camera: { position: [6.8, 0.85, 8.6], target: [0.4, 0.15, 3.4] },
-    hotspot: [2.6, -0.9, 3.0],
+    hotspot: [0.5, 0.04, 0.95],
   },
   {
     id: "grounds",
     label: "Property",
     blurb: "Everything that is not the house, and still on the policy.",
     camera: { position: [3, 24, 28], target: [1, 0, -2] },
-    hotspot: [6.4, 0.35, -3.4],
+    hotspot: [1.42, 0.06, -0.95],
   },
 ];
 
@@ -101,6 +109,20 @@ export const AREAS: Area[] = [
  */
 export function profileOf(prospect: Prospect): PropertyProfile {
   return prospect.assets?.property ?? blankPropertyProfile();
+}
+
+/**
+ * Turn a fractional hotspot into a world position for a given house.
+ *
+ * Keeping this here rather than in the scene means the placement rules stay
+ * with the areas they belong to, and a new model needs no code change at all.
+ */
+export function hotspotAt(
+  area: Area,
+  house: { width: number; depth: number; height: number },
+): [number, number, number] {
+  const [fx, fy, fz] = area.hotspot;
+  return [(fx * house.width) / 2, fy * house.height, (fz * house.depth) / 2];
 }
 
 export function areaById(id: AreaId): Area {

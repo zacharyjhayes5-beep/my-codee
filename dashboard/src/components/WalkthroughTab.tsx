@@ -23,6 +23,17 @@ import {
  */
 const Scene = lazy(() => import("./walkthrough/Scene"));
 
+/**
+ * The house every household gets for now.
+ *
+ * Per-household selection is the intent — a ranch, a lakefront cottage, a
+ * split-level — and everything downstream is already built for it: the loader
+ * normalises whatever model it is given, and the hotspots are expressed as
+ * fractions of the house rather than fixed coordinates. What is missing is the
+ * field on the record and the picker, so until then everyone shares one.
+ */
+const HOUSE_MODEL = "colonial";
+
 interface WalkthroughTabProps {
   prospects: Prospect[];
   /** Which household to open on, when arriving from somewhere that knows. */
@@ -138,6 +149,7 @@ export function WalkthroughTab({
               area={area}
               onSelect={setArea}
               showHotspots={area !== "grounds"}
+              houseUrl={`${import.meta.env.BASE_URL}models/${HOUSE_MODEL}.glb`}
               placed={placed}
               selectedId={openItem}
               onSelectObject={(id) => {

@@ -287,12 +287,14 @@ const PAINT = ["#31465c", "#6d2f2c", "#4a4f56", "#2f4a3c", "#6a5a3a", "#3c3f4a"]
 
 interface CoverageObjectsProps {
   placed: PlacedObject[];
+  /** Height of the house's ridge, so the canopy clears whatever roof is loaded. */
+  ridge: number;
   /** Which object is selected in the panel, so the scene can echo it. */
   selectedId: string | null;
   onSelect: (id: string) => void;
 }
 
-export function CoverageObjects({ placed, selectedId, onSelect }: CoverageObjectsProps) {
+export function CoverageObjects({ placed, ridge, selectedId, onSelect }: CoverageObjectsProps) {
   return (
     <group>
       {placed.map((p, i) => {
@@ -303,7 +305,9 @@ export function CoverageObjects({ placed, selectedId, onSelect }: CoverageObject
         return (
           <group
             key={p.item.id}
-            position={p.position}
+            // The umbrella is the one object whose height depends on the house
+            // rather than the ground, so it is raised to clear the real ridge.
+            position={p.kind === "umbrella" ? [p.position[0], ridge + 1.9, p.position[2]] : p.position}
             rotation={[0, p.rotation, 0]}
             onClick={(e) => {
               e.stopPropagation();

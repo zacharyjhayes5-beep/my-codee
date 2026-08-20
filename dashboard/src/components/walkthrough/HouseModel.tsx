@@ -305,12 +305,18 @@ function Steps({ position }: { position: [number, number, number] }) {
   );
 }
 
-export function HouseModel() {
-  const siding = sidingTexture();
-  const shingle = shingleTexture();
-  const stone = stoneTexture();
+/**
+ * The lot: ground, driveway, planting and path.
+ *
+ * Separate from the building on purpose. A modelled house arrives with no
+ * ground under it and no driveway to park on, so the grounds have to stand on
+ * their own and host whichever house is chosen.
+ */
+export function Grounds() {
   const grass = grassTexture();
   const asphalt = asphaltTexture();
+  const siding = sidingTexture();
+  const shingle = shingleTexture();
 
   return (
     <group>
@@ -324,6 +330,39 @@ export function HouseModel() {
           the garage, so the bays have somewhere to sit. */}
       <Clad args={[6.2, 0.06, 15]} position={[-4.1, 0.03, 9.4]} tex={asphalt} roughness={0.96} bumpScale={0.02} />
 
+      {/* Shed on the grounds */}
+      <Clad args={[2.2, 1.9, 2.2]} position={[6.6, 1.16, -3.4]} tex={siding} bumpScale={0.04} roughness={0.92} />
+      <Box args={[2.5, 0.1, 2.5]} position={[6.6, 2.16, -3.4]} m="trim" />
+      <Gable width={2.5} depth={2.5} height={0.72} position={[6.6, 2.21, -3.4]} tex={shingle} />
+      <Box args={[2.4, 0.22, 2.4]} position={[6.6, 0.11, -3.4]} m="stone" />
+
+      {/* Planting. Foundation shrubs give the wall a base and a sense of
+          scale; the trees sit well back so they frame the lot without
+          crowding the building or the driveway. */}
+      <Shrub position={[1.5, 0.42, 3.9]} s={0.9} />
+      <Shrub position={[2.6, 0.42, 3.95]} s={1.05} />
+      <Shrub position={[3.5, 0.42, 3.8]} s={0.8} />
+      <Shrub position={[-1.4, 0.42, 3.95]} s={0.95} />
+      <Shrub position={[8.4, 0.42, 1.2]} s={1.1} />
+      <Tree position={[11.5, 0, -2.5]} h={5.4} />
+      <Tree position={[-11.5, 0, -4.5]} h={4.6} />
+      <Tree position={[13.5, 0, 8]} h={4.9} />
+      <Tree position={[-13, 0, 14]} h={5.1} />
+
+      {/* Path to the front door */}
+      <Box args={[1.5, 0.05, 3.4]} position={[0, 0.03, 5.6]} m="stone" />
+    </group>
+  );
+}
+
+/** The hand-built house. Still the fallback when no model is chosen. */
+export function HouseModel() {
+  const siding = sidingTexture();
+  const shingle = shingleTexture();
+  const stone = stoneTexture();
+
+  return (
+    <group>
       {/* Basement mass, below grade */}
       <Clad args={[8, 2.2, 7]} position={[0, -1.1, 0]} tex={stone} />
 
@@ -394,27 +433,6 @@ export function HouseModel() {
       <Box args={[3.32, 2.02, 0.1]} position={[-4.1, 1.42, 3.36]} m="trim" />
       <Box args={[3.8, 0.16, 0.24]} position={[-4.1, 2.6, 3.36]} m="trim" />
 
-      {/* Shed on the grounds */}
-      <Clad args={[2.2, 1.9, 2.2]} position={[6.6, 1.16, -3.4]} tex={siding} bumpScale={0.04} roughness={0.92} />
-      <Box args={[2.5, 0.1, 2.5]} position={[6.6, 2.16, -3.4]} m="trim" />
-      <Gable width={2.5} depth={2.5} height={0.72} position={[6.6, 2.21, -3.4]} tex={shingle} />
-      <Box args={[2.4, 0.22, 2.4]} position={[6.6, 0.11, -3.4]} m="stone" />
-
-      {/* Planting. Foundation shrubs give the wall a base and a sense of
-          scale; the trees sit well back so they frame the lot without
-          crowding the building or the driveway. */}
-      <Shrub position={[1.5, 0.42, 3.9]} s={0.9} />
-      <Shrub position={[2.6, 0.42, 3.95]} s={1.05} />
-      <Shrub position={[3.5, 0.42, 3.8]} s={0.8} />
-      <Shrub position={[-1.4, 0.42, 3.95]} s={0.95} />
-      <Shrub position={[8.4, 0.42, 1.2]} s={1.1} />
-      <Tree position={[11.5, 0, -2.5]} h={5.4} />
-      <Tree position={[-11.5, 0, -4.5]} h={4.6} />
-      <Tree position={[13.5, 0, 8]} h={4.9} />
-      <Tree position={[-13, 0, 14]} h={5.1} />
-
-      {/* Path to the front door */}
-      <Box args={[1.5, 0.05, 3.4]} position={[0, 0.03, 5.6]} m="stone" />
     </group>
   );
 }
