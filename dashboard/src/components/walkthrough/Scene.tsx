@@ -7,6 +7,8 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { AREAS, areaById, type AreaId } from "../../lib/walkthrough";
 import { HouseModel } from "./HouseModel";
+import { CoverageObjects } from "./Props";
+import type { PlacedObject } from "../../lib/walkthrough";
 
 /**
  * The property, and a camera you actually drive.
@@ -230,9 +232,20 @@ interface SceneProps {
   onSelect: (id: AreaId) => void;
   /** Hotspots are hidden on the overhead shot, where they would crowd. */
   showHotspots: boolean;
+  /** The household's cover, already positioned. */
+  placed: PlacedObject[];
+  selectedId: string | null;
+  onSelectObject: (id: string) => void;
 }
 
-export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
+export default function Scene({
+  area,
+  onSelect,
+  showHotspots,
+  placed,
+  selectedId,
+  onSelectObject,
+}: SceneProps) {
   const [reduced] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
@@ -271,6 +284,7 @@ export default function Scene({ area, onSelect, showHotspots }: SceneProps) {
       <Suspense fallback={null}>
         <Sky />
         <HouseModel />
+        <CoverageObjects placed={placed} selectedId={selectedId} onSelect={onSelectObject} />
         <ContactShadows position={[0, 0.014, 0]} opacity={0.4} scale={48} blur={2.6} far={12} resolution={1024} />
       </Suspense>
 

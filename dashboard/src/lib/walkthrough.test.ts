@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { blankProspect } from "./prospectSchema";
-import { AREAS, crossSell, readingsFor, recordedCount, roofAge } from "./walkthrough";
-import type { Prospect, PropertyProfile } from "../types";
+import {
+  AREAS,
+  coverageSummary,
+  crossSell,
+  kindOf,
+  placeCoverage,
+  readingsFor,
+  recordedCount,
+  roofAge,
+} from "./walkthrough";
+import type { CoverageItem, Prospect, PropertyProfile } from "../types";
 
 function household(property: Partial<PropertyProfile> = {}, assets: Record<string, unknown> = {}): Prospect {
   const p = blankProspect({ name: "Sample" });
@@ -148,5 +157,118 @@ describe("records that never went through normalisation", () => {
       expect(() => recordedCount(area.id, raw)).not.toThrow();
     }
     expect(crossSell(raw)).toBeNull();
+  });
+});
+
+describe("placing coverage on the property", () => {
+  const item = (over: Partial<CoverageItem> & { line: string }): CoverageItem => ({
+    id: over.id ?? over.line,
+    line: over.line,
+    status: over.status ?? "held",
+    label: over.label ?? "",
+    detail: over.detail ?? "",
+  });
+
+  it("maps each line to the object it should become", () => {
+    expect(kindOf("personal-auto")).toBe("vehicle");
+    expect(kindOf("business-auto")).toBe("vehicle");
+    expect(kindOf("boat")).toBe("boat");
+    expect(kindOf("motorcycle")).toBe("motorcycle");
+    expect(kindOf("personal-umbrella")).toBe("umbrella");
+    expect(kindOf("comm-umbrella")).toBe("umbrella");
+  });
+
+  /** Life is the one category insured on a person rather than a thing. */
+  it("turns every life line into a figure", () => {
+    for (const l of ["term-life", "rop-term", "whole-life", "premier-whole", "myga"]) {
+      expect(kindOf(l), l).toBe("figure");
+    }
+  });
+
+  /**
+   * A general liability policy has no honest physical form. Inventing one would
+   * be decoration, so it stays in the panel and off the lot.
+   */
+  it("leaves lines with no physical form unplaced", () => {
+    for (const l of ["gen-liability", "work-comp", "bop", "homeowners", "unknown-line"]) {
+      expect(kindOf(l), l).toBe("listed");
+    }
+    expect(placeCoverage([item({ line: "gen-liability" })])).toEqual([]);
+  });
+
+  it("parks vehicles in the driveway, each in its own bay", () => {
+    const placed = placeCoverage([
+      item({ id: "a", line: "personal-auto", label: "F-150" }),
+      item({ id: "b", line: "personal-auto", label: "Explorer" }),
+      item({ id: "c", line: "boat", label: "Lund" }),
+    ]);
+    expect(placed).toHaveLength(3);
+    const spots = placed.map((p) => `${p.position[0]},${p.position[2]}`);
+    expect(new Set(spots).size, "no two objects share a bay").toBe(3);
+    // All on the driveway, which runs out to the left of the house.
+    for (const p of placed) expect(p.position[0]).toBeLessThan(0);
+  });
+
+  /** Running out of driveway must not stack cars on top of each other. */
+  it("stops placing once the bays are full", () => {
+    const many = Array.from({ length: 10 }, (_, i) => item({ id: `v${i}`, line: "personal-auto" }));
+    const placed = placeCoverage(many);
+    expect(placed).toHaveLength(6);
+    expect(new Set(placed.map((p) => p.position.join(","))).size).toBe(6);
+  });
+
+  /** Two canopies over one roof would read as a modelling error. */
+  it("puts up one umbrella however many umbrella policies there are", () => {
+    const placed = placeCoverage([
+      item({ id: "u1", line: "personal-umbrella" }),
+      item({ id: "u2", line: "comm-umbrella" }),
+    ]);
+    expect(placed).toHaveLength(1);
+    expect(placed[0].kind).toBe("umbrella");
+    // Above the ridge, which sits at about y=5.5.
+    expect(placed[0].position[1]).toBeGreaterThan(6);
+  });
+
+  it("stands people near the door without blocking it", () => {
+    const placed = placeCoverage([
+      item({ id: "p1", line: "term-life", label: "Doug" }),
+      item({ id: "p2", line: "whole-life", label: "Patricia" }),
+    ]);
+    expect(placed).toHaveLength(2);
+    for (const p of placed) {
+      expect(p.position[0], "off to the side of the path").toBeGreaterThan(1);
+      expect(p.position[2], "in front of the house").toBeGreaterThan(4);
+    }
+  });
+
+  /** Status rides along untouched — the scene decides solid versus ghosted. */
+  it("carries held and needed through to the placed object", () => {
+    const placed = placeCoverage([
+      item({ id: "a", line: "personal-auto", status: "held" }),
+      item({ id: "u", line: "personal-umbrella", status: "needed" }),
+    ]);
+    expect(placed.find((p) => p.kind === "vehicle")!.item.status).toBe("held");
+    expect(placed.find((p) => p.kind === "umbrella")!.item.status).toBe("needed");
+  });
+
+  it("copes with an empty list", () => {
+    expect(placeCoverage([])).toEqual([]);
+  });
+});
+
+describe("coverage summary", () => {
+  it("counts held and needed separately", () => {
+    const p = household();
+    p.assets.coverage = [
+      { id: "a", line: "personal-auto", status: "held", label: "", detail: "" },
+      { id: "b", line: "boat", status: "held", label: "", detail: "" },
+      { id: "c", line: "personal-umbrella", status: "needed", label: "", detail: "" },
+    ];
+    expect(coverageSummary(p)).toEqual({ held: 2, needed: 1 });
+  });
+
+  it("survives a household with no coverage field at all", () => {
+    const raw = { ...household(), assets: undefined } as unknown as Prospect;
+    expect(coverageSummary(raw)).toEqual({ held: 0, needed: 0 });
   });
 });

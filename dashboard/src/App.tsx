@@ -17,7 +17,7 @@ import { useStored, whenPersisted } from "./lib/repository";
 import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
-import type { PropertyProfile, Prospect, ReviewProposal } from "./types";
+import type { CoverageItem, PropertyProfile, Prospect, ReviewProposal } from "./types";
 
 type Tab =
   | "operator"
@@ -214,6 +214,13 @@ function App() {
     );
   }
 
+  /** Coverage is data entry, same as property detail — no audit entry. */
+  function patchCoverage(id: string, coverage: CoverageItem[]) {
+    setProspects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, assets: { ...p.assets, coverage } } : p)),
+    );
+  }
+
   function patchProspectFromResearch(id: string, patch: Partial<Prospect>) {
     const before = prospects.find((p) => p.id === id);
     setProspects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -382,6 +389,7 @@ function App() {
             prospects={prospects}
             focusId={focusProspectId}
             onPatch={patchProperty}
+            onCoverageChange={patchCoverage}
           />
         )}
         {tab === "vault" && <VaultTab />}

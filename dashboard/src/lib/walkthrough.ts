@@ -49,7 +49,7 @@ export const AREAS: Area[] = [
     id: "exterior",
     label: "Exterior",
     blurb: "The dwelling itself — how it is built, and what it would cost to rebuild.",
-    camera: { position: [13.5, 6.2, 17.5], target: [-1.6, 1.6, 3.2] },
+    camera: { position: [16.5, 8.4, 21.5], target: [-2.2, 2.4, 4.5] },
     hotspot: [0, 2.4, 3.2],
   },
   {
@@ -252,4 +252,127 @@ export function crossSell(prospect: Prospect): string | null {
 export function recordedCount(area: AreaId, prospect: Prospect): { filled: number; total: number } {
   const rs = readingsFor(area, prospect);
   return { filled: rs.filter((r) => r.value !== null).length, total: rs.length };
+}
+
+/* ---------------------------------------------------------------------------
+   Coverage, placed on the property
+
+   The whole point of the tab: a household's policies standing on their lot. A
+   car in the driveway because they carry auto, an umbrella over the roof if
+   they hold one — ghosted if they do not. This half stays free of any 3D so the
+   placement can be tested and the scene can be rebuilt around a different model
+   without touching it.
+   --------------------------------------------------------------------------- */
+
+import { lineById } from "./policies";
+import type { CoverageItem } from "../types";
+
+/** What a coverage item becomes in the scene. */
+export type ObjectKind = "vehicle" | "boat" | "motorcycle" | "umbrella" | "figure" | "listed";
+
+/**
+ * Which lines get a physical object, and which one.
+ *
+ * Anything not named here falls through to `listed` — it appears in the panel
+ * but not on the lot. That is deliberate: a general liability policy has no
+ * honest physical form, and inventing one would be decoration rather than
+ * information.
+ */
+const KIND_BY_LINE: Record<string, ObjectKind> = {
+  "personal-auto": "vehicle",
+  "business-auto": "vehicle",
+  boat: "boat",
+  motorcycle: "motorcycle",
+  "personal-umbrella": "umbrella",
+  "comm-umbrella": "umbrella",
+};
+
+export function kindOf(line: string): ObjectKind {
+  const explicit = KIND_BY_LINE[line];
+  if (explicit) return explicit;
+  // Every life line becomes a person, because that is what life cover insures.
+  if (lineById.get(line)?.category === "life") return "figure";
+  return "listed";
+}
+
+/** A coverage item, positioned. */
+export interface PlacedObject {
+  item: CoverageItem;
+  kind: ObjectKind;
+  position: [number, number, number];
+  /** Radians about Y. */
+  rotation: number;
+}
+
+/**
+ * Where things stand.
+ *
+ * The driveway runs out from the garage on the left, so vehicles fill it from
+ * the garage door outward in two columns — the order somebody would actually
+ * park in. Bays are finite; anything that does not fit is still listed in the
+ * panel rather than stacked on top of another car.
+ */
+const BAYS: [number, number][] = [
+  [-5.5, 5.6],
+  [-2.7, 5.6],
+  [-5.5, 9.0],
+  [-2.7, 9.0],
+  [-5.5, 12.4],
+  [-2.7, 12.4],
+];
+
+/** Household members stand off to the side of the path, not blocking the door. */
+const FIGURE_SPOTS: [number, number][] = [
+  [2.2, 5.4],
+  [3.0, 5.4],
+  [3.8, 5.4],
+  [2.2, 6.3],
+  [3.0, 6.3],
+  [3.8, 6.3],
+];
+
+export function placeCoverage(items: CoverageItem[]): PlacedObject[] {
+  const out: PlacedObject[] = [];
+  let bay = 0;
+  let spot = 0;
+  let umbrellaPlaced = false;
+
+  for (const item of items) {
+    const kind = kindOf(item.line);
+
+    if (kind === "vehicle" || kind === "boat" || kind === "motorcycle") {
+      const at = BAYS[bay];
+      if (!at) continue; // Out of driveway; the panel still lists it.
+      bay++;
+      out.push({ item, kind, position: [at[0], 0, at[1]], rotation: 0 });
+      continue;
+    }
+
+    if (kind === "figure") {
+      const at = FIGURE_SPOTS[spot];
+      if (!at) continue;
+      spot++;
+      out.push({ item, kind, position: [at[0], 0, at[1]], rotation: Math.PI });
+      continue;
+    }
+
+    if (kind === "umbrella") {
+      // One canopy, however many umbrella policies there are — two umbrellas
+      // over one roof would read as a modelling mistake, not as more cover.
+      if (umbrellaPlaced) continue;
+      umbrellaPlaced = true;
+      out.push({ item, kind, position: [0, 7.4, 0], rotation: 0 });
+    }
+  }
+
+  return out;
+}
+
+/** What the panel says about a household's cover, object or not. */
+export function coverageSummary(prospect: Prospect): { held: number; needed: number } {
+  const items = prospect.assets?.coverage ?? [];
+  return {
+    held: items.filter((c) => c.status === "held").length,
+    needed: items.filter((c) => c.status === "needed").length,
+  };
 }

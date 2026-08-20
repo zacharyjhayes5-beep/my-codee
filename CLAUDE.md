@@ -186,9 +186,10 @@ building looks like. Swapping the placeholder for a real GLB is one component
 replacement — `useGLTF` and `<primitive>` — and nothing else changes, because
 no camera position, hotspot or panel refers to the geometry.
 
-- **No orbit controls and no scroll handler.** The only thing that moves the
-  camera is choosing an area. That is the difference between a configurator and
-  a game, and it was the explicit brief.
+- **The camera is free**, and this reverses the original rule. Orbit, zoom and
+  pan; the six waypoints survive as *shortcuts* rather than as the only way to
+  move. The no-orbit rule was right when the tab was six composed shots and
+  wrong once the scene became a property you inspect.
 - **Interior and Basement are framed from outside**, because the placeholder is
   a solid shell on a ground plane — a camera indoors sees a closed box and one
   below grade sees the underside of the ground. Re-aim those two when a model
@@ -220,6 +221,37 @@ Two rules that are easy to get wrong:
 `readingsFor` tolerates a household with no `assets` and no `property` at all.
 That is not defensive habit: a record that bypassed normalisation crashed the
 whole application during this build, exactly as `tags` had before it.
+
+**Coverage is the point of the tab.** Schema v10 added `assets.coverage` — a
+list of `CoverageItem`, each one a catalog line, a `held`/`needed` status, a
+name and a detail. Entered by hand, never inferred, which is what stops it ever
+contradicting a policy somebody actually carries.
+
+`placeCoverage()` in `lib/walkthrough.ts` turns those into positioned objects
+and contains no 3D, so the scene can be rebuilt around a different model
+without touching it. `components/walkthrough/Props.tsx` draws them.
+
+- **Solid means held; ghosted means a gap.** An empty driveway says nothing; a
+  faint car in it says "you have two vehicles and one is not on this policy".
+  The umbrella is the clearest case — a translucent canopy over an otherwise
+  covered house needs no legend.
+- **Only some lines get an object.** Auto, boat, motorcycle, umbrella and life
+  do; everything else is `listed` and appears in the panel only. A general
+  liability policy has no honest physical form and inventing one would be
+  decoration rather than information.
+- **Bays are finite.** Six driveway spaces; a seventh vehicle is still listed
+  but not stacked on top of another car. One umbrella however many umbrella
+  policies exist, because two canopies read as a modelling error.
+- Life lines become **figures**, because life cover insures a person.
+
+**Realism has a ceiling and it is the model, not the materials.** The house is
+procedural — textures are drawn onto canvases at module load rather than
+fetched, so nothing can fail to load. A photographed HDRI in `public/env`
+lights the scene. Path tracing was built, measured and removed: on the
+integrated graphics this actually runs on it managed ~4 samples/second, was
+still noise after two minutes, and crashed the tab twice when pushed. It needs
+a discrete GPU. The next real jump is a modelled house GLB, which remains a
+one-component swap in `HouseModel.tsx`.
 
 ## The vault tab
 
@@ -543,7 +575,7 @@ changes (`actor: "rule"`). **No history was reconstructed for records that
 predate this** — a fabricated "who changed this" is worse than an honest gap.
 `AUDIT_LIMIT` caps the log at 2000 entries.
 
-## Prospect schema v4 (now at v9)
+## Prospect schema v4 (now at v10)
 
 `lib/prospectSchema.ts` holds `normalizeProspect()` — **the only place that
 decides what an old record becomes**. It runs from three directions: the
