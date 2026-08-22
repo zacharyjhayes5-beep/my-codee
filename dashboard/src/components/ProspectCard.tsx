@@ -88,7 +88,8 @@ export function ProspectCard({
 
   function toggleLine(id: LineId) {
     const on = prospect.lines.includes(id);
-    onChange({ lines: on ? prospect.lines.filter((l) => l !== id) : [...prospect.lines, id] });
+    const lines = prospect.lines ?? [];
+    onChange({ lines: on ? lines.filter((l) => l !== id) : [...lines, id] });
   }
 
   function addNote() {
@@ -342,9 +343,9 @@ export function ProspectCard({
                 />
               </label>
             </div>
-            {prospect.contacts.length > 0 && (
+            {(prospect.contacts ?? []).length > 0 && (
               <ul className="contact-list">
-                {prospect.contacts.map((c) => (
+                {(prospect.contacts ?? []).map((c) => (
                   <li key={c.id}>
                     {[c.firstName, c.lastName].filter(Boolean).join(" ") || "Unnamed"}
                     {c.dob && <span className="muted-note"> · DOB {c.dob}</span>}
@@ -464,7 +465,7 @@ export function ProspectCard({
                 <button
                   className="remove-btn"
                   aria-label="Remove note"
-                  onClick={() => onChange({ notes: prospect.notes.filter((n) => n.id !== note.id) })}
+                  onClick={() => onChange({ notes: (prospect.notes ?? []).filter((n) => n.id !== note.id) })}
                 >
                   ×
                 </button>

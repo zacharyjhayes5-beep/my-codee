@@ -334,7 +334,16 @@ export async function initRepository(): Promise<BootResult> {
   await upgradeCallOutcomes();
 
   cache = {
-    prospects: await readAll<Prospect>("prospects"),
+    // Normalised on the way into the cache, every boot, not only when the
+    // schema version moves. `upgradeProspectSchema` returns early once the
+    // stored version matches, so a record that is malformed *after* that point
+    // — a half-finished write, a hand-edited store, an import that skipped the
+    // seam — stays broken forever and takes a component down when it is
+    // rendered. That is exactly how a household with no `contacts` array
+    // white-screened the whole application. `normalizeProspects` is idempotent
+    // and cheap, so paying it on every boot buys a guarantee: nothing
+    // downstream ever sees a record that did not come through the seam.
+    prospects: normalizeProspects(await readAll<unknown>("prospects")),
     policies: await readAll<PolicyEntry>("policies"),
     tasks: await readAll<Task>("tasks"),
     suggestions: await readAll<Suggestion>("suggestions"),

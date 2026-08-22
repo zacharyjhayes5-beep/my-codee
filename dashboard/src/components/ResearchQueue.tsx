@@ -85,7 +85,7 @@ function ResearchRow({
     <li className="research-item enter">
       <div className="research-who">
         <span className="research-name">{prospect.name || "Untitled household"}</span>
-        {prospect.tags.map((tag) => {
+        {(prospect.tags ?? []).map((tag) => {
           const c = tagColor(tag.color);
           return (
             <span

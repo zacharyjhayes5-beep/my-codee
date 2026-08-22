@@ -222,6 +222,18 @@ Two rules that are easy to get wrong:
 That is not defensive habit: a record that bypassed normalisation crashed the
 whole application during this build, exactly as `tags` had before it.
 
+**Prospects are normalised into the cache on every boot, and that is load-bearing.**
+`upgradeProspectSchema` returns early once the stored version matches, so it
+repairs a record exactly once and never again. Anything malformed *after* that
+point stayed malformed forever — and a household with no `contacts` array made
+`contacts.length` throw inside `ProspectCard`, which unmounted the entire tree
+and left the dashboard white. That was the third instance of the same failure
+(`tags`, then `assets.property`), so the fix went at the seam rather than at the
+render site: `initRepository` runs `normalizeProspects` over whatever comes out
+of IndexedDB. It is idempotent and cheap, and it means no component can ever be
+handed a record that did not come through the conversion. Render sites are
+guarded too, but that is the belt, not the braces.
+
 **Coverage is the point of the tab.** Schema v10 added `assets.coverage` — a
 list of `CoverageItem`, each one a catalog line, a `held`/`needed` status, a
 name and a detail. Entered by hand, never inferred, which is what stops it ever

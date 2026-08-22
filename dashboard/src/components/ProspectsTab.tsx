@@ -185,7 +185,7 @@ export function ProspectsTab({
           p.email.toLowerCase().includes(q) ||
           p.phone.includes(q) ||
           p.nextAction.toLowerCase().includes(q) ||
-          p.notes.some((n) => n.body.toLowerCase().includes(q))
+          (p.notes ?? []).some((n) => n.body.toLowerCase().includes(q))
         );
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.name.localeCompare(b.name));
@@ -541,10 +541,10 @@ export function ProspectsTab({
                                 );
                               })}
                             </span>
-                            {p.contacts.length > 0 && (
+                            {(p.contacts ?? []).length > 0 && (
                               <span className="lead-sub">
-                                {p.contacts.length} contact
-                                {p.contacts.length === 1 ? "" : "s"}
+                                {(p.contacts ?? []).length} contact
+                                {(p.contacts ?? []).length === 1 ? "" : "s"}
                               </span>
                             )}
                           </span>

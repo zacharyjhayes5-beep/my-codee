@@ -406,3 +406,49 @@ describe("coverage — schema v10", () => {
     expect(normalizeProspect(once).assets.coverage).toEqual(once.assets.coverage);
   });
 });
+
+describe("records that reach a component without their arrays", () => {
+  /**
+   * The bug this guards against took the entire dashboard white: a household
+   * with no `contacts` array reached ProspectCard, `contacts.length` threw, and
+   * React unmounted the whole tree. It is the third time this shape of failure
+   * has happened here — `tags` and `assets.property` did it before.
+   *
+   * Normalisation is the seam that guarantees these exist, so it has to fill
+   * every one of them no matter how mangled the input is.
+   */
+  it("gives every array field back, whatever is missing", () => {
+    const p = normalizeProspect({ id: "x", name: "Stripped" });
+    expect(Array.isArray(p.contacts)).toBe(true);
+    expect(Array.isArray(p.notes)).toBe(true);
+    expect(Array.isArray(p.tags)).toBe(true);
+    expect(Array.isArray(p.lines)).toBe(true);
+    expect(Array.isArray(p.mergedFrom)).toBe(true);
+    expect(Array.isArray(p.assets.coverage)).toBe(true);
+  });
+
+  it("replaces an array field that is not an array", () => {
+    const p = normalizeProspect({
+      id: "x",
+      name: "Wrong types",
+      contacts: "nope",
+      notes: 7,
+      tags: null,
+      lines: {},
+      mergedFrom: false,
+    });
+    expect(p.contacts).toEqual([]);
+    expect(p.notes).toEqual([]);
+    expect(p.tags).toEqual([]);
+    expect(p.lines).toEqual([]);
+    expect(p.mergedFrom).toEqual([]);
+  });
+
+  /** The address is read straight off the record in several places. */
+  it("always returns a structured address", () => {
+    const p = normalizeProspect({ id: "x", name: "No address" });
+    expect(p.address).toEqual({ line1: "", city: "", state: "", zip: "" });
+    const q = normalizeProspect({ id: "x", name: "Junk address", address: "123 Main St" });
+    expect(q.address.line1).toBe("");
+  });
+});
