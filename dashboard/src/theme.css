@@ -224,30 +224,6 @@ body {
 }
 
 /* ---------- Sidebar ---------- */
-
-.sidenav {
-  display: flex;
-  flex-direction: column;
-  background: var(--navy);
-  color: rgba(247, 244, 237, 0.72);
-  padding: var(--space-5) 0 var(--space-4);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  /* The spine sits above the workspace rather than beside it. One shadow, and
-     the two surfaces stop reading as flat panels butted together. */
-  box-shadow: var(--shadow-3);
-  z-index: 2;
-}
-
-.sidenav-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 var(--space-5) var(--space-6);
-}
-
 /* The one deliberate piece of cognac in the permanent chrome. */
 .brand-mark {
   width: 3px;
@@ -278,121 +254,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.sidenav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0 var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.sidenav-link {
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 12px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: rgba(247, 244, 237, 0.72);
-  font-size: 0.9rem;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background var(--t-fast),
-    color var(--t-fast);
-}
-
-.sidenav-link svg {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.75;
-}
-
-.sidenav-link:hover {
-  background: rgba(247, 244, 237, 0.06);
-  color: #f7f4ed;
-}
-
-/* Selected state: ivory text and a cognac rule, not a glowing pill. */
-.sidenav-link.is-current {
-  background: rgba(247, 244, 237, 0.09);
-  color: #f7f4ed;
-  font-weight: 600;
-}
-
-.sidenav-link.is-current svg {
-  opacity: 1;
-}
-
-.sidenav-link.is-current::before {
-  content: "";
-  position: absolute;
-  left: -12px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  border-radius: 0 2px 2px 0;
-  background: var(--cognac);
-}
-
-.sidenav-link:focus-visible {
-  outline: 2px solid rgba(247, 244, 237, 0.85);
-  outline-offset: -2px;
-}
-
-.sidenav-foot {
-  padding: var(--space-4) var(--space-5) 0;
-  margin-top: var(--space-4);
-  border-top: 1px solid rgba(247, 244, 237, 0.1);
-}
-
-/* Backup lives in the sidebar, so its controls wear the dark surface. */
-.sidenav-foot .backup-panel {
-  background: none;
-  border: none;
-  padding: 0;
-  box-shadow: none;
-}
-
-.sidenav-foot .backup-buttons {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.sidenav-foot .ghost-btn {
-  flex: 1;
-  background: rgba(247, 244, 237, 0.07);
-  border: 1px solid rgba(247, 244, 237, 0.14);
-  color: rgba(247, 244, 237, 0.88);
-  font-size: 0.8rem;
-  padding: 7px 10px;
-}
-
-.sidenav-foot .ghost-btn:hover:not(:disabled) {
-  background: rgba(247, 244, 237, 0.12);
-  color: #f7f4ed;
-}
-
-.sidenav-foot .backup-status {
-  color: rgba(247, 244, 237, 0.6);
-  font-size: 0.75rem;
-  margin: var(--space-3) 0 0;
-}
-
-/* ---------- Workspace ---------- */
+/* Selected state: ivory text and a cognac rule, not a glowing pill. *//* Backup lives in the sidebar, so its controls wear the dark surface. *//* ---------- Workspace ---------- */
 
 .workspace {
   min-width: 0;
@@ -1186,61 +1048,9 @@ td {
   .app {
     grid-template-columns: 1fr;
   }
-
-  .sidenav {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3) var(--space-4);
-    overflow-x: auto;
-  }
-
-  .sidenav-brand {
-    padding: 0;
-    flex: none;
-  }
-
   .brand-text {
     display: none;
   }
-
-  .sidenav-list {
-    flex-direction: row;
-    padding: 0;
-    flex: 1;
-    gap: var(--space-1);
-  }
-
-  .sidenav-link {
-    white-space: nowrap;
-    padding: 8px 11px;
-  }
-
-  .sidenav-link.is-current::before {
-    left: 8px;
-    right: 8px;
-    top: auto;
-    bottom: -4px;
-    width: auto;
-    height: 2px;
-    border-radius: 0 2px 0 0;
-  }
-
-  .sidenav-foot {
-    margin: 0;
-    padding: 0;
-    border-top: none;
-    border-left: 1px solid rgba(247, 244, 237, 0.1);
-    padding-left: var(--space-4);
-    flex: none;
-  }
-
-  .sidenav-foot .backup-status {
-    display: none;
-  }
-
   .page-head {
     flex-direction: column;
     align-items: flex-start;
@@ -3954,35 +3764,6 @@ kbd {
     radial-gradient(circle at 58% 5%, rgba(91, 66, 111, 0.09), transparent 40rem),
     var(--page);
 }
-
-.sidenav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: clamp(18px, 2.3vw, 38px);
-  width: 100%;
-  height: 72px;
-  padding: 0 clamp(18px, 3vw, 44px);
-  overflow: visible;
-  border-bottom: 1px solid rgba(197, 167, 78, 0.2);
-  background: rgba(12, 9, 16, 0.94);
-  color: var(--text-secondary);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(18px);
-}
-
-.sidenav-brand {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: max-content;
-  padding: 0;
-}
-
 .brand-mark {
   width: 30px;
   height: 30px;
@@ -4020,117 +3801,6 @@ kbd {
 .brand-text span {
   display: none;
 }
-
-.sidenav-list {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: row;
-  align-self: stretch;
-  gap: 2px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.sidenav-list::-webkit-scrollbar {
-  display: none;
-}
-
-.sidenav-list li {
-  display: flex;
-  flex: none;
-}
-
-.sidenav-link {
-  position: relative;
-  width: auto;
-  min-height: 100%;
-  gap: 7px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #9f97aa;
-  font-size: 0.69rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.sidenav-link svg {
-  display: none;
-}
-
-.sidenav-link:hover {
-  background: transparent;
-  color: var(--text-primary);
-}
-
-.sidenav-link.is-current {
-  background: transparent;
-  color: var(--cognac-2);
-  font-weight: 650;
-}
-
-.sidenav-link.is-current::before {
-  left: 10px;
-  right: 10px;
-  top: auto;
-  bottom: -1px;
-  width: auto;
-  height: 1px;
-  border-radius: 0;
-  background: var(--cognac);
-  box-shadow: 0 0 10px rgba(197, 167, 78, 0.25);
-}
-
-.sidenav-link:focus-visible {
-  outline: none;
-  background: var(--navy-soft);
-}
-
-.sidenav-link.is-current:focus-visible {
-  outline: none;
-  background: transparent;
-}
-
-.sidenav-foot {
-  flex: none;
-  min-width: 166px;
-  margin: 0;
-  padding: 0 0 0 18px;
-  border-top: 0;
-  border-left: 1px solid rgba(197, 167, 78, 0.18);
-}
-
-.sidenav-foot .backup-buttons {
-  gap: 6px;
-}
-
-.sidenav-foot .ghost-btn {
-  min-height: 32px;
-  padding: 6px 10px;
-  border: 1px solid rgba(197, 167, 78, 0.3);
-  border-radius: 0;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.69rem;
-  white-space: nowrap;
-}
-
-.sidenav-foot .ghost-btn:hover:not(:disabled) {
-  border-color: var(--cognac);
-  background: var(--cognac-soft);
-  color: var(--cognac-2);
-}
-
-.sidenav-foot .backup-status {
-  display: none;
-}
-
 .workspace {
   width: 100%;
   min-width: 0;
@@ -4590,43 +4260,12 @@ td strong {
   background: linear-gradient(145deg, rgba(31, 24, 36, 0.93), rgba(15, 11, 18, 0.96));
 }
 
-@media (max-width: 1180px) {
-  .sidenav {
-    gap: 14px;
-    padding-inline: 22px;
-  }
-
-  .brand-text span {
+@media (max-width: 1180px) {  .brand-text span {
     display: none;
-  }
-
-  .sidenav-link {
-    padding-inline: 9px;
-  }
-
-  .sidenav-foot {
-    min-width: 118px;
-    padding-left: 12px;
-  }
-
-  .sidenav-foot .ghost-btn {
-    padding-inline: 7px;
   }
 }
 
-@media (max-width: 900px) {
-  .sidenav {
-    position: sticky;
-    height: 62px;
-    padding: 0 14px;
-    overflow: hidden;
-  }
-
-  .sidenav-brand {
-    padding: 0;
-  }
-
-  .brand-mark {
+@media (max-width: 900px) {  .brand-mark {
     width: 28px;
     height: 28px;
   }
@@ -4634,29 +4273,6 @@ td strong {
   .brand-text {
     display: none;
   }
-
-  .sidenav-list {
-    align-self: stretch;
-    overflow-x: auto;
-  }
-
-  .sidenav-link {
-    padding: 0 10px;
-  }
-
-  .sidenav-link.is-current::before {
-    left: 8px;
-    right: 8px;
-    top: auto;
-    bottom: -1px;
-    width: auto;
-    height: 1px;
-  }
-
-  .sidenav-foot {
-    display: none;
-  }
-
   .workspace {
     padding: 24px 18px 56px;
   }
@@ -4667,18 +4283,7 @@ td strong {
   }
 }
 
-@media (max-width: 640px) {
-  .sidenav {
-    gap: 8px;
-    padding-inline: 10px;
-  }
-
-  .sidenav-link {
-    font-size: 0.64rem;
-    padding-inline: 9px;
-  }
-
-  .workspace {
+@media (max-width: 640px) {  .workspace {
     padding: 20px 14px 48px;
   }
 
@@ -5192,5 +4797,288 @@ a.agenda-event {
   .calendar-connect-card {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+}
+
+/* ============================================================
+   19. The shell — a top bar, and a page that says what it is
+
+   The sidebar is gone. A 236px spine spent a sixth of the window on five
+   words that never change, and it forced every screen into a column that
+   was narrower than the tables it had to hold. The nav is a 70px rail
+   across the top instead: type only, no icons.
+
+   This section comes last and therefore wins. The .sidenav rules it
+   replaced have been deleted outright rather than overridden.
+   ============================================================ */
+
+.app {
+  display: block;
+  min-height: 100vh;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: none; /* the ground is on body, and stays put while this scrolls */
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  height: 70px;
+  padding: 0 34px;
+  border-bottom: 1px solid var(--line-header);
+  background: var(--ink-header);
+  backdrop-filter: blur(10px);
+}
+
+.topbar-brand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-monogram {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--gold-500);
+}
+
+.topbar-brand-rule {
+  width: 1px;
+  height: 20px;
+  background: var(--line-check);
+}
+
+.topbar-wordmark {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.topbar-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.topbar-org {
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ---------- Nav ---------- */
+
+.topbar-nav {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 100%;
+  min-width: 0;
+}
+
+.topbar-item {
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 0 14px;
+  background: none;
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.topbar-item:hover {
+  color: var(--gold-200);
+}
+
+.topbar-item.is-current {
+  border-bottom-color: var(--gold-500);
+  color: var(--gold-200);
+}
+
+/* ---------- Right cluster ---------- */
+
+.topbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.topbar-date {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.topbar-search {
+  border: 1px solid var(--line-button);
+  padding: 8px 14px;
+  background: none;
+  color: var(--gold-300);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--t-hover),
+    background var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.topbar-search:hover {
+  border-color: rgba(201, 168, 106, 0.55);
+  background: rgba(201, 168, 106, 0.1);
+}
+
+/* ---------- Page header ---------- */
+
+.workspace {
+  min-width: 0;
+  padding: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 34px 34px 12px;
+  margin: 0;
+  border: none;
+}
+
+.page-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kicker {
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--gold-500);
+}
+
+.page-header-text h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-primary);
+  text-shadow: none;
+  animation: none;
+}
+
+.page-standfirst {
+  max-width: 380px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  text-wrap: pretty;
+  color: var(--text-muted);
+}
+
+/* The rule under the header fades out to the right, so it reads as an
+   underline to the title rather than a border on the whole page. */
+.page-rule {
+  height: 1px;
+  margin: 0 34px 26px;
+  background: linear-gradient(
+    90deg,
+    rgba(201, 168, 106, 0.4),
+    rgba(201, 168, 106, 0.04)
+  );
+}
+
+main {
+  min-width: 0;
+  padding: 0 34px 34px;
+}
+
+/* The storage notice sits in the gutter with everything else. */
+.workspace > .storage-notice {
+  margin: 0 34px 26px;
+}
+
+/* ---------- Below 1100px ----------
+   The bar keeps its order and lets the nav scroll rather than wrap; a
+   wrapped 70px bar stops being a rail. */
+
+@media (max-width: 1100px) {
+  .topbar {
+    gap: 20px;
+    padding: 0 20px;
+  }
+
+  .topbar-nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .topbar-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topbar-org,
+  .topbar-date {
+    display: none;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 26px 20px 12px;
+  }
+
+  .page-standfirst {
+    max-width: none;
+    text-align: left;
+  }
+
+  .page-rule {
+    margin: 0 20px 20px;
+  }
+
+  main {
+    padding: 0 20px 26px;
   }
 }

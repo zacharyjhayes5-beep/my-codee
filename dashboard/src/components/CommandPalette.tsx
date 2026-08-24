@@ -4,11 +4,13 @@ import { needsResearch } from "../lib/research";
 
 export type PaletteTarget =
   | "operator"
-  | "progress"
-  | "todo"
+  | "leads"
   | "pipeline"
+  | "campaigns"
+  | "vault"
   | "walkthrough"
-  | "campaigns";
+  | "todo"
+  | "progress";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -63,12 +65,15 @@ export function CommandPalette({
 
   const sections: Command[] = useMemo(
     () => [
-      { id: "go-operator", label: "Operator", detail: "Calendar, suggestions and today's updates", run: () => onGoTo("operator") },
-      { id: "go-pipeline", label: "Pipeline", detail: "Households, stages and opportunities", run: () => onGoTo("pipeline") },
+      { id: "go-operator", label: "Operator", detail: "What you owe today, and who is up next", run: () => onGoTo("operator") },
+      { id: "go-leads", label: "Leads", detail: "Every household and the one thing owed to it", run: () => onGoTo("leads") },
+      { id: "go-pipeline", label: "Pipeline", detail: "Opportunities by stage, and what has gone quiet", run: () => onGoTo("pipeline") },
+      { id: "go-campaigns", label: "Campaigns", detail: "Five channels, logged as you work them", run: () => onGoTo("campaigns") },
+      { id: "go-vault", label: "Vault", detail: "Everything you have written, searchable", run: () => onGoTo("vault") },
+      // Off the nav by design. The palette is the only direct way in.
+      { id: "go-walkthrough", label: "Walkthrough", detail: "The property area by area", run: () => onGoTo("walkthrough") },
       { id: "go-todo", label: "To-Do", detail: "Tasks and the review inbox", run: () => onGoTo("todo") },
       { id: "go-progress", label: "Progress", detail: "The book against the goal", run: () => onGoTo("progress") },
-      { id: "go-campaigns", label: "Campaigns", detail: "Five channels of activity", run: () => onGoTo("campaigns") },
-      { id: "go-walkthrough", label: "Walkthrough", detail: "The property area by area", run: () => onGoTo("walkthrough") },
     ],
     [onGoTo],
   );

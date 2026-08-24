@@ -11,71 +11,93 @@ import { StorageNotice } from "./components/StorageNotice";
 import { CommandPalette } from "./components/CommandPalette";
 import { WalkthroughTab } from "./components/WalkthroughTab";
 import { CampaignsTab } from "./components/CampaignsTab";
+import { PipelineTab } from "./components/PipelineTab";
+import { VaultTab } from "./components/VaultTab";
 import { useStored, whenPersisted } from "./lib/repository";
 import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
 import type { CoverageItem, PropertyProfile, ReviewProposal } from "./types";
 
-type Tab =
-  | "operator"
-  | "progress"
-  | "todo"
-  | "pipeline"
-  | "campaigns"
-  | "walkthrough";
+/**
+ * The five destinations in the top bar, and the three that are no longer in it.
+ *
+ * The nav is type-only — no icons — so the inline SVG paths the sidebar needed
+ * are gone. Walkthrough is reached from a household record, and To-Do and
+ * Progress are folded into Operator; all three keep working routes and stay
+ * reachable from the command palette.
+ */
+type NavTab = "operator" | "leads" | "pipeline" | "campaigns" | "vault";
+type QuietTab = "walkthrough" | "todo" | "progress";
+type Tab = NavTab | QuietTab;
+
+const NAV: { id: NavTab; label: string }[] = [
+  { id: "operator", label: "Operator" },
+  { id: "leads", label: "Leads" },
+  { id: "pipeline", label: "Pipeline" },
+  { id: "campaigns", label: "Campaigns" },
+  { id: "vault", label: "Vault" },
+];
 
 /**
- * Navigation, and the page header each destination writes.
- *
- * `title` and `standfirst` answer "where am I" and "what matters here" without
- * a decorative heading. The icons are single-stroke paths drawn inline rather
- * than pulled from a library — six glyphs did not justify a dependency.
+ * What each screen says about itself: a kicker over a title, and a standfirst
+ * that answers "what matters here" without a decorative heading.
  */
-const tabs: { id: Tab; label: string; title: string; standfirst: string; icon: string }[] = [
-  {
-    id: "operator",
-    label: "Operator",
+const PAGE: Record<Tab, { kicker: string; title: string; standfirst: string }> = {
+  operator: {
+    kicker: "Today",
     title: "Operator",
-    standfirst: "Your calendar, suggestions, and the few updates that matter today.",
-    icon: "M5 3v3M19 3v3M4 9h16M5 5h14a1 1 0 011 1v14H4V6a1 1 0 011-1z",
+    standfirst: "What you owe today, and who is up next.",
   },
-  {
-    id: "pipeline",
-    label: "Pipeline",
+  leads: {
+    kicker: "Households",
+    title: "Leads",
+    standfirst: "Every household and the one thing owed to it.",
+  },
+  pipeline: {
+    kicker: "Open work",
     title: "Pipeline",
-    standfirst: "Every household, its stage, and the next action in one place.",
-    icon: "M4 19V9M10 19V5M16 19v-7M22 19H2",
+    standfirst: "Opportunities by stage, and what has gone quiet.",
   },
-  {
-    id: "todo",
-    label: "To-Do",
+  campaigns: {
+    kicker: "Outreach",
+    title: "Campaigns",
+    standfirst: "Five channels, logged as you work them.",
+  },
+  vault: {
+    kicker: "Knowledge",
+    title: "Vault",
+    standfirst: "Everything you have written, searchable.",
+  },
+  walkthrough: {
+    kicker: "Property",
+    title: "Walkthrough",
+    standfirst: "The dwelling area by area, and what underwriting will ask.",
+  },
+  todo: {
+    kicker: "Owed",
     title: "To-Do",
     standfirst: "Tasks by urgency, the week ahead, and the review inbox.",
-    icon: "M4 7l2.5 2.5L11 5M4 17l2.5 2.5L11 13M14 7h6M14 17h6",
   },
-  {
-    id: "progress",
-    label: "Progress",
+  progress: {
+    kicker: "The book",
     title: "Progress",
     standfirst: "The book of business against the period's goal.",
-    icon: "M4 18l5-6 4 3.5L20 6",
   },
-  {
-    id: "campaigns",
-    label: "Campaigns",
-    title: "Campaigns",
-    standfirst: "A living record of the five ways you create conversations.",
-    icon: "M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0M12 3v6M12 15v6M3 12h6M15 12h6M5.6 5.6l4.2 4.2M14.2 14.2l4.2 4.2",
-  },
-  {
-    id: "walkthrough",
-    label: "Walkthrough",
-    title: "Property walkthrough",
-    standfirst: "The dwelling area by area, and what underwriting will ask about each.",
-    icon: "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",
-  },
-];
+};
+
+/** "Mon 24 Aug" — the date the top bar carries, in the reader's own locale. */
+function todayLabel(): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date());
+}
+
+/** The palette is Cmd+K on a Mac and Ctrl+K everywhere else. Say which. */
+const IS_MAC = typeof navigator !== "undefined" && /Mac|iP(hone|ad|od)/.test(navigator.platform);
+const PALETTE_HINT = IS_MAC ? "⌘K" : "Ctrl K";
 
 function App() {
   const [tab, setTab] = useState<Tab>("operator");
@@ -231,60 +253,60 @@ function App() {
     paletteTrigger.current?.focus();
   }
 
-  const current = tabs.find((t) => t.id === tab) ?? tabs[0];
+  const current = PAGE[tab];
 
   return (
     <div className="app">
-      <nav className="sidenav" aria-label="Sections">
-        <div className="sidenav-brand">
-          <span className="brand-mark" aria-hidden="true" />
-          <span className="brand-text">
-            <strong>Agency Control Center</strong>
-            <span>Farm Bureau Michigan</span>
+      <header className="topbar">
+        <div className="topbar-brand">
+          <span className="topbar-monogram" aria-hidden="true">
+            A
+          </span>
+          <span className="topbar-brand-rule" aria-hidden="true" />
+          <span className="topbar-wordmark">
+            <span className="topbar-name">Agency Control Center</span>
+            <span className="topbar-org">Farm Bureau · Michigan</span>
           </span>
         </div>
 
-        <ul className="sidenav-list">
-          {tabs.map((t) => (
-            <li key={t.id}>
-              <button
-                className={`sidenav-link${t.id === tab ? " is-current" : ""}`}
-                onClick={() => setTab(t.id)}
-                aria-current={t.id === tab ? "page" : undefined}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d={t.icon} />
-                </svg>
-                {t.label}
-              </button>
-            </li>
+        <nav className="topbar-nav" aria-label="Sections">
+          {NAV.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={`topbar-item${t.id === tab ? " is-current" : ""}`}
+              onClick={() => setTab(t.id)}
+              aria-current={t.id === tab ? "page" : undefined}
+            >
+              {t.label}
+            </button>
           ))}
-        </ul>
+        </nav>
 
-        <div className="sidenav-foot">
-          <BackupPanel onExported={() => setLastBackupAt(new Date().toISOString())} />
-        </div>
-      </nav>
-
-      <div className="workspace">
-        <header className="page-head">
-          <div className="page-head-text">
-            <h1>{current.title}</h1>
-            <p>{current.standfirst}</p>
-          </div>
-
+        <div className="topbar-right">
+          <span className="topbar-date">{todayLabel()}</span>
           {/* Visible on purpose. A shortcut nobody finds is worth nothing. */}
           <button
             ref={paletteTrigger}
-            className="palette-trigger"
+            type="button"
+            className="topbar-search"
             onClick={() => setPaletteOpen(true)}
             aria-haspopup="dialog"
           >
-            <span>Search</span>
-            <kbd>Ctrl</kbd>
-            <kbd>K</kbd>
+            Search {PALETTE_HINT}
           </button>
-        </header>
+        </div>
+      </header>
+
+      <div className="workspace">
+        <div className="page-header">
+          <div className="page-header-text">
+            <span className="kicker">{current.kicker}</span>
+            <h1>{current.title}</h1>
+          </div>
+          <p className="page-standfirst">{current.standfirst}</p>
+        </div>
+        <div className="page-rule" aria-hidden="true" />
 
         <StorageNotice
           prospects={prospects}
@@ -304,7 +326,9 @@ function App() {
             googleCalendarClientId={googleCalendarClientId}
             onGoogleCalendarClientIdChange={setGoogleCalendarClientId}
             onGo={(target, prospectId) => {
-              setTab(target);
+              // Operator still speaks the old names: its "pipeline" means the
+              // household list, which is the Leads screen now.
+              setTab(target === "pipeline" ? "leads" : target);
               if (prospectId) setFocusProspectId(prospectId);
             }}
           />
@@ -332,7 +356,7 @@ function App() {
             dismissed={dismissed}
           />
         )}
-        {tab === "pipeline" && (
+        {tab === "leads" && (
           <ProspectsTab
             prospects={prospects}
             onChange={setProspects}
@@ -350,6 +374,22 @@ function App() {
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
           />
+        )}
+        {tab === "pipeline" && (
+          <PipelineTab
+            opportunities={opportunities}
+            prospects={prospects}
+            onOpenProspect={(id) => {
+              setFocusProspectId(id);
+              setTab("leads");
+            }}
+          />
+        )}
+        {tab === "vault" && (
+          <>
+            <VaultTab />
+            <BackupPanel onExported={() => setLastBackupAt(new Date().toISOString())} />
+          </>
         )}
         {tab === "walkthrough" && (
           <WalkthroughTab
@@ -369,7 +409,7 @@ function App() {
         onGoTo={(target) => setTab(target)}
         onOpenProspect={(id) => {
           setFocusProspectId(id);
-          setTab("pipeline");
+          setTab("leads");
         }}
       />
     </div>
