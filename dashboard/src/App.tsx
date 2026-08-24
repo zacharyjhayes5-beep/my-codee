@@ -3,31 +3,27 @@ import "./App.css";
 // Loaded last: the design system that governs the whole interface.
 import "./theme.css";
 import { BackupPanel } from "./components/BackupPanel";
-import { LeadMap } from "./components/LeadMap";
-import { OperatorTab, type CommandTarget } from "./components/OperatorTab";
+import { OperatorTab } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
 import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
-import { PipelineTab } from "./components/PipelineTab";
 import { StorageNotice } from "./components/StorageNotice";
 import { CommandPalette } from "./components/CommandPalette";
 import { WalkthroughTab } from "./components/WalkthroughTab";
-import { VaultTab } from "./components/VaultTab";
+import { CampaignsTab } from "./components/CampaignsTab";
 import { useStored, whenPersisted } from "./lib/repository";
 import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
-import type { CoverageItem, PropertyProfile, Prospect, ReviewProposal } from "./types";
+import type { CoverageItem, PropertyProfile, ReviewProposal } from "./types";
 
 type Tab =
   | "operator"
   | "progress"
   | "todo"
-  | "prospects"
   | "pipeline"
-  | "map"
-  | "walkthrough"
-  | "vault";
+  | "campaigns"
+  | "walkthrough";
 
 /**
  * Navigation, and the page header each destination writes.
@@ -41,21 +37,14 @@ const tabs: { id: Tab; label: string; title: string; standfirst: string; icon: s
     id: "operator",
     label: "Operator",
     title: "Operator",
-    standfirst: "Today's brief, what needs you, and the next call.",
-    icon: "M3 12h4l2.5-7 5 14L17.5 12H21",
-  },
-  {
-    id: "prospects",
-    label: "Leads",
-    title: "Leads",
-    standfirst: "Every household, and what has to happen next on each.",
-    icon: "M4 6h16M4 12h16M4 18h10",
+    standfirst: "Your calendar, suggestions, and the few updates that matter today.",
+    icon: "M5 3v3M19 3v3M4 9h16M5 5h14a1 1 0 011 1v14H4V6a1 1 0 011-1z",
   },
   {
     id: "pipeline",
     label: "Pipeline",
     title: "Pipeline",
-    standfirst: "Open opportunities by stage, and what has gone quiet.",
+    standfirst: "Every household, its stage, and the next action in one place.",
     icon: "M4 19V9M10 19V5M16 19v-7M22 19H2",
   },
   {
@@ -73,25 +62,18 @@ const tabs: { id: Tab; label: string; title: string; standfirst: string; icon: s
     icon: "M4 18l5-6 4 3.5L20 6",
   },
   {
+    id: "campaigns",
+    label: "Campaigns",
+    title: "Campaigns",
+    standfirst: "A living record of the five ways you create conversations.",
+    icon: "M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0M12 3v6M12 15v6M3 12h6M15 12h6M5.6 5.6l4.2 4.2M14.2 14.2l4.2 4.2",
+  },
+  {
     id: "walkthrough",
     label: "Walkthrough",
     title: "Property walkthrough",
     standfirst: "The dwelling area by area, and what underwriting will ask about each.",
     icon: "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",
-  },
-  {
-    id: "vault",
-    label: "Vault",
-    title: "Knowledge vault",
-    standfirst: "Everything you have written, as an orbital map you can search and read.",
-    icon: "M12 3a9 9 0 100 18 9 9 0 000-18zM3.6 9h16.8M3.6 15h16.8M12 3a14 14 0 000 18M12 3a14 14 0 010 18",
-  },
-  {
-    id: "map",
-    label: "Lead Map",
-    title: "Lead map",
-    standfirst: "How households connect to the lines they hold.",
-    icon: "M12 3v6m0 6v6M5.6 7.3l4.7 2.7m3.4 2 4.7 2.7M18.4 7.3l-4.7 2.7m-3.4 2-4.7 2.7",
   },
 ];
 
@@ -114,9 +96,12 @@ function App() {
   const [reviews, setReviews] = useStored("reviews");
   const [audit, setAudit] = useStored("audit");
   const [opportunities, setOpportunities] = useStored("opportunities");
-  const [correspondence, setCorrespondence] = useStored("correspondence");
   const [lastBackupAt, setLastBackupAt] = useStored("lastBackupAt");
   const [noticeSeen, setNoticeSeen] = useStored("noticeSeen");
+  const [campaigns, setCampaigns] = useStored("campaigns");
+  const [googleCalendarClientId, setGoogleCalendarClientId] = useStored(
+    "googleCalendarClientId",
+  );
 
   /**
    * Applies a proposal or nothing at all. The whole next state is assembled
@@ -221,29 +206,6 @@ function App() {
     );
   }
 
-  function patchProspectFromResearch(id: string, patch: Partial<Prospect>) {
-    const before = prospects.find((p) => p.id === id);
-    setProspects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
-
-    // Finding a number is data entry. Closing a household is a decision, and
-    // the audit log is where decisions are recorded.
-    if (before && patch.stage === "Closed") {
-      setAudit(
-        appendAudit(audit, [
-          auditEntry({
-            entity: "prospect",
-            entityId: id,
-            field: "stage",
-            from: before.stage,
-            to: "Closed",
-            actor: "user",
-            summary: `Closed ${before.name || "a household"} as unreachable — no phone number found`,
-          }),
-        ]),
-      );
-    }
-  }
-
   const [paletteOpen, setPaletteOpen] = useState(false);
   const paletteTrigger = useRef<HTMLButtonElement>(null);
 
@@ -277,7 +239,7 @@ function App() {
         <div className="sidenav-brand">
           <span className="brand-mark" aria-hidden="true" />
           <span className="brand-text">
-            <strong>Agency</strong>
+            <strong>Agency Control Center</strong>
             <span>Farm Bureau Michigan</span>
           </span>
         </div>
@@ -334,18 +296,13 @@ function App() {
         <main>
         {tab === "operator" && (
           <OperatorTab
-            entries={entries}
-            lines={lines}
-            period={period}
             prospects={prospects}
             tasks={tasks}
             reviews={reviews}
             calls={calls}
             opportunities={opportunities}
-            correspondence={correspondence}
-            onCorrespondenceChange={setCorrespondence}
-            onCommand={(target: CommandTarget) => setTab(target)}
-            onPatchProspect={patchProspectFromResearch}
+            googleCalendarClientId={googleCalendarClientId}
+            onGoogleCalendarClientIdChange={setGoogleCalendarClientId}
             onGo={(target, prospectId) => {
               setTab(target);
               if (prospectId) setFocusProspectId(prospectId);
@@ -362,6 +319,7 @@ function App() {
             onEntriesChange={setEntries}
           />
         )}
+        {tab === "campaigns" && <CampaignsTab entries={campaigns} onChange={setCampaigns} />}
         {tab === "todo" && (
           <TodoTab
             tasks={tasks}
@@ -375,28 +333,6 @@ function App() {
           />
         )}
         {tab === "pipeline" && (
-          <PipelineTab
-            opportunities={opportunities}
-            prospects={prospects}
-            onOpenProspect={(id) => {
-              setFocusProspectId(id);
-              setTab("prospects");
-            }}
-          />
-        )}
-        {tab === "walkthrough" && (
-          <WalkthroughTab
-            prospects={prospects}
-            focusId={focusProspectId}
-            onPatch={patchProperty}
-            onCoverageChange={patchCoverage}
-          />
-        )}
-        {tab === "vault" && <VaultTab />}
-        {tab === "map" && (
-          <LeadMap prospects={prospects} onOpenProspect={() => setTab("prospects")} />
-        )}
-        {tab === "prospects" && (
           <ProspectsTab
             prospects={prospects}
             onChange={setProspects}
@@ -415,6 +351,14 @@ function App() {
             onOwnerNameChange={setOwnerName}
           />
         )}
+        {tab === "walkthrough" && (
+          <WalkthroughTab
+            prospects={prospects}
+            focusId={focusProspectId}
+            onPatch={patchProperty}
+            onCoverageChange={patchCoverage}
+          />
+        )}
         </main>
       </div>
 
@@ -425,7 +369,7 @@ function App() {
         onGoTo={(target) => setTab(target)}
         onOpenProspect={(id) => {
           setFocusProspectId(id);
-          setTab("prospects");
+          setTab("pipeline");
         }}
       />
     </div>

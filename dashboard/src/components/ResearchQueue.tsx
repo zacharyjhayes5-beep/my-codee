@@ -42,8 +42,8 @@ export function ResearchQueue({
       </header>
 
       <p className="research-blurb">
-        Kent County gives a name and an address but no phone number. Add one and the
-        household joins your call queue.
+        New properties wait here while contact enrichment is pending. Add a verified
+        number at any time and the household joins your call queue.
       </p>
 
       <ul className="research-list">
@@ -102,6 +102,14 @@ function ResearchRow({
       <p className="research-where">
         {address || prospect.area || "No address on file"}
         {prospect.parcelId && <span className="research-parcel">{prospect.parcelId}</span>}
+      </p>
+
+      <p className="research-enrichment">
+        {prospect.enrichmentStatus === "processing" && "Enrichment running"}
+        {prospect.enrichmentStatus === "needs_review" && "Enrichment result needs review"}
+        {prospect.enrichmentStatus === "not_found" && "No contact found automatically"}
+        {prospect.enrichmentStatus === "failed" && "Enrichment will need a retry"}
+        {(!prospect.enrichmentStatus || prospect.enrichmentStatus === "pending") && "Waiting for enrichment"}
       </p>
 
       <div className="research-entry">

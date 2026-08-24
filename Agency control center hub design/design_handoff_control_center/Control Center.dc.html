@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-c8648810-d974-4c09-a699-4e5358692d4b/styles.css">
+<script src="_ds/nocturne-c8648810-d974-4c09-a699-4e5358692d4b/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap">
+<style>
+  :root {
+    --color-bg: #0c0b0f;
+    --color-text: #ece9e3;
+    --color-accent: #c9a86a;
+    --color-accent-100: #f6efe1; --color-accent-200: #ecdec2; --color-accent-300: #dfc9a1;
+    --color-accent-400: #d3b784; --color-accent-500: #c9a86a; --color-accent-600: #a88a52;
+    --color-accent-700: #7d663c; --color-accent-800: #55462a; --color-accent-900: #38301e;
+  }
+  body { margin: 0; background: #0c0b0f; }
+  a { color: #c9a86a; text-decoration: none; }
+  a:hover { color: #e0c891; }
+  @keyframes cc-drift { 0%,100% { opacity: .2; } 50% { opacity: .6; } }
+  @keyframes cc-rot { to { transform: rotate(360deg); } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: radial-gradient(85% 65% at 50% 0%, #191720 0%, #121116 50%, #0c0b0f 100%); background-attachment: fixed; color: #ece9e3; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column;">
+
+  <header style="display: flex; align-items: center; gap: 34px; padding: 0 34px; height: 70px; border-bottom: 1px solid rgba(201,168,106,.16); background: rgba(14,13,17,.82); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 20;">
+    <div style="display: flex; align-items: center; gap: 12px; flex: 0 0 auto;">
+      <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 21px; font-weight: 500; color: #c9a86a; line-height: 1;">A</span>
+      <span style="width: 1px; height: 20px; background: rgba(201,168,106,.35);"></span>
+      <span style="display: flex; flex-direction: column; gap: 1px; flex: 0 0 auto; white-space: nowrap;">
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 17px; letter-spacing: .05em;">Agency Control Center</span>
+        <span style="font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: #7e7a74;">Farm Bureau · Michigan</span>
+      </span>
+    </div>
+
+    <nav style="display: flex; gap: 2px; align-items: stretch; height: 100%;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <button onClick="{{ t.go }}" style="background: none; border: none; border-bottom: 1px solid {{ t.rule }}; color: {{ t.color }}; font-family: Inter, system-ui, sans-serif; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; padding: 0 14px; cursor: pointer; white-space: nowrap; transition: color .18s;" style-hover="color: #e0c891;">{{ t.label }}</button>
+      </sc-for>
+    </nav>
+
+    <div style="flex: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #7e7a74;">{{ dateLine }}</span>
+      <button style="background: none; border: 1px solid rgba(201,168,106,.3); color: #dfc9a1; font-family: Inter, system-ui, sans-serif; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; padding: 8px 14px; cursor: pointer; white-space: nowrap;" style-hover="background: rgba(201,168,106,.1); border-color: rgba(201,168,106,.55);">Search ⌘K</button>
+    </div>
+  </header>
+
+  <div style="padding: 34px 34px 12px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+      <span style="font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: #c9a86a;">{{ page.kicker }}</span>
+      <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 40px; font-weight: 400; letter-spacing: .02em; line-height: 1;">{{ page.title }}</span>
+    </div>
+    <span style="font-size: 13px; color: #8f8b84; max-width: 380px; text-align: right; text-wrap: pretty;">{{ page.standfirst }}</span>
+  </div>
+  <div style="margin: 0 34px 26px; height: 1px; background: linear-gradient(90deg, rgba(201,168,106,.4), rgba(201,168,106,.04));"></div>
+
+  <main style="flex: 1; padding: 0 34px 44px;">
+
+    <sc-if value="{{ isOperator }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 26px;">
+
+        <section style="position: relative; display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); gap: 0; border: 1px solid rgba(201,168,106,.2); background: linear-gradient(140deg, rgba(32,29,37,.7), rgba(13,12,16,.8)); overflow: hidden;">
+          <div style="position: absolute; inset: 0; background: radial-gradient(50% 80% at 12% 30%, rgba(201,168,106,.07), transparent 70%); pointer-events: none;"></div>
+          <div style="position: relative; padding: 32px 34px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid rgba(201,168,106,.14);">
+            <div style="display: flex; align-items: baseline; gap: 14px;">
+              <span style="font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: #c9a86a; white-space: nowrap;">To-do</span>
+              <span style="flex: 1; height: 1px; background: linear-gradient(90deg, rgba(201,168,106,.3), transparent);"></span>
+              <span style="font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #7e7a74; white-space: nowrap;">{{ todoMeta }}</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column;">
+              <sc-for list="{{ todos }}" as="t" hint-placeholder-count="6">
+                <div onClick="{{ t.toggle }}" style="display: flex; align-items: flex-start; gap: 14px; padding: 13px 0; border-top: 1px solid rgba(201,168,106,.1); cursor: pointer; transition: background .18s;" style-hover="background: rgba(201,168,106,.04);">
+                  <span style="width: 15px; height: 15px; flex: 0 0 auto; margin-top: 2px; border: 1px solid {{ t.boxBorder }}; background: {{ t.boxFill }}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #14120f; line-height: 1;">{{ t.check }}</span>
+                  <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+                    <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; letter-spacing: .01em; color: {{ t.color }}; text-decoration: {{ t.strike }};">{{ t.label }}</span>
+                    <span style="font-size: 12px; color: #7e7a74;">{{ t.who }}</span>
+                  </span>
+                  <span style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: {{ t.tone }}; white-space: nowrap; margin-top: 5px;">{{ t.due }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center; border-top: 1px solid rgba(201,168,106,.1); padding-top: 14px;">
+              <input type="text" placeholder="Add a task" value="{{ draft }}" onChange="{{ setDraft }}" onKeyDown="{{ onKey }}" style="flex: 1; min-width: 0; background: rgba(10,9,13,.6); color: #ece9e3; border: 1px solid rgba(201,168,106,.18); padding: 10px 12px; font-family: Inter, system-ui, sans-serif; font-size: 13px; outline: none;" style-focus="border-color: rgba(201,168,106,.5);"></input>
+              <button onClick="{{ add }}" style="background: none; border: 1px solid rgba(201,168,106,.3); color: #dfc9a1; font-family: Inter, system-ui, sans-serif; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; padding: 11px 18px; cursor: pointer; white-space: nowrap;" style-hover="border-color: rgba(201,168,106,.6);">Add</button>
+            </div>
+          </div>
+
+          <div style="position: relative; padding: 32px 34px; display: flex; flex-direction: column; gap: 14px;">
+            <span style="font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: #c9a86a;">Then</span>
+            <sc-for list="{{ queue }}" as="q" hint-placeholder-count="4">
+              <div style="display: flex; align-items: baseline; gap: 14px; padding: 11px 0; border-top: 1px solid rgba(201,168,106,.1);">
+                <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 13px; color: #c9a86a; width: 20px; flex: 0 0 auto;">{{ q.num }}</span>
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                  <span style="font-size: 14px;">{{ q.name }}</span>
+                  <span style="font-size: 12px; color: #7e7a74;">{{ q.why }}</span>
+                </span>
+                <span style="font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: {{ q.tone }}; white-space: nowrap;">{{ q.tag }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1px; background: rgba(201,168,106,.14); border: 1px solid rgba(201,168,106,.14);">
+          <sc-for list="{{ vitals }}" as="v" hint-placeholder-count="4">
+            <div style="background: linear-gradient(180deg, rgba(26,24,30,.75), rgba(13,12,16,.85)); padding: 22px 24px; display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7e7a74;">{{ v.label }}</span>
+              <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 34px; line-height: 1; letter-spacing: .01em;">{{ v.value }}</span>
+              <span style="font-size: 11px; color: {{ v.tone }};">{{ v.sub }}</span>
+            </div>
+          </sc-for>
+        </section>
+
+        <section style="display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 26px;">
+          <div style="border: 1px solid rgba(201,168,106,.16); background: linear-gradient(180deg, rgba(26,24,30,.55), rgba(13,12,16,.7)); padding: 26px 28px; display: flex; flex-direction: column; gap: 18px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 21px;">Toward {{ goal.target }} policies</span>
+              <span style="flex: 1; height: 1px; background: linear-gradient(90deg, rgba(201,168,106,.3), transparent);"></span>
+              <span style="font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: {{ goal.tone }};">{{ goal.flag }}</span>
+            </div>
+            <div style="position: relative; height: 3px; background: rgba(201,168,106,.12);">
+              <div style="position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #a88a52, #dfc9a1); width: {{ goal.pct }};"></div>
+              <div style="position: absolute; top: -5px; bottom: -5px; width: 1px; background: rgba(236,233,227,.45); left: {{ goal.pace }};"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #7e7a74; letter-spacing: .04em;">
+              <span>{{ goal.written }} written · {{ goal.remaining }} to go</span>
+              <span>{{ goal.paceLine }}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(201,168,106,.12); margin-top: 4px;">
+              <sc-for list="{{ lines }}" as="l" hint-placeholder-count="3">
+                <div style="background: rgba(15,14,18,.6); padding: 16px 18px; display: flex; flex-direction: column; gap: 7px;">
+                  <span style="display: flex; align-items: center; gap: 7px;">
+                    <span style="width: 5px; height: 5px; border-radius: 50%; background: {{ l.hue }};"></span>
+                    <span style="font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #a8a39b;">{{ l.name }}</span>
+                  </span>
+                  <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px;">{{ l.count }}<span style="font-size: 13px; color: #7e7a74;"> / {{ l.goal }}</span></span>
+                  <span style="height: 2px; background: rgba(201,168,106,.12);"><span style="display: block; height: 2px; background: {{ l.hue }}; width: {{ l.pct }};"></span></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="border: 1px solid rgba(201,168,106,.16); background: linear-gradient(180deg, rgba(26,24,30,.55), rgba(13,12,16,.7)); padding: 26px 24px; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #c9a86a; padding-bottom: 10px;">Waiting on you</span>
+            <sc-for list="{{ waiting }}" as="w" hint-placeholder-count="4">
+              <button onClick="{{ w.go }}" style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 13px 0; border: none; border-top: 1px solid rgba(201,168,106,.1); background: none; color: inherit; font-family: Inter, system-ui, sans-serif; text-align: left; cursor: pointer;" style-hover="color: #dfc9a1;">
+                <span style="font-size: 13px;">{{ w.label }}</span>
+                <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; color: {{ w.tone }};">{{ w.count }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isLeads }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+            <button onClick="{{ f.go }}" style="background: {{ f.bg }}; border: 1px solid {{ f.border }}; color: {{ f.color }}; font-family: Inter, system-ui, sans-serif; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; padding: 9px 15px; cursor: pointer;" style-hover="border-color: rgba(201,168,106,.5);">{{ f.label }}<span style="color: #7e7a74;"> {{ f.count }}</span></button>
+          </sc-for>
+        </div>
+
+        <div style="border: 1px solid rgba(201,168,106,.16); background: linear-gradient(180deg, rgba(26,24,30,.5), rgba(13,12,16,.7));">
+          <div style="display: grid; grid-template-columns: minmax(0,2fr) 1fr 1fr minmax(0,1.6fr) auto; gap: 20px; padding: 15px 26px; border-bottom: 1px solid rgba(201,168,106,.18);">
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7e7a74;">Household</span>
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7e7a74;">Stage</span>
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7e7a74;">Lines held</span>
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7e7a74;">Next step</span>
+            <span style="font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7e7a74; text-align: right;">Last touch</span>
+          </div>
+          <sc-for list="{{ leadRows }}" as="r" hint-placeholder-count="7">
+            <div style="display: grid; grid-template-columns: minmax(0,2fr) 1fr 1fr minmax(0,1.6fr) auto; gap: 20px; padding: 17px 26px; border-bottom: 1px solid rgba(201,168,106,.07); align-items: center; cursor: pointer; transition: background .18s;" style-hover="background: rgba(201,168,106,.05);">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 19px; letter-spacing: .01em;">{{ r.name }}</span>
+                <span style="font-size: 11px; color: #7e7a74;">{{ r.place }}</span>
+              </span>
+              <span style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: {{ r.stageTone }};">{{ r.stage }}</span>
+              <span style="font-size: 13px; color: #a8a39b;">{{ r.lines }}</span>
+              <span style="font-size: 13px; color: #ece9e3; min-width: 0;">{{ r.next }}</span>
+              <span style="font-size: 11px; color: {{ r.touchTone }}; text-align: right; white-space: nowrap;">{{ r.touch }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCampaigns }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 340px; border: 1px solid rgba(201,168,106,.16); background: linear-gradient(180deg, rgba(26,24,30,.5), rgba(13,12,16,.7)); flex-direction: column; gap: 14px;">
+        <span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 27px;">Channel Map</span>
+        <span style="font-size: 13px; color: #8f8b84; max-width: 420px; text-align: center; text-wrap: pretty;">Built out on its own canvas — see <a href="Campaigns Tab.dc.html">Campaigns Tab</a>. It drops straight into this shell.</span>
+      </div>
+    </sc-if>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+const TABS = [
+  { id: 'operator', label: 'Operator', kicker: 'Today', title: 'Operator', standfirst: 'What you owe today, and who is up next.' },
+  { id: 'leads', label: 'Leads', kicker: 'Households', title: 'Leads', standfirst: 'Every household and the one thing owed to it.' },
+  { id: 'pipeline', label: 'Pipeline', kicker: 'Open work', title: 'Pipeline', standfirst: 'Opportunities by stage, and what has gone quiet.' },
+  { id: 'campaigns', label: 'Campaigns', kicker: 'Outreach', title: 'Campaigns', standfirst: 'Five channels, logged as you work them.' },
+  { id: 'vault', label: 'Vault', kicker: 'Knowledge', title: 'Vault', standfirst: 'Everything you have written, searchable.' }
+];
+
+const LEADS = [
+  { name: 'Marcy & Ted Hall', place: 'Grand Ledge', stage: 'Quoted', lines: 'Auto, Home', next: 'Present umbrella at $1M', touch: '2d', warm: true },
+  { name: 'Dale Whitmore', place: 'Charlotte', stage: 'Reviewing', lines: 'Auto', next: 'Send home comparison', touch: '5d', warm: true },
+  { name: 'The Okonkwo family', place: 'Delta Twp', stage: 'New', lines: '—', next: 'First call', touch: 'today', warm: true },
+  { name: 'Renata Silva', place: 'Lansing', stage: 'Quoted', lines: 'Home', next: 'Follow up on deductible', touch: '11d', warm: false },
+  { name: 'Bud & Ann Kacher', place: 'Eaton Rapids', stage: 'Won', lines: 'Auto, Home, Life', next: 'Schedule annual review', touch: '3w', warm: false },
+  { name: 'Simon Vogel', place: 'Portland', stage: 'Reviewing', lines: 'Auto', next: 'Waiting on prior dec page', touch: '4d', warm: true },
+  { name: 'Priya Raman', place: 'Okemos', stage: 'New', lines: '—', next: 'Left voicemail — call back', touch: '1d', warm: true }
+];
+
+const SEED_TODOS = [
+  { label: 'Present the umbrella at $1M', who: 'Marcy & Ted Hall', due: 'Today', tone: '#c9a86a', done: false },
+  { label: 'First call', who: 'The Okonkwo family', due: 'Today', tone: '#c9a86a', done: false },
+  { label: 'Chase the prior dec page', who: 'Simon Vogel', due: 'Overdue 2d', tone: '#9c5a48', done: false },
+  { label: 'Send the home comparison', who: 'Dale Whitmore', due: 'Tomorrow', tone: '#8f8b84', done: false },
+  { label: 'Schedule the annual review', who: 'Bud & Ann Kacher', due: 'This week', tone: '#8f8b84', done: false },
+  { label: 'Call back on the voicemail', who: 'Priya Raman', due: 'Done', tone: '#4f7f75', done: true }
+];
+
+const STAGE_TONE = { New: '#c9a86a', Quoted: '#4f7f75', Reviewing: '#b0803e', Won: '#8f8b84' };
+
+class Component extends DCLogic {
+  state = { tab: 'operator', filter: 'Needs a move', todos: SEED_TODOS, draft: '' };
+
+  toggle(i) {
+    return () => this.setState(st => ({
+      todos: st.todos.map((t, j) => (j === i ? Object.assign({}, t, { done: !t.done }) : t))
+    }));
+  }
+
+  setDraft = (ev) => this.setState({ draft: ev.target.value });
+
+  add = () => this.setState(st => {
+    const v = st.draft.trim();
+    if (!v) return null;
+    return { draft: '', todos: st.todos.concat([{ label: v, who: '', due: 'No date', tone: '#8f8b84', done: false }]) };
+  });
+
+  onKey = (ev) => { if (ev.key === 'Enter') this.add(); };
+
+  go(id) { return () => this.setState({ tab: id }); }
+  setFilter(f) { return () => this.setState({ filter: f }); }
+
+  renderVals() {
+    const tab = this.state.tab;
+    const page = TABS.find(t => t.id === tab) || TABS[0];
+    const filter = this.state.filter;
+
+    const counts = {
+      'Needs a move': LEADS.filter(l => l.warm).length,
+      'Gone quiet': LEADS.filter(l => !l.warm).length,
+      'All households': LEADS.length,
+      'Won': LEADS.filter(l => l.stage === 'Won').length
+    };
+    const rows = LEADS.filter(l => {
+      if (filter === 'Needs a move') return l.warm;
+      if (filter === 'Gone quiet') return !l.warm;
+      if (filter === 'Won') return l.stage === 'Won';
+      return true;
+    });
+
+    return {
+      tabs: TABS.map(t => ({
+        label: t.label,
+        go: this.go(t.id),
+        color: t.id === tab ? '#e0c891' : '#7e7a74',
+        rule: t.id === tab ? '#c9a86a' : 'transparent'
+      })),
+      page,
+      dateLine: 'Mon 24 Aug',
+      isOperator: tab === 'operator',
+      isLeads: tab === 'leads' || tab === 'pipeline',
+      isCampaigns: tab === 'campaigns' || tab === 'vault',
+
+      todos: this.state.todos.map((t, i) => ({
+        label: t.label,
+        who: t.who,
+        due: t.due,
+        tone: t.done ? '#4f7f75' : t.tone,
+        toggle: this.toggle(i),
+        check: t.done ? '✓' : '',
+        boxBorder: t.done ? '#c9a86a' : 'rgba(201,168,106,.35)',
+        boxFill: t.done ? '#c9a86a' : 'transparent',
+        color: t.done ? '#7e7a74' : '#ece9e3',
+        strike: t.done ? 'line-through' : 'none'
+      })),
+      todoMeta: (() => {
+        const open = this.state.todos.filter(t => !t.done).length;
+        return open + (open === 1 ? ' open' : ' open') + ' · ' + this.state.todos.length + ' total';
+      })(),
+      draft: this.state.draft,
+      setDraft: this.setDraft,
+      add: this.add,
+      onKey: this.onKey,
+      queue: [
+        { num: 'I', name: 'The Okonkwo family', why: 'New lead, no first call yet', tag: 'Today', tone: '#c9a86a' },
+        { num: 'II', name: 'Simon Vogel', why: 'Waiting on the prior dec page', tag: 'Chase', tone: '#b0803e' },
+        { num: 'III', name: 'Renata Silva', why: 'Quote going cold at eleven days', tag: 'Quiet', tone: '#9c5a48' },
+        { num: 'IV', name: 'Bud & Ann Kacher', why: 'Annual review due this month', tag: 'Schedule', tone: '#8f8b84' }
+      ],
+      vitals: [
+        { label: 'Net commission', value: '$41,280', sub: 'this period', tone: '#7e7a74' },
+        { label: 'Policies written', value: '68', sub: '4 ahead of pace', tone: '#4f7f75' },
+        { label: 'Households in play', value: '23', sub: '6 gone quiet', tone: '#9c5a48' },
+        { label: 'Days remaining', value: '39', sub: 'period ends Oct 1', tone: '#7e7a74' }
+      ],
+      goal: {
+        target: '120', flag: 'On pace', tone: '#4f7f75',
+        pct: '56.7%', pace: '52%',
+        written: '68', remaining: '52',
+        paceLine: '3.1 per week to finish'
+      },
+      lines: [
+        { name: 'Property', count: '26', goal: '45', pct: '58%', hue: '#4f7f75' },
+        { name: 'Casualty', count: '31', goal: '55', pct: '56%', hue: '#c9a86a' },
+        { name: 'Life', count: '11', goal: '20', pct: '55%', hue: '#9c5a48' }
+      ],
+      waiting: [
+        { label: 'Overdue tasks', count: '3', tone: '#9c5a48', go: this.go('operator') },
+        { label: 'Due today', count: '5', tone: '#c9a86a', go: this.go('operator') },
+        { label: 'Reviews to approve', count: '2', tone: '#c9a86a', go: this.go('operator') },
+        { label: 'Leads missing a phone', count: '7', tone: '#8f8b84', go: this.go('leads') }
+      ],
+
+      filters: ['Needs a move', 'Gone quiet', 'All households', 'Won'].map(f => ({
+        label: f,
+        count: counts[f],
+        go: this.setFilter(f),
+        bg: f === filter ? 'rgba(201,168,106,.12)' : 'transparent',
+        border: f === filter ? 'rgba(201,168,106,.5)' : 'rgba(201,168,106,.16)',
+        color: f === filter ? '#e0c891' : '#a8a39b'
+      })),
+      leadRows: rows.map(l => ({
+        name: l.name, place: l.place, stage: l.stage, lines: l.lines, next: l.next,
+        touch: l.touch,
+        stageTone: STAGE_TONE[l.stage] || '#a8a39b',
+        touchTone: l.warm ? '#8f8b84' : '#9c5a48'
+      }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>

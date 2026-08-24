@@ -32,6 +32,10 @@ export interface GisLead {
   acreage: number | null;
   reason: string;
   created_at: string;
+  enrichment_status?: "pending" | "processing" | "enriched" | "needs_review" | "not_found" | "failed";
+  enrichment_provider?: string | null;
+  enrichment_confidence?: "low" | "medium" | "high" | null;
+  enrichment_attempted_at?: string | null;
 }
 
 export interface SyncSettings {
@@ -107,6 +111,10 @@ export function prospectFromLead(lead: GisLead): Prospect {
         ? `Kent County parcel ${lead.pnum} changed hands.`
         : `Kent County residential parcel ${lead.pnum}.`,
     needsPhoneNumber: true,
+    enrichmentStatus: lead.enrichment_status ?? "pending",
+    enrichmentProvider: lead.enrichment_provider ?? "",
+    enrichmentConfidence: lead.enrichment_confidence ?? "",
+    enrichmentAttemptedAt: lead.enrichment_attempted_at ?? "",
     createdAt: today(),
     updatedAt: today(),
   });

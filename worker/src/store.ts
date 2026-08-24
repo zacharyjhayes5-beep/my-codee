@@ -206,6 +206,10 @@ export interface LeadRow {
   acreage: number | null;
   reason: string;
   created_at: string;
+  enrichment_status?: "pending" | "processing" | "enriched" | "needs_review" | "not_found" | "failed";
+  enrichment_provider?: string | null;
+  enrichment_confidence?: "low" | "medium" | "high" | null;
+  enrichment_attempted_at?: string | null;
 }
 
 /** Leads the dashboard has not yet taken. */
@@ -214,7 +218,8 @@ export async function unsyncedLeads(db: D1Database, limit: number): Promise<Lead
     .prepare(
       `SELECT id, pnum, govt_unit, owner_raw, property_address, property_city,
               property_state, property_zip, owner_address, owner_city, owner_zip,
-              acreage, reason, created_at
+              acreage, reason, created_at, enrichment_status,
+              enrichment_provider, enrichment_confidence, enrichment_attempted_at
          FROM leads
         WHERE synced_at IS NULL
      ORDER BY created_at, pnum

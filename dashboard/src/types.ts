@@ -287,6 +287,11 @@ export interface Prospect {
   assets: AssetIndicators;
   /** Set by the Bad Number rule; puts the record in the research queue. */
   needsPhoneNumber: boolean;
+  /** Provider workflow state. Blank on records created before enrichment. */
+  enrichmentStatus: "pending" | "processing" | "enriched" | "needs_review" | "not_found" | "failed" | "";
+  enrichmentProvider: string;
+  enrichmentConfidence: "low" | "medium" | "high" | "";
+  enrichmentAttemptedAt: string;
   /** Set when the attempt cap is reached. Flags for review, never auto-closes. */
   needsReview: boolean;
   /** How this record arrived, kept when duplicates are merged. */

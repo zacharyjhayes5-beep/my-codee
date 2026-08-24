@@ -14,6 +14,8 @@ import {
 import { defaultOwnerName, defaultPeriod } from "./defaultData";
 import { normalizeProposals, reviewsFromSuggestions } from "./reviews";
 import type { CorrespondenceNote } from "./dailyBrief";
+import type { CampaignEntry } from "./campaigns";
+import { DEFAULT_GOOGLE_CALENDAR_CLIENT_ID } from "./googleCalendar";
 import {
   CALL_SCHEMA_VERSION,
   callsNeedMigration,
@@ -64,6 +66,9 @@ export const SETTING_KEYS = {
   /** When the last export happened, so the app can say when it has been a while. */
   lastBackupAt: "fb-dashboard:lastBackupAt",
   noticeSeen: "fb-dashboard:storageNoticeSeen",
+  campaigns: "fb-dashboard:campaigns",
+  /** Public OAuth application identifier only. Access tokens are never stored. */
+  googleCalendarClientId: "fb-dashboard:googleCalendarClientId",
 } as const;
 
 export type SettingKey = keyof typeof SETTING_KEYS;
@@ -111,6 +116,8 @@ interface Cache {
   correspondence: CorrespondenceNote[];
   lastBackupAt: string;
   noticeSeen: boolean;
+  campaigns: CampaignEntry[];
+  googleCalendarClientId: string;
 }
 
 export type StoreKey = keyof Cache;
@@ -368,6 +375,11 @@ function loadSettings() {
     correspondence: readLocal<CorrespondenceNote[]>(SETTING_KEYS.correspondence) ?? [],
     lastBackupAt: readLocal<string>(SETTING_KEYS.lastBackupAt) ?? "",
     noticeSeen: readLocal<boolean>(SETTING_KEYS.noticeSeen) ?? false,
+    campaigns: readLocal<CampaignEntry[]>(SETTING_KEYS.campaigns) ?? [],
+    googleCalendarClientId:
+      readLocal<string>(SETTING_KEYS.googleCalendarClientId) ??
+      import.meta.env.VITE_GOOGLE_CALENDAR_CLIENT_ID ??
+      DEFAULT_GOOGLE_CALENDAR_CLIENT_ID,
   };
 }
 

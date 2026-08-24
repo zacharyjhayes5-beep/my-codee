@@ -131,6 +131,10 @@ export function blankProspect(overrides: Partial<Prospect> = {}): Prospect {
     importantNotes: "",
     assets: blankAssets(),
     needsPhoneNumber: false,
+    enrichmentStatus: "",
+    enrichmentProvider: "",
+    enrichmentConfidence: "",
+    enrichmentAttemptedAt: "",
     needsReview: false,
     mergedFrom: [],
     contacts: [],
@@ -362,6 +366,18 @@ export function normalizeProspect(input: unknown): Prospect {
     importantNotes: raw.importantNotes ?? "",
     assets: asAssets(raw.assets),
     needsPhoneNumber: Boolean(raw.needsPhoneNumber),
+    enrichmentStatus:
+      raw.enrichmentStatus === "pending" || raw.enrichmentStatus === "processing" ||
+      raw.enrichmentStatus === "enriched" || raw.enrichmentStatus === "needs_review" ||
+      raw.enrichmentStatus === "not_found" || raw.enrichmentStatus === "failed"
+        ? raw.enrichmentStatus
+        : "",
+    enrichmentProvider: raw.enrichmentProvider ?? "",
+    enrichmentConfidence:
+      raw.enrichmentConfidence === "low" || raw.enrichmentConfidence === "medium" || raw.enrichmentConfidence === "high"
+        ? raw.enrichmentConfidence
+        : "",
+    enrichmentAttemptedAt: raw.enrichmentAttemptedAt ?? "",
     needsReview: Boolean(raw.needsReview),
     mergedFrom: Array.isArray(raw.mergedFrom) ? raw.mergedFrom : [],
     contacts: asContacts(raw.contacts),

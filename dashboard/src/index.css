@@ -5,59 +5,59 @@
  * and never raw colour, so the application's material can change here without
  * three thousand lines being edited rule by rule.
  *
- * The material: a warm ivory cabin flooded with daylight, deep midnight-navy
- * structure, and cognac used the way stitching is used on a door card — rarely,
- * and only where the eye should land. Neutrals are warm throughout; there is no
- * cold blue-grey anywhere in this palette.
+ * Nocturne material: black-violet lacquer, smoked glass, aged brass rules and
+ * a restrained ultraviolet signal for active controls. The palette stays
+ * quiet enough for dense operating work while giving every screen the same
+ * cinematic depth as the Campaigns map.
  */
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
   /* ---------- Ground and surfaces ----------
      Ivory is the room. Panels are *lighter* than the page, not darker, so the
      page reads as a surface with objects resting on it rather than as a set of
      windows cut into a dark ground. */
-  --page: #f2eee4;
-  --surface-1: #f9f7f1;
-  --surface-2: #efeadf;
-  --surface-3: #e7e1d4;
+  --page: #0c0910;
+  --surface-1: #151119;
+  --surface-2: #1b151f;
+  --surface-3: #241c29;
 
   /* Navy — the structural colour. Sidebar, primary actions, headings. */
-  --navy: #131e2b;
-  --navy-2: #1b2a3a;
-  --navy-3: #24384c;
-  --navy-soft: rgba(19, 30, 43, 0.06);
-  --navy-line: rgba(19, 30, 43, 0.1);
+  --navy: #766cff;
+  --navy-2: #5f56d6;
+  --navy-3: #8b82ff;
+  --navy-soft: rgba(118, 108, 255, 0.13);
+  --navy-line: rgba(118, 108, 255, 0.22);
 
   /* Cognac — an accent, never a theme. If the interface looks orange,
      something is using this that should not be. */
-  --cognac: #a9663a;
-  --cognac-2: #b87548;
-  --cognac-soft: rgba(169, 102, 58, 0.1);
+  --cognac: #c5a74e;
+  --cognac-2: #d8c47a;
+  --cognac-soft: rgba(197, 167, 78, 0.12);
   /* Cognac as *text* has to be darker than cognac as a 3px marker — the mid
      tone reads beautifully on a rule and fails AA on a label. */
-  --cognac-ink: #854d2c;
+  --cognac-ink: #dfce92;
 
   /* Brushed metal — borders, dividers, quiet icons. */
-  --metal: #a8adb2;
-  --metal-light: #c3c6c7;
+  --metal: #817b87;
+  --metal-light: #aaa2b5;
 
   /* Hairlines, warm so they sit in the ivory rather than on top of it. */
-  --gridline: rgba(19, 30, 43, 0.06);
-  --border: rgba(19, 30, 43, 0.11);
-  --border-strong: rgba(19, 30, 43, 0.18);
-  --baseline: rgba(19, 30, 43, 0.28);
+  --gridline: rgba(238, 233, 228, 0.055);
+  --border: rgba(238, 233, 228, 0.13);
+  --border-strong: rgba(197, 167, 78, 0.27);
+  --baseline: rgba(238, 233, 228, 0.3);
 
   /* ---------- Text ----------
      Primary text is deep navy, never pure black. Secondary is a warm taupe
      that still clears AA on ivory — no grey-on-grey. */
-  --text-primary: #131e2b;
-  --text-secondary: #5d5648;
+  --text-primary: #eee9e4;
+  --text-secondary: #b7afbc;
   /* Darkened to clear 4.5:1 on surface-3, the darkest ivory a caption sits on.
      The lighter taupe this used to be measured 4.05 and was the single most
      common contrast failure in the interface. */
-  --text-muted: #635b4c;
+  --text-muted: #928a99;
 
   /* ---------- Meaning ----------
      Four signals, all muted. Status never depends on hue alone; these are
@@ -66,16 +66,16 @@
   --accent-hover: var(--navy-3);
   --accent-soft: var(--navy-soft);
   --accent-track: rgba(19, 30, 43, 0.12);
-  --on-accent: #f7f4ed;
+  --on-accent: #fbf9ff;
 
-  --success: #4a6b52;
-  --success-soft: rgba(74, 107, 82, 0.11);
+  --success: #78b58a;
+  --success-soft: rgba(82, 143, 102, 0.16);
 
-  --attention: #7a5820;
-  --attention-soft: rgba(138, 101, 36, 0.11);
+  --attention: #d7b766;
+  --attention-soft: rgba(197, 167, 78, 0.15);
 
-  --danger: #9b3f38;
-  --danger-soft: rgba(155, 63, 56, 0.1);
+  --danger: #e58d86;
+  --danger-soft: rgba(190, 77, 71, 0.15);
 
   /* ---------- Legacy aliases ----------
      The component sheet grew up on these names. Mapping them here re-materials
@@ -88,23 +88,23 @@
   --status-critical: var(--danger);
 
   /* Chart series — navy, cognac, sage. Distinguishable without being loud. */
-  --series-1: #2c445e; /* Property */
-  --series-2: #a9663a; /* Casualty */
-  --series-3: #5f6f5a; /* Life */
+  --series-1: #7c72ff; /* Property */
+  --series-2: #c5a74e; /* Casualty */
+  --series-3: #65a987; /* Life */
 
   /* ---------- Depth ----------
      Warm-tinted and shallow. Nothing floats; things rest. */
-  --shadow-1: 0 1px 2px rgba(35, 26, 12, 0.06);
-  --shadow-2: 0 2px 6px rgba(35, 26, 12, 0.07);
-  --shadow-3: 0 10px 28px rgba(35, 26, 12, 0.1);
+  --shadow-1: 0 8px 24px rgba(0, 0, 0, 0.22);
+  --shadow-2: 0 16px 42px rgba(0, 0, 0, 0.32);
+  --shadow-3: 0 22px 60px rgba(0, 0, 0, 0.46);
   --glow-blue: var(--shadow-2);
   --glow-red: var(--shadow-2);
 
   /* ---------- Shape ----------
      Restrained. Nothing bubbly. */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 3px;
+  --radius: 4px;
+  --radius-lg: 6px;
 
   /* ---------- Spacing ----------
      A 4px base. Layout uses the larger steps so the page breathes. */
@@ -132,7 +132,7 @@
 
   /* ---------- Focus ----------
      One ring, defined once, used everywhere. */
-  --focus-ring: 0 0 0 2px var(--surface-1), 0 0 0 4px var(--navy);
+  --focus-ring: 0 0 0 2px var(--surface-1), 0 0 0 4px rgba(124, 114, 255, 0.8);
 
   font-family: var(--font-sans);
 }
@@ -149,7 +149,9 @@ body,
 
 body {
   margin: 0;
-  background: var(--page);
+  background:
+    radial-gradient(circle at 62% 8%, rgba(91, 66, 111, 0.11), transparent 36rem),
+    var(--page);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -169,7 +171,7 @@ textarea {
 input,
 select,
 textarea {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 ::selection {

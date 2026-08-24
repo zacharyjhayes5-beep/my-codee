@@ -6,11 +6,9 @@ export type PaletteTarget =
   | "operator"
   | "progress"
   | "todo"
-  | "prospects"
   | "pipeline"
-  | "map"
   | "walkthrough"
-  | "vault";
+  | "campaigns";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -65,14 +63,12 @@ export function CommandPalette({
 
   const sections: Command[] = useMemo(
     () => [
-      { id: "go-operator", label: "Operator", detail: "Today's brief and what needs you", run: () => onGoTo("operator") },
-      { id: "go-prospects", label: "Leads", detail: "Every household", run: () => onGoTo("prospects") },
-      { id: "go-pipeline", label: "Pipeline", detail: "Open opportunities by stage", run: () => onGoTo("pipeline") },
+      { id: "go-operator", label: "Operator", detail: "Calendar, suggestions and today's updates", run: () => onGoTo("operator") },
+      { id: "go-pipeline", label: "Pipeline", detail: "Households, stages and opportunities", run: () => onGoTo("pipeline") },
       { id: "go-todo", label: "To-Do", detail: "Tasks and the review inbox", run: () => onGoTo("todo") },
       { id: "go-progress", label: "Progress", detail: "The book against the goal", run: () => onGoTo("progress") },
+      { id: "go-campaigns", label: "Campaigns", detail: "Five channels of activity", run: () => onGoTo("campaigns") },
       { id: "go-walkthrough", label: "Walkthrough", detail: "The property area by area", run: () => onGoTo("walkthrough") },
-      { id: "go-vault", label: "Vault", detail: "Search everything you have written", run: () => onGoTo("vault") },
-      { id: "go-map", label: "Lead Map", detail: "How households connect", run: () => onGoTo("map") },
     ],
     [onGoTo],
   );

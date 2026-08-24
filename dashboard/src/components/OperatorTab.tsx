@@ -1,241 +1,244 @@
-import { useMemo } from "react";
-import { differenceInCalendarDays, format } from "date-fns";
-import type {
-  Call,
-  Opportunity,
-  Period,
-  PolicyEntry,
-  PolicyLine,
-  Prospect,
-  ReviewProposal,
-  Task,
-} from "../types";
-import { countsByCategory, currency, totalsFor } from "../lib/policies";
-import type { CorrespondenceNote } from "../lib/dailyBrief";
-import { CommandCenter } from "./CommandCenter";
-import { ProgressOrb } from "./ProgressOrb";
-
-export type CommandTarget = "progress" | "todo" | "prospects" | "map" | "pipeline";
+import { useMemo, useState } from "react";
+import { format } from "date-fns";
+import type { Call, Opportunity, Prospect, ReviewProposal, Task } from "../types";
+import { whatNeedsMe } from "../lib/attention";
+import { buildDailyBrief, previousDay, todaysSchedule } from "../lib/dailyBrief";
+import {
+  authorizeGoogleCalendar,
+  fetchGoogleCalendarDay,
+  isGoogleClientId,
+  revokeGoogleCalendar,
+  type GoogleCalendarEvent,
+} from "../lib/googleCalendar";
+import { today } from "../lib/storage";
 
 interface OperatorTabProps {
-  entries: PolicyEntry[];
-  lines: PolicyLine[];
-  period: Period;
   prospects: Prospect[];
   tasks: Task[];
   reviews: ReviewProposal[];
   calls: Call[];
   opportunities: Opportunity[];
-  correspondence: CorrespondenceNote[];
-  onCorrespondenceChange: (notes: CorrespondenceNote[]) => void;
-  onCommand: (target: CommandTarget) => void;
-  onGo: (target: "prospects" | "todo" | "pipeline", prospectId?: string) => void;
-  /** Used by the research queue to write a found phone number. */
-  onPatchProspect: (id: string, patch: Partial<Prospect>) => void;
+  googleCalendarClientId: string;
+  onGoogleCalendarClientIdChange: (clientId: string) => void;
+  onGo: (target: "pipeline" | "todo", prospectId?: string) => void;
 }
 
-function parseDay(iso: string) {
-  return new Date(`${iso}T00:00:00`);
+function eventTime(event: GoogleCalendarEvent): string {
+  return event.allDay ? "All day" : format(new Date(event.start), "h:mm a");
 }
 
-function todayIso() {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-/** Compact readouts — 14.4K rather than 14,400. */
-function compact(n: number) {
-  if (Math.abs(n) >= 1000) {
-    const k = n / 1000;
-    return `${k >= 100 ? Math.round(k) : k.toFixed(1)}K`;
-  }
-  return String(Math.round(n));
-}
-
-const commands: { id: CommandTarget; label: string; hint: string }[] = [
-  { id: "progress", label: "Log policy", hint: "add to the book" },
-  { id: "prospects", label: "Import notes", hint: "Granola → profile" },
-  { id: "todo", label: "Plan today", hint: "what's due" },
-  { id: "map", label: "Lead map", hint: "see the web" },
-  { id: "todo", label: "Review inbox", hint: "approve suggestions" },
-  { id: "progress", label: "Week review", hint: "pace & tiers" },
-];
-
+/** The Operator is deliberately quiet: the day, then a short read on what deserves attention. */
 export function OperatorTab({
-  entries,
-  lines,
-  period,
   prospects,
   tasks,
   reviews,
   calls,
   opportunities,
-  correspondence,
-  onCorrespondenceChange,
-  onCommand,
+  googleCalendarClientId,
+  onGoogleCalendarClientIdChange,
   onGo,
-  onPatchProspect,
 }: OperatorTabProps) {
-  const stats = useMemo(() => {
-    const inPeriod = entries.filter(
-      (e) => e.effectiveDate >= period.start && e.effectiveDate < period.end
-    );
-    const earnings = totalsFor(inPeriod);
-    const derived = countsByCategory(inPeriod);
-    const policyCount =
-      derived.counts.property + derived.counts.casualty + derived.counts.life;
-    const policyGoal = lines.reduce((sum, l) => sum + l.policyGoal, 0);
+  const now = useMemo(() => new Date(), []);
+  const day = today();
+  const [draftClientId, setDraftClientId] = useState(googleCalendarClientId);
+  const [accessToken, setAccessToken] = useState("");
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [calendarState, setCalendarState] = useState<
+    "idle" | "connecting" | "connected" | "error"
+  >("idle");
+  const [calendarError, setCalendarError] = useState("");
 
-    const now = new Date();
-    const start = parseDay(period.start);
-    const end = parseDay(period.end);
-    const totalDays = Math.max(1, differenceInCalendarDays(end, start));
-    const elapsed = Math.min(totalDays, Math.max(0, differenceInCalendarDays(now, start)));
-    const daysLeft = Math.max(0, differenceInCalendarDays(end, now));
-    const elapsedPct = (elapsed / totalDays) * 100;
-    const expected = (policyGoal * elapsedPct) / 100;
-    const delta = policyCount - expected;
+  const dashboardSchedule = useMemo(
+    () => todaysSchedule(opportunities, prospects, day),
+    [opportunities, prospects, day],
+  );
 
-    const openProspects = prospects.filter(
-      // "Lost" folded into Closed in schema v4; Won is the other terminal.
-      (p) => p.stage !== "Closed" && p.stage !== "Won"
-    ).length;
-    const iso = todayIso();
-    const openTodos = tasks.filter((t) => !t.done).length;
-    const dueToday = tasks.filter((t) => !t.done && t.dueDate === iso).length;
-    const overdue = tasks.filter((t) => !t.done && t.dueDate && t.dueDate < iso).length;
+  const brief = useMemo(
+    () =>
+      buildDailyBrief({
+        prospects,
+        calls,
+        tasks,
+        opportunities,
+        reviews,
+        today: day,
+        yesterday: previousDay(day),
+        now,
+      }),
+    [prospects, calls, tasks, opportunities, reviews, day, now],
+  );
 
-    return {
-      net: earnings.net,
-      premium: earnings.premium,
-      policyCount,
-      policyGoal,
-      goalPct: policyGoal > 0 ? (policyCount / policyGoal) * 100 : 0,
-      daysLeft,
-      elapsedPct,
-      delta,
-      openProspects,
-      openTodos,
-      dueToday,
-      overdue,
-      waiting: reviews.filter((r) => r.status === "pending" || r.status === "edited").length,
-    };
-  }, [entries, lines, period, prospects, tasks, reviews]);
+  const updates = useMemo(
+    () => whatNeedsMe({ prospects, opportunities, tasks, reviews, today: day }, 4),
+    [prospects, opportunities, tasks, reviews, day],
+  );
 
-  const onPace = stats.delta >= -0.5;
+  async function loadEvents(token: string) {
+    const events = await fetchGoogleCalendarDay(token, day);
+    setGoogleEvents(events);
+    setCalendarState("connected");
+    setCalendarError("");
+  }
+
+  async function connectCalendar() {
+    const clientId = draftClientId.trim();
+    if (!isGoogleClientId(clientId)) {
+      setCalendarState("error");
+      setCalendarError("Paste the Web application client ID from Google Cloud.");
+      return;
+    }
+
+    setCalendarState("connecting");
+    setCalendarError("");
+    try {
+      onGoogleCalendarClientIdChange(clientId);
+      const token = await authorizeGoogleCalendar(clientId);
+      setAccessToken(token);
+      await loadEvents(token);
+    } catch (error) {
+      setCalendarState("error");
+      setCalendarError(error instanceof Error ? error.message : "Google Calendar could not connect.");
+    }
+  }
+
+  async function refreshCalendar() {
+    if (!accessToken) return;
+    setCalendarState("connecting");
+    try {
+      await loadEvents(accessToken);
+    } catch (error) {
+      setCalendarState("error");
+      setCalendarError(error instanceof Error ? error.message : "Google Calendar could not refresh.");
+    }
+  }
+
+  async function disconnectCalendar() {
+    const token = accessToken;
+    setAccessToken("");
+    setGoogleEvents([]);
+    setCalendarState("idle");
+    setCalendarError("");
+    await revokeGoogleCalendar(token);
+  }
+
+  const connected = calendarState === "connected" || Boolean(accessToken);
 
   return (
-    <div className="operator">
-      {/* Today's work comes first. The book-of-business figures are the
-          snapshot underneath it, never the thing you open the app to. */}
-      <CommandCenter
-        prospects={prospects}
-        calls={calls}
-        tasks={tasks}
-        opportunities={opportunities}
-        reviews={reviews}
-        correspondence={correspondence}
-        onCorrespondenceChange={onCorrespondenceChange}
-        onGo={onGo}
-        onPatchProspect={onPatchProspect}
-      />
-
-      <h2 className="snapshot-heading">Business snapshot</h2>
-
-      <div className="op-grid">
-        <section className="op-panel op-vitals">
-          <header className="op-panel-head">System vitals</header>
-          <div className="op-vital">
-            <span className="op-vital-label">Net commission</span>
-            <span className="op-vital-value">{currency(stats.net, 0)}</span>
+    <div className="operator operator-simple">
+      <section className="operator-calendar" aria-labelledby="calendar-title">
+        <header className="operator-calendar-head">
+          <div>
+            <span className="operator-eyebrow">Today</span>
+            <h2 id="calendar-title">{format(now, "EEEE, MMMM d")}</h2>
           </div>
-          <div className="op-vital">
-            <span className="op-vital-label">Premium written</span>
-            <span className="op-vital-value">${compact(stats.premium)}</span>
-          </div>
-          <div className="op-vital">
-            <span className="op-vital-label">Policies</span>
-            <span className="op-vital-value">
-              {stats.policyCount}
-              <em> / {stats.policyGoal}</em>
+          <div className="calendar-connection">
+            <span className={`calendar-source ${connected ? "is-connected" : ""}`}>
+              {connected ? "Google Calendar connected" : "Google Calendar not connected"}
             </span>
+            {connected && (
+              <div className="calendar-actions">
+                <button onClick={() => void refreshCalendar()} disabled={calendarState === "connecting"}>Refresh</button>
+                <button onClick={() => void disconnectCalendar()}>Disconnect</button>
+              </div>
+            )}
           </div>
-          <div className="op-vital">
-            <span className="op-vital-label">Open prospects</span>
-            <span className="op-vital-value">{stats.openProspects}</span>
-          </div>
-          <div className="op-vital">
-            <span className="op-vital-label">Days remaining</span>
-            <span className="op-vital-value">{stats.daysLeft}</span>
-          </div>
-        </section>
+        </header>
 
-        <section className="op-panel op-core">
-          <header className="op-panel-head">
-            Book status
-            <span className={`op-flag ${onPace ? "ok" : "alert"}`}>
-              {onPace ? "ON PACE" : `${Math.abs(Math.round(stats.delta))} BEHIND`}
-            </span>
-          </header>
-          <ProgressOrb
-            pct={stats.goalPct}
-            label="of policy goal"
-            caption={`${stats.elapsedPct.toFixed(0)}% of period elapsed`}
-          />
-        </section>
+        {!connected && (
+          <div className="calendar-connect-card">
+            <div>
+              <span className="operator-eyebrow">Read-only connection</span>
+              <h3>Bring today’s Google Calendar here</h3>
+              <p>The dashboard can see event names, times, and locations. It cannot create, edit, or delete anything in Google Calendar.</p>
+            </div>
+            <div className="calendar-connect-form">
+              <label htmlFor="google-client-id">Google OAuth client ID</label>
+              <input
+                id="google-client-id"
+                value={draftClientId}
+                onChange={(event) => setDraftClientId(event.target.value)}
+                placeholder="123456789-…apps.googleusercontent.com"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <button className="primary" onClick={() => void connectCalendar()} disabled={calendarState === "connecting"}>
+                {calendarState === "connecting" ? "Connecting…" : "Connect Google Calendar"}
+              </button>
+              {calendarError && <p className="calendar-error" role="alert">{calendarError}</p>}
+              <details>
+                <summary>Where do I get this?</summary>
+                <ol>
+                  <li>Enable the <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noreferrer">Google Calendar API</a>.</li>
+                  <li>Create an OAuth client of type <strong>Web application</strong> in <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">Google Cloud credentials</a>.</li>
+                  <li>Add authorized origins <code>http://127.0.0.1:5173</code>, <code>http://localhost:5173</code>, and <code>https://zacharyjhayes5-beep.github.io</code>.</li>
+                  <li>Paste the generated client ID above.</li>
+                </ol>
+              </details>
+            </div>
+          </div>
+        )}
 
-        <section className="op-panel op-deck">
-          <header className="op-panel-head">Command deck</header>
-          <ul className="op-commands">
-            {commands.map((c) => (
-              <li key={c.label}>
-                <button onClick={() => onCommand(c.id)}>
-                  <span className="op-cmd-label">{c.label}</span>
-                  <span className="op-cmd-hint">{c.hint}</span>
-                </button>
+        {connected && googleEvents.length === 0 ? (
+          <div className="calendar-empty">
+            <span className="calendar-empty-time">All day</span>
+            <div><strong>Your Google Calendar is clear today.</strong><p>No events were returned from your primary calendar.</p></div>
+          </div>
+        ) : connected ? (
+          <ol className="operator-agenda">
+            {googleEvents.map((event) => (
+              <li key={event.id}>
+                <time dateTime={event.start}>{eventTime(event)}</time>
+                <span className="agenda-rule" aria-hidden="true" />
+                {event.htmlLink ? (
+                  <a className="agenda-event" href={event.htmlLink} target="_blank" rel="noreferrer">
+                    <strong>{event.title}</strong>
+                    <span>{event.location || (event.allDay ? "All-day event" : `${format(new Date(event.start), "h:mm a")}–${format(new Date(event.end), "h:mm a")}`)}</span>
+                  </a>
+                ) : (
+                  <div className="agenda-event"><strong>{event.title}</strong><span>{event.location || "Google Calendar"}</span></div>
+                )}
               </li>
             ))}
-          </ul>
+          </ol>
+        ) : dashboardSchedule.length > 0 ? (
+          <>
+            <p className="calendar-fallback-label">Dashboard appointments</p>
+            <ol className="operator-agenda">
+              {dashboardSchedule.map((item) => (
+                <li key={item.id}>
+                  <time dateTime={item.at}>{item.time}</time>
+                  <span className="agenda-rule" aria-hidden="true" />
+                  <button className="agenda-event" onClick={() => onGo("pipeline", item.prospectId)}>
+                    <strong>{item.title}</strong><span>{item.detail}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </>
+        ) : null}
+      </section>
+
+      <div className="operator-day-grid">
+        <section className="operator-day-panel">
+          <header><span className="operator-eyebrow">Suggestions</span><h3>{brief.headline}</h3></header>
+          {brief.focus.length === 0 ? <p className="empty">Nothing pressing. Use the open space deliberately.</p> : (
+            <ol className="operator-suggestions">
+              {brief.focus.slice(0, 4).map((line, index) => <li key={line}><span>{String(index + 1).padStart(2, "0")}</span><p>{line}</p></li>)}
+            </ol>
+          )}
+        </section>
+
+        <section className="operator-day-panel">
+          <header><span className="operator-eyebrow">Updates</span><h3>What changed or needs you</h3></header>
+          {updates.length === 0 ? <p className="empty">Nothing urgent right now.</p> : (
+            <ul className="operator-updates">
+              {updates.map((item) => (
+                <li key={item.id}><button onClick={() => onGo(item.target === "todo" ? "todo" : "pipeline", item.prospectId)}><strong>{item.title}</strong><span>{item.detail}</span></button></li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
-
-      <section className="op-panel op-bhag">
-        <header className="op-panel-head">Big goal</header>
-        <div className="op-bhag-body">
-          <span className="op-bhag-text">
-            Road to {stats.policyGoal} policies
-          </span>
-          <div className="op-bhag-track">
-            <div className="op-bhag-fill" style={{ width: `${Math.min(100, stats.goalPct)}%` }} />
-          </div>
-          <span className="op-bhag-meta">
-            {stats.policyCount} written · {Math.max(0, stats.policyGoal - stats.policyCount)} to go ·
-            ends {format(parseDay(period.end), "MMM d, yyyy")}
-          </span>
-        </div>
-      </section>
-
-      <section className="op-panel op-ticker">
-        <header className="op-panel-head">Today</header>
-        <div className="op-ticker-body">
-          <span>
-            <em>{stats.dueToday}</em> due today
-          </span>
-          <span className={stats.overdue > 0 ? "op-overdue" : ""}>
-            <em>{stats.overdue}</em> overdue
-          </span>
-          <span>
-            <em>{stats.openTodos}</em> open task{stats.openTodos === 1 ? "" : "s"}
-          </span>
-          <span>
-            <em>{stats.waiting}</em> review{stats.waiting === 1 ? "" : "s"} waiting
-          </span>
-          <span>
-            <em>{stats.openProspects}</em> prospect{stats.openProspects === 1 ? "" : "s"} in play
-          </span>
-        </div>
-      </section>
     </div>
   );
 }

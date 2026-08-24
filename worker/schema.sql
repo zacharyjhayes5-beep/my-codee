@@ -71,11 +71,18 @@ CREATE TABLE IF NOT EXISTS leads (
   -- NULL until the dashboard has pulled it. This is what stops the same lead
   -- being downloaded on every sync.
   synced_at         TEXT,
-  run_id            INTEGER
+  run_id            INTEGER,
+  -- Enrichment is downstream of durable ingestion. A provider can fail
+  -- without changing dedupe, delivery or dashboard acknowledgement.
+  enrichment_status TEXT NOT NULL DEFAULT 'pending',
+  enrichment_provider TEXT,
+  enrichment_confidence TEXT,
+  enrichment_attempted_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_leads_unsynced ON leads (synced_at);
 CREATE INDEX IF NOT EXISTS idx_leads_pnum ON leads (pnum);
+CREATE INDEX IF NOT EXISTS idx_leads_enrichment ON leads (enrichment_status, created_at);
 
 -- ---------------------------------------------------------------------------
 -- Ingestion runs — enough to answer "did the automation actually run, and

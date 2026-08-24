@@ -10,7 +10,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 execute gis_leads --local --file=./schema.sql",
-    "db:remote": "wrangler d1 execute gis_leads --remote --file=./schema.sql"
+    "db:remote": "wrangler d1 execute gis_leads --remote --file=./schema.sql",
+    "db:migrate:enrichment:local": "wrangler d1 execute gis_leads --local --file=./migrations/0001_enrichment_status.sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260811.1",

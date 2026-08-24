@@ -356,8 +356,8 @@ export function ProspectsTab({
     return (
       <div className="tab-panel">
         <div className="mode-switch">
-          <button onClick={() => setMode("browse")}>Browse</button>
-          <button className="active">Work</button>
+          <button onClick={() => setMode("browse")}>Households</button>
+          <button className="active">Call queue</button>
         </div>
         <WorkMode
           prospects={prospects}
@@ -384,57 +384,35 @@ export function ProspectsTab({
 
   return (
     <div className="tab-panel">
-      <div className="mode-switch">
-        <button className="active">Browse</button>
-        <button onClick={() => setMode("work")}>Work</button>
-      </div>
-
-      <IntakePanel
-        prospects={prospects}
-        onCreate={createProspect}
-        onMerge={(existingId, incoming) =>
-          onChange((prev) =>
-            prev.map((p) => (p.id === existingId ? { ...mergeInto(p, incoming), updatedAt: today() } : p)),
-          )
-        }
-      />
-
-      <TranscriptPanel
-        prospects={prospects}
-        ownerName={ownerName}
-        onOwnerNameChange={onOwnerNameChange}
-        onQueueReview={onQueueReview}
-      />
-
-      <div className="prospect-toolbar">
-        <div className="filter-chips">
-          <button
-            className={`filter-chip${stageFilter === "All" ? " on" : ""}`}
-            onClick={() => setStageFilter("All")}
-          >
-            All <span>{prospects.length}</span>
-          </button>
-          {researchTotal > 0 && (
-            <button
-              className={`filter-chip${stageFilter === "Needs research" ? " on" : ""}`}
-              onClick={() => setStageFilter("Needs research")}
-            >
-              Needs research{" "}
-              <span className="tick" key={researchTotal}>
-                {researchTotal}
-              </span>
-            </button>
-          )}
-          {prospectStages.map((s) => (
-            <button
-              key={s}
-              className={`filter-chip${stageFilter === s ? " on" : ""}`}
-              onClick={() => setStageFilter(s)}
-            >
-              {s} <span>{counts.get(s) ?? 0}</span>
-            </button>
-          ))}
+      <div className="pipeline-toolbar">
+        <div className="mode-switch" aria-label="Pipeline view">
+          <button className="active">Households</button>
+          <button onClick={() => setMode("work")}>Call queue</button>
         </div>
+
+        <details className="pipeline-tools">
+          <summary>Add or import</summary>
+          <div className="pipeline-tools-body">
+            <IntakePanel
+              prospects={prospects}
+              onCreate={createProspect}
+              onMerge={(existingId, incoming) =>
+                onChange((prev) =>
+                  prev.map((p) =>
+                    p.id === existingId ? { ...mergeInto(p, incoming), updatedAt: today() } : p,
+                  ),
+                )
+              }
+            />
+
+            <TranscriptPanel
+              prospects={prospects}
+              ownerName={ownerName}
+              onOwnerNameChange={onOwnerNameChange}
+              onQueueReview={onQueueReview}
+            />
+          </div>
+        </details>
       </div>
 
       <div className="lead-toolbar">
@@ -450,6 +428,25 @@ export function ProspectsTab({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search names, areas, notes…"
           />
+          <label className="pipeline-stage-filter">
+            <span className="sr-only">Filter by stage</span>
+            <select
+              value={stageFilter}
+              onChange={(event) =>
+                setStageFilter(event.target.value as Stage | "All" | "Needs research")
+              }
+            >
+              <option value="All">All stages ({prospects.length})</option>
+              {researchTotal > 0 && (
+                <option value="Needs research">Needs research ({researchTotal})</option>
+              )}
+              {prospectStages.map((stage) => (
+                <option key={stage} value={stage}>
+                  {stage} ({counts.get(stage) ?? 0})
+                </option>
+              ))}
+            </select>
+          </label>
           <span className="lead-count">
             {sorted.length} of {prospects.length} households
           </span>
@@ -464,7 +461,7 @@ export function ProspectsTab({
             {syncing ? "Syncing…" : "Retry lead sync"}
           </button>
           <button className="primary-btn" onClick={addBlank}>
-            Blank profile
+            Add household
           </button>
         </div>
       </div>
@@ -474,7 +471,7 @@ export function ProspectsTab({
       {sorted.length === 0 ? (
         <p className="lead-empty">
           {prospects.length === 0
-            ? "No households yet — add one with Quick add above, or bring a list in with Bulk import."
+            ? "No households yet — use Add household, or open Add or import for a list."
             : "Nothing matches that filter."}
         </p>
       ) : (
