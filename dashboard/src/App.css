@@ -30,7 +30,7 @@
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 4px;
 }
 
@@ -38,7 +38,7 @@
   border: none;
   background: transparent;
   padding: 8px 16px;
-  border-radius: 7px;
+  border-radius: 0;
   cursor: pointer;
   font-weight: 500;
   color: var(--text-secondary);
@@ -133,7 +133,7 @@
   gap: 12px;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 14px 18px;
 }
 
@@ -153,7 +153,7 @@
 .period-dates input {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 8px;
 }
 
@@ -195,7 +195,7 @@
 .stat-tile {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -259,7 +259,7 @@
 .meter-track {
   position: relative;
   height: 10px;
-  border-radius: 6px;
+  border-radius: 0;
   background: var(--gridline);
   overflow: hidden;
 }
@@ -275,7 +275,7 @@
 
 .meter-fill {
   height: 100%;
-  border-radius: 6px;
+  border-radius: 0;
   transition: width 0.2s ease;
 }
 
@@ -294,7 +294,7 @@
 .line-card {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 18px;
 }
 
@@ -324,7 +324,7 @@
 .line-inputs input {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 8px;
 }
 
@@ -366,7 +366,7 @@
 .todo-stat {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
@@ -399,7 +399,7 @@
   gap: 8px;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 12px 14px;
 }
 
@@ -407,7 +407,7 @@
 .quick-add select {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 8px 10px;
 }
 
@@ -420,7 +420,7 @@
 .agenda {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 18px;
 }
 
@@ -438,7 +438,7 @@
 .agenda-overdue {
   border: 1px solid var(--danger-soft);
   background: var(--neon-red-soft);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 10px 12px;
   margin-bottom: 14px;
 }
@@ -485,7 +485,7 @@
 .agenda-day {
   background: var(--surface-2);
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 10px;
   min-height: 96px;
 }
@@ -533,7 +533,7 @@
 .inbox {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -586,7 +586,7 @@
 .suggestion-card {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -632,7 +632,7 @@
   width: 100%;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 8px 10px;
   font-weight: 500;
 }
@@ -673,7 +673,7 @@
 .mini-field textarea {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 8px;
   color: var(--text-primary);
 }
@@ -724,7 +724,7 @@
 .task-section {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 14px 18px 16px;
 }
 
@@ -771,7 +771,7 @@
 .task-row {
   background: var(--surface-2);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 8px 10px;
 }
 
@@ -824,7 +824,7 @@
 .urgency-select {
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 3px 6px;
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -916,7 +916,7 @@
   gap: 3px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 3px;
 }
 
@@ -924,7 +924,7 @@
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 14px;
   cursor: pointer;
   font-size: 0.85rem;
@@ -943,7 +943,7 @@
 .book-table input {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 8px;
 }
 
@@ -1029,7 +1029,7 @@
   gap: 12px;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 14px 18px;
 }
 
@@ -1084,7 +1084,7 @@
 .tier-card {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -1166,7 +1166,7 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-left: 3px solid var(--status-critical);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -1238,7 +1238,7 @@
 .aa-card {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -1443,7 +1443,7 @@
   background: var(--surface-1);
   border: 1px solid var(--border-strong);
   border-left: 3px solid var(--accent);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 14px 18px;
   margin-bottom: 20px;
 }
@@ -1660,13 +1660,13 @@
   background: var(--surface-2);
   border-left: 2px solid var(--accent);
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 .proposed-block {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 14px 16px;
 }
 
@@ -1883,7 +1883,7 @@
 .pipe-stat {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
@@ -1917,7 +1917,7 @@
 .stage-column {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -2015,7 +2015,7 @@
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 4px;
   align-self: flex-start;
 }
@@ -2024,7 +2024,7 @@
   border: none;
   background: transparent;
   padding: 7px 18px;
-  border-radius: 7px;
+  border-radius: 0;
   cursor: pointer;
   font-weight: 500;
   color: var(--text-secondary);
@@ -2053,7 +2053,7 @@
   border: none;
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 16px 34px;
   font-size: 1.05rem;
   font-weight: 700;
@@ -2088,7 +2088,7 @@
 .call-card {
   background: var(--surface-1);
   border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  border-radius: 0;
   padding: 22px 24px;
   display: flex;
   flex-direction: column;
@@ -2163,7 +2163,7 @@
 .up-next {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -2223,7 +2223,7 @@
 .intake-panel {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -2315,7 +2315,7 @@
 .dup-review {
   background: var(--attention-soft);
   border: 1px solid var(--attention-soft);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -2365,7 +2365,7 @@
   padding: 10px 12px;
   background: var(--surface-2);
   border-left: 2px solid var(--accent);
-  border-radius: 6px;
+  border-radius: 0;
 }
 
 .why-fit,
@@ -2426,7 +2426,7 @@
 .opportunity-row {
   background: var(--surface-2);
   border: 1px solid var(--gridline);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -2526,7 +2526,7 @@
 .conflict-block {
   background: var(--attention-soft);
   border: 1px solid var(--attention-soft);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -2606,7 +2606,7 @@
   width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 0;
   padding: 3px 7px;
   color: var(--status-good);
 }
@@ -2648,7 +2648,7 @@
 .call-logger {
   background: var(--surface-2);
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -2773,7 +2773,7 @@
 .call-row {
   background: var(--surface-2);
   border: 1px solid var(--gridline);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -2917,7 +2917,7 @@
   border: none;
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 7px 14px;
   cursor: pointer;
   font-weight: 500;
@@ -2927,7 +2927,7 @@
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text-secondary);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 7px 14px;
   cursor: pointer;
 }
@@ -2936,7 +2936,7 @@
   border: none;
   background: var(--status-critical);
   color: var(--on-accent);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 7px 14px;
   cursor: pointer;
   font-weight: 500;
@@ -2964,7 +2964,7 @@
 .import-panel {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -2995,14 +2995,14 @@
 .owner-field input {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 8px;
   min-width: 220px;
 }
 
 .drop-zone {
   border: 1.5px dashed var(--baseline);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 26px 18px;
   text-align: center;
   cursor: pointer;
@@ -3039,7 +3039,7 @@
   margin: 10px 0 8px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 8px 10px;
   resize: vertical;
 }
@@ -3078,7 +3078,7 @@
 
 .draft-card {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 14px;
   background: var(--surface-2);
   display: flex;
@@ -3100,7 +3100,7 @@
   gap: 4px;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 3px;
 }
 
@@ -3108,7 +3108,7 @@
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 4px 10px;
   cursor: pointer;
   font-size: 0.8rem;
@@ -3137,7 +3137,7 @@
 .draft-fields select {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 6px 8px;
 }
 
@@ -3163,7 +3163,7 @@
   margin: 0;
   background: var(--page);
   border: 1px solid var(--gridline);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 10px 12px;
   font-size: 0.8rem;
   line-height: 1.45;
@@ -3260,7 +3260,7 @@
 .search-input {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 7px 10px;
   min-width: 220px;
 }
@@ -3275,7 +3275,7 @@
 .prospect-card {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -3300,7 +3300,7 @@
   font-weight: 600;
   border: 1px solid transparent;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 0;
   padding: 4px 6px;
 }
 
@@ -3317,7 +3317,7 @@
   font-size: 0.82rem;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 4px 6px;
 }
 
@@ -3338,7 +3338,7 @@
 .inline-field input {
   border: 1px solid transparent;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 0;
   padding: 5px 6px;
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -3390,7 +3390,7 @@
   letter-spacing: 0.04em;
   background: var(--accent-track);
   color: var(--accent);
-  border-radius: 4px;
+  border-radius: 0;
   padding: 1px 6px;
 }
 
@@ -3575,7 +3575,7 @@
     linear-gradient(180deg, transparent, transparent 42%),
     var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 0;
   padding: 14px 16px 16px;
 }
 
@@ -3603,7 +3603,7 @@
   letter-spacing: 0.12em;
   padding: 2px 7px;
   border: 1px solid currentColor;
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 .op-flag.ok {
@@ -3766,7 +3766,7 @@
   background: var(--surface-2);
   border: 1px solid var(--gridline);
   border-left: 2px solid var(--accent);
-  border-radius: 2px;
+  border-radius: 0;
   padding: 9px 12px;
   cursor: pointer;
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -3811,7 +3811,7 @@
 .op-bhag-track {
   height: 6px;
   background: var(--gridline);
-  border-radius: 3px;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -3927,7 +3927,7 @@
     radial-gradient(620px 420px at 50% 45%, transparent, transparent 70%),
     var(--page);
   border: 1px solid var(--gridline);
-  border-radius: 3px;
+  border-radius: 0;
 }
 
 .map-edge {
@@ -3991,7 +3991,7 @@
   gap: 8px 16px;
   border: 1px solid var(--border);
   border-left: 2px solid var(--accent);
-  border-radius: 3px;
+  border-radius: 0;
   background: var(--surface-2);
   padding: 10px 14px;
 }
@@ -4011,7 +4011,7 @@
   font-size: 0.62rem;
   letter-spacing: 0.01em;
   border: 1px solid currentColor;
-  border-radius: 2px;
+  border-radius: 0;
   padding: 1px 7px;
 }
 

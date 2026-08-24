@@ -13,6 +13,199 @@
  */
 
 /* ============================================================
+   0. Ink & gold tokens
+   ============================================================
+
+   The material of the revamp. theme.css loads after index.css and App.css,
+   so this block is the last word on every custom property it names — the
+   older sheets keep their rules and simply resolve to the new palette.
+
+   Nothing here is rounded. Border radius is zero by design; it is the
+   single strongest signal of the style. Elevation is an edge plus a
+   gradient, never a shadow.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* ---------- Ground ---------- */
+  --ink-900: #0c0b0f; /* base */
+  --ink-800: #121116; /* mid stop */
+  --ink-700: #191720; /* top stop */
+
+  /* Panel and hero fills. Two-stop gradients, never flat. */
+  --ink-panel-a: rgba(26, 24, 30, 0.55);
+  --ink-panel-b: rgba(13, 12, 16, 0.7);
+  --ink-hero-a: rgba(32, 29, 37, 0.7);
+  --ink-hero-b: rgba(13, 12, 16, 0.8);
+  --ink-field: rgba(10, 9, 13, 0.6);
+  --ink-header: rgba(14, 13, 17, 0.82);
+
+  /* ---------- Gold ---------- */
+  --gold-500: #c9a86a; /* rules, kickers, active nav, primary fill */
+  --gold-300: #dfc9a1; /* accent text, hover */
+  --gold-200: #e0c891; /* active nav label, brightest accent text */
+  --gold-600: #a88a52; /* progress fill, low end of gradient */
+
+  /* Gold at alpha carries every border and rule in the interface. Named by
+     role rather than by number so a rule reads as its intent. */
+  --line-header: rgba(201, 168, 106, 0.2);
+  --line-hero: rgba(201, 168, 106, 0.2);
+  --line-panel: rgba(201, 168, 106, 0.16);
+  --line-quiet: rgba(201, 168, 106, 0.14);
+  --line-seam: rgba(201, 168, 106, 0.14); /* grid gap hairlines */
+  --line-field: rgba(201, 168, 106, 0.18);
+  --line-row: rgba(201, 168, 106, 0.1); /* divider inside a panel */
+  --line-table: rgba(201, 168, 106, 0.07); /* table row divider */
+  --line-track: rgba(201, 168, 106, 0.12); /* progress track */
+  --wash-row: rgba(201, 168, 106, 0.05); /* row hover */
+  --line-check: rgba(201, 168, 106, 0.35); /* unchecked checkbox */
+  --line-button: rgba(201, 168, 106, 0.3);
+  --line-button-hover: rgba(201, 168, 106, 0.6);
+  --line-focus: rgba(201, 168, 106, 0.5); /* input focus border */
+
+  /* ---------- Text ---------- */
+  --text-primary: #ece9e3;
+  --text-secondary: #a8a39b;
+  --text-muted: #8f8b84;
+  --text-faint: #7e7a74;
+  --on-gold: #14120f;
+
+  /* ---------- Channel and semantic hues ----------
+     Muted jewels, never bright. Each is used in two registers: as a channel
+     identity on Campaigns, and as a status tone elsewhere. Status is always
+     carried by text as well as hue — none of these ever stands alone. */
+  --hue-slate: #3f6f9e; /* Mailing */
+  --hue-cognac: #b0803e; /* Cold Calls; Reviewing */
+  --hue-terracotta: #9c5a48; /* Community; Life; overdue, quiet, behind */
+  --hue-verdigris: #4f7f75; /* Social Media; Property; Quoted; on pace, done */
+  --hue-brass: #c9a86a; /* Referrals; Casualty; New; due today */
+  --hue-grey: #8f8b84; /* Won; neutral, no date */
+
+  /* ---------- Type ----------
+     Two families. Display carries every number that matters, every panel
+     title and every proper name; UI carries everything else. */
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-ui: Inter, system-ui, sans-serif;
+
+  /* ---------- Geometry ---------- */
+  --radius-sm: 0;
+  --radius: 0;
+  --radius-lg: 0;
+
+  /* ---------- Motion ----------
+     .18s for colour on hover, .25s for opacity on selection. Nothing else. */
+  --t-hover: 0.18s;
+  --t-select: 0.25s;
+
+  /* ============================================================
+     Legacy aliases
+
+     The older sheets were written against these names. Re-pointing them
+     here re-materials the whole application in ink and gold without
+     editing the rules that use them.
+     ============================================================ */
+
+  --page: var(--ink-900);
+  --surface-1: var(--ink-800);
+  --surface-2: var(--ink-700);
+  --surface-3: #1f1c26;
+
+  /* There is no navy and no cognac any more; both become gold. */
+  --navy: var(--gold-500);
+  --navy-2: var(--gold-600);
+  --navy-3: var(--gold-300);
+  --navy-soft: rgba(201, 168, 106, 0.12);
+  --navy-line: var(--line-panel);
+
+  --cognac: var(--gold-500);
+  --cognac-2: var(--gold-300);
+  --cognac-soft: rgba(201, 168, 106, 0.12);
+  --cognac-ink: var(--gold-200);
+
+  --metal: var(--text-muted);
+  --metal-light: var(--text-secondary);
+
+  --gridline: var(--line-table);
+  --border: var(--line-panel);
+  --border-strong: var(--line-button);
+  --baseline: var(--line-check);
+
+  --accent: var(--gold-500);
+  --accent-hover: var(--gold-300);
+  --accent-soft: rgba(201, 168, 106, 0.12);
+  --accent-track: var(--line-track);
+  --on-accent: var(--on-gold);
+
+  --success: var(--hue-verdigris);
+  --success-soft: rgba(79, 127, 117, 0.16);
+  --attention: var(--hue-brass);
+  --attention-soft: rgba(201, 168, 106, 0.15);
+  --danger: var(--hue-terracotta);
+  --danger-soft: rgba(156, 90, 72, 0.16);
+
+  --neon-red: var(--danger);
+  --neon-red-soft: var(--danger-soft);
+  --status-good: var(--success);
+  --status-warning: var(--attention);
+  --status-serious: var(--hue-cognac);
+  --status-critical: var(--danger);
+
+  --series-1: var(--hue-verdigris); /* Property */
+  --series-2: var(--hue-brass); /* Casualty */
+  --series-3: var(--hue-terracotta); /* Life */
+
+  /* Elevation is an edge, not a shadow. These resolve to nothing so the
+     older rules that reference them stop lifting things off the page. */
+  --shadow-1: none;
+  --shadow-2: none;
+  --shadow-3: none;
+  --glow-blue: none;
+  --glow-red: none;
+
+  --font-sans: var(--font-ui);
+  --tracking-label: 0.16em;
+
+  --focus-ring: 0 0 0 1px var(--gold-500);
+}
+
+/* ---------- Ground and base type ----------
+   The page is one fixed radial wash from ink-700 at the top through ink-800
+   to ink-900 at the foot, so scrolling moves content across a still ground
+   rather than dragging the gradient with it. */
+
+body {
+  background: radial-gradient(
+    85% 65% at 50% 0%,
+    var(--ink-700) 0%,
+    var(--ink-800) 50%,
+    var(--ink-900) 100%
+  );
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+/* Every letterspaced uppercase label must refuse to wrap. At .16–.24em
+   tracking they break their containers in ways that look like a bug. */
+.kicker,
+.micro-label,
+.nav-item,
+.button-label,
+.column-header {
+  white-space: nowrap;
+}
+
+/* One focus ring, gold, everywhere — never the browser default and never
+   `outline: none` on its own. */
+:focus-visible {
+  outline: 1px solid var(--gold-500);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+/* ============================================================
    1. Shell — a permanent navy spine and an ivory workspace
    ============================================================ */
 
@@ -59,7 +252,7 @@
 .brand-mark {
   width: 3px;
   height: 26px;
-  border-radius: 2px;
+  border-radius: 0;
   background: var(--cognac);
   flex: none;
 }
@@ -830,7 +1023,7 @@ label {
   letter-spacing: 0;
   text-transform: none;
   padding: 3px 9px;
-  border-radius: 4px;
+  border-radius: 0;
   border: none;
   background: var(--surface-3);
   color: var(--text-secondary);
@@ -1032,7 +1225,7 @@ td {
     bottom: -4px;
     width: auto;
     height: 2px;
-    border-radius: 2px 2px 0 0;
+    border-radius: 0 2px 0 0;
   }
 
   .sidenav-foot {
@@ -1361,7 +1554,7 @@ th,
   line-height: 1.5;
   letter-spacing: 0.01em;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: 0;
   white-space: nowrap;
   vertical-align: middle;
 }
@@ -1412,7 +1605,7 @@ th,
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 0;
   min-height: 0;
 }
 
@@ -1447,7 +1640,7 @@ th,
 .tag-swatch {
   width: 22px;
   height: 22px;
-  border-radius: 4px;
+  border-radius: 0;
   border: 1px solid var(--border-strong);
   cursor: pointer;
   padding: 0;
@@ -1621,7 +1814,7 @@ kbd {
   font-size: 0.7rem;
   line-height: 1;
   padding: 3px 5px;
-  border-radius: 3px;
+  border-radius: 0;
   background: var(--surface-3);
   border: 1px solid var(--border);
   color: var(--text-secondary);
@@ -2624,7 +2817,7 @@ kbd {
 .vault-result-snippet mark,
 .vault-note mark {
   padding: 0 2px;
-  border-radius: 2px;
+  border-radius: 0;
   background: var(--cognac-soft);
   color: var(--cognac-ink);
 }
@@ -2771,7 +2964,7 @@ kbd {
   height: 11px;
   margin-top: 5px;
   border: 1px solid var(--metal);
-  border-radius: 3px;
+  border-radius: 0;
   background: var(--surface-2);
 }
 
@@ -2788,7 +2981,7 @@ kbd {
   font-family: var(--mono);
   font-size: 0.82em;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 0;
   background: var(--surface-3);
   color: var(--text-primary);
 }
@@ -3516,7 +3709,7 @@ kbd {
   min-height: 44px;
   padding: 11px 13px;
   border: 1px solid rgba(197, 167, 78, 0.24);
-  border-radius: 2px;
+  border-radius: 0;
   background: rgba(8, 6, 10, 0.66);
   color: var(--campaign-ink);
   color-scheme: dark;
@@ -3559,7 +3752,7 @@ kbd {
 .campaigns-save,
 .campaigns-clear {
   min-height: 42px;
-  border-radius: 10px;
+  border-radius: 0;
   font-weight: 700;
   cursor: pointer;
 }
@@ -3921,7 +4114,7 @@ kbd {
   min-height: 32px;
   padding: 6px 10px;
   border: 1px solid rgba(197, 167, 78, 0.3);
-  border-radius: 8px;
+  border-radius: 0;
   background: transparent;
   color: var(--text-secondary);
   font-size: 0.69rem;
@@ -3981,7 +4174,7 @@ kbd {
 
 .palette-trigger {
   border: 1px solid rgba(197, 167, 78, 0.25);
-  border-radius: 8px;
+  border-radius: 0;
   background: rgba(21, 17, 25, 0.75);
   color: var(--text-secondary);
 }
@@ -4120,7 +4313,7 @@ button {
 .primary-btn,
 .next-call-btn {
   border: 1px solid var(--cognac);
-  border-radius: 8px;
+  border-radius: 0;
   background: transparent;
   color: var(--cognac-2);
   box-shadow: none;
@@ -4186,7 +4379,7 @@ input,
 select,
 textarea {
   border: 1px solid rgba(197, 167, 78, 0.2);
-  border-radius: 2px;
+  border-radius: 0;
   background: rgba(8, 6, 10, 0.66);
   color: var(--text-primary);
   box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.2);
@@ -4765,7 +4958,7 @@ td strong {
   min-height: 36px;
   padding: 8px 14px;
   border: 1px solid rgba(197, 167, 78, 0.32);
-  border-radius: 8px;
+  border-radius: 0;
   color: var(--cognac-2);
   font-size: 0.78rem;
   font-weight: 600;
@@ -4930,7 +5123,7 @@ td strong {
   min-height: 44px;
   padding: 10px 13px;
   border: 1px solid rgba(197, 167, 78, 0.24);
-  border-radius: 3px;
+  border-radius: 0;
   background: rgba(7, 5, 9, 0.84);
   color: var(--text-primary);
   font-family: var(--font-mono);
