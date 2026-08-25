@@ -13,7 +13,7 @@ import {
 
 interface LeadMapProps {
   prospects: Prospect[];
-  onOpenProspect: () => void;
+  onOpenProspect: (prospectId: string) => void;
 }
 
 const stageColor: Record<string, string> = {
@@ -235,8 +235,8 @@ export function LeadMap({ prospects, onOpenProspect }: LeadMapProps) {
                 {selectedProspect.nextAction && (
                   <span className="map-detail-meta">Next: {selectedProspect.nextAction}</span>
                 )}
-                <button className="link-btn" onClick={onOpenProspect}>
-                  Open in Prospects →
+                <button className="link-btn" onClick={() => onOpenProspect(selectedProspect.id)}>
+                  Open this household →
                 </button>
               </div>
             )}

@@ -5717,3 +5717,211 @@ main {
     padding: 26px 22px;
   }
 }
+
+/* ============================================================
+   21. Leads — every household, and the one thing owed to it
+
+   The filters are intents rather than stages, so the screen answers
+   "what should I do" without being translated into "which stage is
+   that" first. The table is a grid, not a <table>: five columns that
+   hold their proportions, and a whole row that is one button.
+   ============================================================ */
+
+.lead-intents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lead-intent {
+  border: 1px solid var(--line-panel);
+  border-radius: 0;
+  padding: 9px 15px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--t-hover),
+    background var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.lead-intent:hover {
+  border-color: var(--line-focus);
+}
+
+.lead-intent.is-current {
+  border-color: var(--line-focus);
+  background: rgba(201, 168, 106, 0.12);
+  color: var(--gold-200);
+}
+
+.lead-intent-count {
+  color: var(--text-faint);
+}
+
+/* ---------- The table ---------- */
+
+.lead-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-panel);
+  background: linear-gradient(180deg, var(--ink-panel-a), var(--ink-panel-b));
+}
+
+.lead-head,
+.lead-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 1fr 1fr minmax(0, 1.6fr) auto;
+  gap: 20px;
+  align-items: center;
+  text-align: left;
+}
+
+.lead-head {
+  padding: 15px 26px;
+  border-bottom: 1px solid var(--line-field);
+}
+
+.column-header {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.lead-right {
+  text-align: right;
+}
+
+/* The whole row is the control. One target, and the keyboard gets it free. */
+.lead-row {
+  width: 100%;
+  padding: 17px 26px;
+  border: none;
+  border-bottom: 1px solid var(--line-table);
+  background: none;
+  color: inherit;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background var(--t-hover);
+}
+
+.lead-row:hover,
+.lead-row.is-open {
+  background: var(--wash-row);
+}
+
+.lead-cell-name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.lead-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+}
+
+.lead-town {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.lead-tag {
+  padding: 2px 6px;
+  border-radius: 0;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lead-stage {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lead-lines {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* The most important cell on the screen. Full weight, never muted. */
+.lead-next {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.lead-touch {
+  font-size: 11px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.lead-detail {
+  padding: 0 26px 22px;
+  border-bottom: 1px solid var(--line-table);
+  background: rgba(10, 9, 13, 0.35);
+}
+
+.lead-empty {
+  padding: 26px;
+  border: 1px solid var(--line-quiet);
+  background: linear-gradient(180deg, var(--ink-panel-a), var(--ink-panel-b));
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+/* ---------- Below 1100px ----------
+   Lines held goes first, then Last touch — in that order, because a
+   household's next step survives longer than either. */
+
+@media (max-width: 1240px) {
+  .lead-head,
+  .lead-row {
+    grid-template-columns: minmax(0, 2fr) 1fr minmax(0, 1.6fr) auto;
+  }
+
+  .lead-head .column-header:nth-child(3),
+  .lead-lines {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .lead-head,
+  .lead-row {
+    grid-template-columns: minmax(0, 2fr) 1fr minmax(0, 1.6fr);
+    gap: 14px;
+  }
+
+  .lead-head .column-header:nth-child(5),
+  .lead-touch {
+    display: none;
+  }
+
+  .lead-head,
+  .lead-row {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}

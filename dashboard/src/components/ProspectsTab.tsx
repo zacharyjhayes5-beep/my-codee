@@ -25,6 +25,16 @@ import { ProspectCard } from "./ProspectCard";
 import { tagColor } from "../lib/tags";
 import { needsResearch, researchCount } from "../lib/research";
 import {
+  isQuiet,
+  isTerminal,
+  lastTouchLabel,
+  linesHeldLabel,
+  nextStepOf,
+  stageTone,
+  townOf,
+} from "../lib/leadView";
+import { LeadMap } from "./LeadMap";
+import {
   DEFAULT_ENDPOINT,
   GisSyncError,
   readSyncSettings,
@@ -32,31 +42,43 @@ import {
   writeSyncSettings,
 } from "../lib/gisSync";
 
-type SortKey = "name" | "stage" | "area" | "next" | "touched";
+/**
+ * The filters are intents, not stages — that is the point of the screen.
+ *
+ * A stage list makes you translate "what should I do" into "which stage is
+ * that", every time. These four are the questions actually being asked.
+ */
+type Intent = "move" | "quiet" | "all" | "won";
 
-const columns: { key: SortKey; label: string }[] = [
-  { key: "name", label: "Household" },
-  { key: "stage", label: "Stage" },
-  { key: "area", label: "Area" },
-  { key: "next", label: "Next action" },
+const INTENTS: { id: Intent; label: string }[] = [
+  { id: "move", label: "Needs a move" },
+  { id: "quiet", label: "Gone quiet" },
+  { id: "all", label: "All households" },
+  { id: "won", label: "Won" },
 ];
 
-/**
- * The working state of a lead, read from fields the record already carries.
- *
- * This is a display derivation and nothing more — no state is stored, and the
- * order of the checks is the priority order: a household that is closed is
- * closed regardless of what else is true, and an overdue follow-up outranks
- * the fact that somebody has been contacted before.
- */
-function leadStatus(p: Prospect, now: string): { label: string; tone: string } {
-  if (p.stage === "Closed") return { label: "Closed", tone: "is-neutral" };
-  if (p.needsPhoneNumber) return { label: "Needs research", tone: "is-warning" };
-  if (p.nextActionDate && p.nextActionDate < now) return { label: "Follow-up due", tone: "is-critical" };
-  if (p.needsReview) return { label: "Needs review", tone: "is-warning" };
-  if (!p.lastContactedAt) return { label: "New", tone: "is-new" };
-  if (p.nextActionDate) return { label: "Scheduled", tone: "is-active" };
-  return { label: "Contacted", tone: "is-good" };
+/** Hue by tone name. Stage is always spelled out as well as toned. */
+const TONE_VAR: Record<string, string> = {
+  slate: "var(--hue-slate)",
+  cognac: "var(--hue-cognac)",
+  terracotta: "var(--hue-terracotta)",
+  verdigris: "var(--hue-verdigris)",
+  brass: "var(--hue-brass)",
+  grey: "var(--hue-grey)",
+};
+
+function matchesIntent(p: Prospect, intent: Intent, todayIso: string): boolean {
+  switch (intent) {
+    case "won":
+      return p.stage === "Won";
+    case "quiet":
+      return isQuiet(p, todayIso);
+    case "move":
+      // Open, not terminal, and still live enough to be worth a move today.
+      return !isTerminal(p) && !isQuiet(p, todayIso);
+    default:
+      return true;
+  }
 }
 
 interface ProspectsTabProps {
@@ -106,9 +128,10 @@ export function ProspectsTab({
     onFocusHandled();
   }, [focusProspectId, onFocusHandled]);
 
+  const [intent, setIntent] = useState<Intent>("move");
   const [stageFilter, setStageFilter] = useState<Stage | "All" | "Needs research">("All");
+  const [mapOpen, setMapOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "touched", dir: -1 });
   const [syncing, setSyncing] = useState(false);
   const [syncNote, setSyncNote] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
 
@@ -167,9 +190,19 @@ export function ProspectsTab({
     return map;
   }, [prospects]);
 
+  const day = today();
+
+  /** Each filter carries its own count, so the cut is visible before it is made. */
+  const intentCounts = useMemo(() => {
+    const map = new Map<Intent, number>();
+    for (const i of INTENTS) map.set(i.id, prospects.filter((p) => matchesIntent(p, i.id, day)).length);
+    return map;
+  }, [prospects, day]);
+
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return prospects
+      .filter((p) => matchesIntent(p, intent, day))
       .filter((p) =>
         stageFilter === "All"
           ? true
@@ -189,34 +222,7 @@ export function ProspectsTab({
         );
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.name.localeCompare(b.name));
-  }, [prospects, search, stageFilter]);
-
-  const sorted = useMemo(() => {
-    const read = (p: Prospect) => {
-      switch (sort.key) {
-        case "name":
-          return p.name.toLowerCase();
-        case "stage":
-          return p.stage;
-        case "area":
-          return p.area.toLowerCase();
-        case "next":
-          // Undated work sorts last either way rather than leading the list.
-          return p.nextActionDate || "9999-12-31";
-        default:
-          return p.updatedAt;
-      }
-    };
-    return [...visible].sort((a, b) => {
-      const x = read(a);
-      const y = read(b);
-      return x === y ? a.name.localeCompare(b.name) : (x < y ? -1 : 1) * sort.dir;
-    });
-  }, [visible, sort]);
-
-  function toggleSort(key: SortKey) {
-    setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
-  }
+  }, [prospects, search, stageFilter, intent, day]);
 
   function patchProspect(id: string, patch: Partial<Prospect>) {
     const before = prospects.find((p) => p.id === id);
@@ -415,6 +421,39 @@ export function ProspectsTab({
         </details>
       </div>
 
+      <div className="lead-intents" role="group" aria-label="Filter households by intent">
+        {INTENTS.map((i) => (
+          <button
+            key={i.id}
+            type="button"
+            className={`lead-intent${intent === i.id ? " is-current" : ""}`}
+            aria-pressed={intent === i.id}
+            onClick={() => setIntent(i.id)}
+          >
+            {i.label}
+            <span className="lead-intent-count"> {intentCounts.get(i.id) ?? 0}</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          className={`lead-intent${mapOpen ? " is-current" : ""}`}
+          aria-pressed={mapOpen}
+          onClick={() => setMapOpen((v) => !v)}
+        >
+          Lead map
+        </button>
+      </div>
+
+      {mapOpen && (
+        <LeadMap
+          prospects={visible}
+          onOpenProspect={(id) => {
+            setMapOpen(false);
+            setExpandedId(id);
+          }}
+        />
+      )}
+
       <div className="lead-toolbar">
         <div className="lead-toolbar-left">
           <label className="sr-only" htmlFor="lead-search">
@@ -448,7 +487,7 @@ export function ProspectsTab({
             </select>
           </label>
           <span className="lead-count">
-            {sorted.length} of {prospects.length} households
+            {visible.length} of {prospects.length} households
           </span>
         </div>
         <div className="lead-toolbar-actions">
@@ -468,141 +507,105 @@ export function ProspectsTab({
 
       {syncNote && <p className={`sync-note enter ${syncNote.tone}`}>{syncNote.text}</p>}
 
-      {sorted.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="lead-empty">
           {prospects.length === 0
             ? "No households yet — use Add household, or open Add or import for a list."
             : "Nothing matches that filter."}
         </p>
       ) : (
-        <div className="lead-table-wrap">
-          <table className="lead-table">
-            <caption className="sr-only">
-              Households, with stage, area, next action and working status.
-            </caption>
-            <thead>
-              <tr>
-                {columns.map((c) => (
-                  <th
-                    key={c.key}
-                    scope="col"
-                    aria-sort={
-                      sort.key === c.key ? (sort.dir === 1 ? "ascending" : "descending") : "none"
-                    }
+        <div className="lead-table">
+          <div className="lead-head" role="row">
+            <span className="column-header">Household</span>
+            <span className="column-header">Stage</span>
+            <span className="column-header">Lines held</span>
+            <span className="column-header">Next step</span>
+            <span className="column-header lead-right">Last touch</span>
+          </div>
+
+          {visible.map((p) => {
+            const open = expandedId === p.id;
+            const quiet = isQuiet(p, day);
+            return (
+              <Fragment key={p.id}>
+                <button
+                  type="button"
+                  className={`lead-row${open ? " is-open" : ""}`}
+                  aria-expanded={open}
+                  onClick={() => setExpandedId(open ? null : p.id)}
+                >
+                  <span className="lead-cell-name">
+                    <span className="lead-name">{p.name || "Untitled household"}</span>
+                    <span className="lead-town">
+                      {townOf(p) || "No town on file"}
+                      {/* Tags read inline, so the table can be scanned
+                          without opening a single row. */}
+                      {(p.tags ?? []).map((tag) => {
+                        const c = tagColor(tag.color);
+                        return (
+                          <span
+                            key={tag.id}
+                            className="lead-tag"
+                            style={{ background: c.background, color: c.foreground }}
+                          >
+                            {tag.label}
+                          </span>
+                        );
+                      })}
+                    </span>
+                  </span>
+
+                  <span className="lead-stage" style={{ color: TONE_VAR[stageTone(p.stage)] }}>
+                    {p.stage}
+                  </span>
+
+                  <span className="lead-lines">{linesHeldLabel(p)}</span>
+
+                  {/* The most important cell on the screen. Never muted. */}
+                  <span className="lead-next">{nextStepOf(p, tasks, opportunities)}</span>
+
+                  <span
+                    className="lead-touch"
+                    style={{ color: quiet ? "var(--hue-terracotta)" : "var(--hue-grey)" }}
                   >
-                    <button onClick={() => toggleSort(c.key)}>
-                      {c.label}
-                      {sort.key === c.key && (
-                        <span className="sort-caret" aria-hidden="true">
-                          {sort.dir === 1 ? "▲" : "▼"}
-                        </span>
-                      )}
-                    </button>
-                  </th>
-                ))}
-                <th scope="col">Status</th>
-                <th scope="col">Contact</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((p) => {
-                const status = leadStatus(p, today());
-                const open = expandedId === p.id;
-                return (
-                  <Fragment key={p.id}>
-                    <tr className={`lead-row${open ? " is-open" : ""}`}>
-                      <td>
-                        <button
-                          className="lead-name"
-                          aria-expanded={open}
-                          onClick={() => setExpandedId(open ? null : p.id)}
-                        >
-                          <span className="lead-disclosure" aria-hidden="true">
-                            ▶
-                          </span>
-                          <span>
-                            <span className="lead-name-line">
-                              {p.name || "Untitled household"}
-                              {/* Tags read inline after the name, so the whole
-                                  table can be scanned without expanding rows. */}
-                              {(p.tags ?? []).map((tag) => {
-                                const c = tagColor(tag.color);
-                                return (
-                                  <span
-                                    key={tag.id}
-                                    className="lead-tag"
-                                    style={{ background: c.background, color: c.foreground }}
-                                  >
-                                    {tag.label}
-                                  </span>
-                                );
-                              })}
-                            </span>
-                            {(p.contacts ?? []).length > 0 && (
-                              <span className="lead-sub">
-                                {(p.contacts ?? []).length} contact
-                                {(p.contacts ?? []).length === 1 ? "" : "s"}
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                      </td>
-                      <td>{p.stage}</td>
-                      <td>{p.area || "—"}</td>
-                      <td>
-                        {p.nextAction || "—"}
-                        {p.nextActionDate && <span className="lead-sub">{p.nextActionDate}</span>}
-                      </td>
-                      <td>
-                        <span className={`lead-status ${status.tone}`}>{status.label}</span>
-                      </td>
-                      <td>
-                        {p.phone || p.email || "—"}
-                        {p.phone && p.email && <span className="lead-sub">{p.email}</span>}
-                      </td>
-                    </tr>
-                    {open && (
-                      <tr className="lead-detail-row">
-                        <td colSpan={6}>
-                          <ProspectCard
-                            prospect={p}
-                            calls={callsFor(calls, p.id)}
-                            expanded
-                            onToggle={() => setExpandedId(null)}
-                            onChange={(patch) => patchProspect(p.id, patch)}
-                            onRemove={() => {
-                              onCallsChange((prev) => prev.filter((c) => c.prospectId !== p.id));
-                              // Rule-made tasks go with the household; hand-typed ones stay.
-                              onTasksChange(
-                                tasks.filter((t) => !(t.prospectId === p.id && t.ruleId)),
-                              );
-                              onChange((prev) => prev.filter((x) => x.id !== p.id));
-                            }}
-                            onSaveCall={saveCall}
-                            onDeleteCall={deleteCall}
-                            onSetScore={(score) => patchProspect(p.id, { conversionScore: score })}
-                            opportunities={opportunitiesFor(opportunities, p.id)}
-                            onSaveOpportunity={(o, isNew) =>
-                              onOpportunitiesChange(
-                                isNew
-                                  ? [...opportunities, o]
-                                  : opportunities.map((x) =>
-                                      x.id === o.id ? patchOpportunity(x, o) : x,
-                                    ),
-                              )
-                            }
-                            onRemoveOpportunity={(id) =>
-                              onOpportunitiesChange(opportunities.filter((x) => x.id !== id))
-                            }
-                          />
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                    {lastTouchLabel(p, day)}
+                  </span>
+                </button>
+
+                {open && (
+                  <div className="lead-detail">
+                    <ProspectCard
+                      prospect={p}
+                      calls={callsFor(calls, p.id)}
+                      expanded
+                      onToggle={() => setExpandedId(null)}
+                      onChange={(patch) => patchProspect(p.id, patch)}
+                      onRemove={() => {
+                        onCallsChange((prev) => prev.filter((c) => c.prospectId !== p.id));
+                        // Rule-made tasks go with the household; hand-typed ones stay.
+                        onTasksChange(tasks.filter((t) => !(t.prospectId === p.id && t.ruleId)));
+                        onChange((prev) => prev.filter((x) => x.id !== p.id));
+                      }}
+                      onSaveCall={saveCall}
+                      onDeleteCall={deleteCall}
+                      onSetScore={(score) => patchProspect(p.id, { conversionScore: score })}
+                      opportunities={opportunitiesFor(opportunities, p.id)}
+                      onSaveOpportunity={(o, isNew) =>
+                        onOpportunitiesChange(
+                          isNew
+                            ? [...opportunities, o]
+                            : opportunities.map((x) => (x.id === o.id ? patchOpportunity(x, o) : x)),
+                        )
+                      }
+                      onRemoveOpportunity={(id) =>
+                        onOpportunitiesChange(opportunities.filter((x) => x.id !== id))
+                      }
+                    />
+                  </div>
+                )}
+              </Fragment>
+            );
+          })}
         </div>
       )}
     </div>
