@@ -73,8 +73,14 @@ describe("guessing the columns", () => {
   });
 
   it("leaves an unrecognised column ignored rather than guessing", () => {
-    const mapping = guessMapping(["Parcel ID"]);
+    const mapping = guessMapping(["Roof Material"]);
     expect(mapping[0]).toBe("");
+  });
+
+  it("recognises the county's parcel number under its usual spellings", () => {
+    expect(guessMapping(["Parcel Number"])[0]).toBe("parcelId");
+    expect(guessMapping(["Parcel ID"])[0]).toBe("parcelId");
+    expect(guessMapping(["PNUM"])[0]).toBe("parcelId");
   });
 });
 
@@ -95,6 +101,23 @@ describe("turning rows into households", () => {
     expect(p.name).toBe("Dana Reed");
     expect(p.firstName).toBe("Dana");
     expect(p.phone).toBe("(517) 555-0134");
+  });
+
+  it("carries the parcel number through, so a later county sync deduplicates", () => {
+    // Without this the household is invisible to runSync's parcel check and
+    // the next batch from the county creates a second copy of it.
+    const withParcel = parseCsv(
+      "Owner Name,Address,City,Parcel Number\nHorton Sharon Trust,147 El Centro Blvd SE,East Grand Rapids,41-14-27-376-005",
+    );
+    const m = guessMapping(withParcel[0]);
+    const mappedRows = applyMapping(withParcel, m, true);
+    const p = prospectFromRow(mappedRows[0], "Kent County GIS");
+    expect(p.parcelId).toBe("41-14-27-376-005");
+    expect(p.name).toBe("Horton Sharon Trust");
+  });
+
+  it("leaves the parcel blank when the file has no such column", () => {
+    expect(prospectFromRow(mapped[0], "Kent list").parcelId).toBe("");
   });
 
   it("fills the area label the Lead Map needs", () => {

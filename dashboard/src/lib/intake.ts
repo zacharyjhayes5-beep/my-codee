@@ -79,6 +79,7 @@ export const IMPORT_FIELDS = [
   "leadSource",
   "whyTheyFit",
   "importantNotes",
+  "parcelId",
 ] as const;
 
 export type ImportField = (typeof IMPORT_FIELDS)[number];
@@ -96,6 +97,7 @@ export const FIELD_LABELS: Record<ImportField, string> = {
   leadSource: "Lead source",
   whyTheyFit: "Why they fit",
   importantNotes: "Important notes",
+  parcelId: "Parcel number",
 };
 
 /** Header spellings seen in the wild, so the first guess is usually right. */
@@ -112,6 +114,7 @@ const HEADER_HINTS: Record<ImportField, string[]> = {
   leadSource: ["source", "lead source", "origin", "list"],
   whyTheyFit: ["why", "why they fit", "fit", "reason"],
   importantNotes: ["notes", "note", "comments", "important notes"],
+  parcelId: ["parcel number", "parcel", "parcel id", "pnum", "permanent parcel number"],
 };
 
 /**
@@ -226,6 +229,15 @@ export function prospectFromRow(row: MappedRow, defaultSource: string): Prospect
     whyTheyFit: v.whyTheyFit ?? "",
     importantNotes: v.importantNotes ?? "",
     contacts,
+    /**
+     * The county's permanent parcel number, when the file carries one.
+     *
+     * `runSync` deduplicates on this and nothing else, so an imported
+     * household without it is invisible to the check and the next county
+     * batch creates a second copy of the same address. Importing a GIS
+     * export used to do exactly that.
+     */
+    parcelId: v.parcelId ?? "",
     source: "import",
     createdAt: today(),
     updatedAt: today(),
