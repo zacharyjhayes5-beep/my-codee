@@ -1,244 +1,384 @@
 import { useMemo, useState } from "react";
-import { format } from "date-fns";
-import type { Call, Opportunity, Prospect, ReviewProposal, Task } from "../types";
-import { whatNeedsMe } from "../lib/attention";
-import { buildDailyBrief, previousDay, todaysSchedule } from "../lib/dailyBrief";
-import {
-  authorizeGoogleCalendar,
-  fetchGoogleCalendarDay,
-  isGoogleClientId,
-  revokeGoogleCalendar,
-  type GoogleCalendarEvent,
-} from "../lib/googleCalendar";
+import type {
+  Opportunity,
+  PolicyEntry,
+  PolicyLine,
+  Period,
+  Prospect,
+  ReviewProposal,
+  Task,
+} from "../types";
+import { countsByCategory, currency, totalsFor } from "../lib/policies";
+import { readPace, lineTotals } from "../lib/pace";
+import { dueTag, upNext, waitingOnYou } from "../lib/operator";
+import { isTerminal } from "../lib/leadView";
 import { today } from "../lib/storage";
+import { DayCalendar } from "./DayCalendar";
 
 interface OperatorTabProps {
   prospects: Prospect[];
   tasks: Task[];
+  onTasksChange: (updater: (prev: Task[]) => Task[]) => void;
   reviews: ReviewProposal[];
-  calls: Call[];
   opportunities: Opportunity[];
+  lines: PolicyLine[];
+  period: Period;
+  entries: PolicyEntry[];
   googleCalendarClientId: string;
   onGoogleCalendarClientIdChange: (clientId: string) => void;
-  onGo: (target: "pipeline" | "todo", prospectId?: string) => void;
+  /** Open a household on the Leads screen. */
+  onOpenProspect: (prospectId: string) => void;
+  /** Jump to another screen, for the "waiting on you" rows. */
+  onGo: (target: "leads" | "todo") => void;
 }
 
-function eventTime(event: GoogleCalendarEvent): string {
-  return event.allDay ? "All day" : format(new Date(event.start), "h:mm a");
+/** A hue token, chosen by tone name. Status always carries a label too. */
+const TONE_VAR: Record<string, string> = {
+  slate: "var(--hue-slate)",
+  cognac: "var(--hue-cognac)",
+  terracotta: "var(--hue-terracotta)",
+  verdigris: "var(--hue-verdigris)",
+  brass: "var(--hue-brass)",
+  grey: "var(--hue-grey)",
+};
+
+function newTaskId(): string {
+  return `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** The Operator is deliberately quiet: the day, then a short read on what deserves attention. */
+/**
+ * Operator — what you owe today, and who is up next.
+ *
+ * Four sections and no more: the hero pairs the to-do list with the queue,
+ * the vitals strip carries exactly four figures, and the goal row puts pace
+ * beside the short list of things waiting on a decision. Today's calendar
+ * follows at the foot.
+ */
 export function OperatorTab({
   prospects,
   tasks,
+  onTasksChange,
   reviews,
-  calls,
   opportunities,
+  lines,
+  period,
+  entries,
   googleCalendarClientId,
   onGoogleCalendarClientIdChange,
+  onOpenProspect,
   onGo,
 }: OperatorTabProps) {
-  const now = useMemo(() => new Date(), []);
   const day = today();
-  const [draftClientId, setDraftClientId] = useState(googleCalendarClientId);
-  const [accessToken, setAccessToken] = useState("");
-  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
-  const [calendarState, setCalendarState] = useState<
-    "idle" | "connecting" | "connected" | "error"
-  >("idle");
-  const [calendarError, setCalendarError] = useState("");
+  const [draft, setDraft] = useState("");
 
-  const dashboardSchedule = useMemo(
-    () => todaysSchedule(opportunities, prospects, day),
-    [opportunities, prospects, day],
-  );
+  /* ---------- Hero: the to-do list ---------- */
 
-  const brief = useMemo(
-    () =>
-      buildDailyBrief({
-        prospects,
-        calls,
-        tasks,
-        opportunities,
-        reviews,
-        today: day,
-        yesterday: previousDay(day),
-        now,
-      }),
-    [prospects, calls, tasks, opportunities, reviews, day, now],
-  );
+  const openCount = tasks.filter((t) => !t.done).length;
 
-  const updates = useMemo(
-    () => whatNeedsMe({ prospects, opportunities, tasks, reviews, today: day }, 4),
+  function toggleTask(id: string) {
+    onTasksChange((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              done: !t.done,
+              completedAt: !t.done ? new Date().toISOString() : undefined,
+            }
+          : t,
+      ),
+    );
+  }
+
+  /** Empty or whitespace is a no-op; on success the field clears. */
+  function addTask() {
+    const text = draft.trim();
+    if (!text) return;
+    onTasksChange((prev) => [
+      ...prev,
+      {
+        id: newTaskId(),
+        text,
+        detail: "",
+        urgency: "week",
+        done: false,
+        source: "manual",
+        createdAt: new Date().toISOString(),
+        kind: "manual",
+      },
+    ]);
+    setDraft("");
+  }
+
+  const byId = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
+
+  /* ---------- Hero: who is up next ---------- */
+
+  const queue = useMemo(
+    () => upNext({ prospects, opportunities, tasks, reviews, today: day }),
     [prospects, opportunities, tasks, reviews, day],
   );
 
-  async function loadEvents(token: string) {
-    const events = await fetchGoogleCalendarDay(token, day);
-    setGoogleEvents(events);
-    setCalendarState("connected");
-    setCalendarError("");
-  }
+  /* ---------- Vitals ---------- */
 
-  async function connectCalendar() {
-    const clientId = draftClientId.trim();
-    if (!isGoogleClientId(clientId)) {
-      setCalendarState("error");
-      setCalendarError("Paste the Web application client ID from Google Cloud.");
-      return;
-    }
+  const inPeriod = useMemo(
+    () => entries.filter((e) => e.effectiveDate >= period.start && e.effectiveDate < period.end),
+    [entries, period.start, period.end],
+  );
+  const earnings = useMemo(() => totalsFor(inPeriod), [inPeriod]);
+  const derived = useMemo(() => countsByCategory(inPeriod), [inPeriod]);
+  const totals = useMemo(() => lineTotals(lines, derived.counts), [lines, derived]);
+  const pace = useMemo(
+    () => readPace(period, totals.policyCount, totals.policyGoal),
+    [period, totals.policyCount, totals.policyGoal],
+  );
 
-    setCalendarState("connecting");
-    setCalendarError("");
-    try {
-      onGoogleCalendarClientIdChange(clientId);
-      const token = await authorizeGoogleCalendar(clientId);
-      setAccessToken(token);
-      await loadEvents(token);
-    } catch (error) {
-      setCalendarState("error");
-      setCalendarError(error instanceof Error ? error.message : "Google Calendar could not connect.");
-    }
-  }
+  const inPlay = useMemo(() => prospects.filter((p) => !isTerminal(p)).length, [prospects]);
 
-  async function refreshCalendar() {
-    if (!accessToken) return;
-    setCalendarState("connecting");
-    try {
-      await loadEvents(accessToken);
-    } catch (error) {
-      setCalendarState("error");
-      setCalendarError(error instanceof Error ? error.message : "Google Calendar could not refresh.");
-    }
-  }
+  const vitals = [
+    {
+      label: "Net commission",
+      value: currency(earnings.net, 0),
+      sub: `${currency(earnings.premium, 0)} in premium`,
+      tone: "grey" as const,
+    },
+    {
+      label: "Policies written",
+      value: String(totals.policyCount),
+      sub: `of ${totals.policyGoal} this period`,
+      tone: pace.onPace ? ("verdigris" as const) : ("terracotta" as const),
+    },
+    {
+      label: "Households in play",
+      value: String(inPlay),
+      sub: `${prospects.length} on the books`,
+      tone: "grey" as const,
+    },
+    {
+      label: "Days remaining",
+      value: pace.valid ? String(pace.daysLeft) : "—",
+      sub: pace.valid ? `${Math.round(pace.elapsedPct)}% of the period gone` : "Period not set",
+      tone: pace.daysLeft < 30 ? ("brass" as const) : ("grey" as const),
+    },
+  ];
 
-  async function disconnectCalendar() {
-    const token = accessToken;
-    setAccessToken("");
-    setGoogleEvents([]);
-    setCalendarState("idle");
-    setCalendarError("");
-    await revokeGoogleCalendar(token);
-  }
+  /* ---------- Waiting on you ---------- */
 
-  const connected = calendarState === "connected" || Boolean(accessToken);
+  const waiting = useMemo(
+    () => waitingOnYou({ tasks, reviews, prospects, today: day }),
+    [tasks, reviews, prospects, day],
+  );
 
   return (
-    <div className="operator operator-simple">
-      <section className="operator-calendar" aria-labelledby="calendar-title">
-        <header className="operator-calendar-head">
-          <div>
-            <span className="operator-eyebrow">Today</span>
-            <h2 id="calendar-title">{format(now, "EEEE, MMMM d")}</h2>
-          </div>
-          <div className="calendar-connection">
-            <span className={`calendar-source ${connected ? "is-connected" : ""}`}>
-              {connected ? "Google Calendar connected" : "Google Calendar not connected"}
+    <div className="operator">
+      {/* ---------- 1. Hero ---------- */}
+      <section className="op-hero">
+        <span className="op-hero-wash" aria-hidden="true" />
+
+        <div className="op-hero-todo">
+          <div className="op-section-head">
+            <span className="kicker">To-do</span>
+            <span className="op-rule" aria-hidden="true" />
+            <span className="op-count">
+              {openCount} open · {tasks.length} total
             </span>
-            {connected && (
-              <div className="calendar-actions">
-                <button onClick={() => void refreshCalendar()} disabled={calendarState === "connecting"}>Refresh</button>
-                <button onClick={() => void disconnectCalendar()}>Disconnect</button>
-              </div>
+          </div>
+
+          <ul className="op-tasks">
+            {tasks.length === 0 && (
+              <li className="op-empty">Nothing on the list. Add the first thing below.</li>
             )}
-          </div>
-        </header>
+            {tasks.map((task) => {
+              const tag = dueTag(task, day);
+              const household = task.prospectId ? byId.get(task.prospectId) : undefined;
+              return (
+                <li key={task.id} className="op-task">
+                  <input
+                    type="checkbox"
+                    id={`todo-${task.id}`}
+                    className="op-check"
+                    checked={task.done}
+                    onChange={() => toggleTask(task.id)}
+                  />
+                  <label htmlFor={`todo-${task.id}`} className="op-task-body">
+                    <span className={`op-task-label${task.done ? " is-done" : ""}`}>
+                      {task.text}
+                    </span>
+                    <span className="op-task-meta">
+                      {household?.name || task.sourceRef || "No household"}
+                    </span>
+                  </label>
+                  <span className="op-due" style={{ color: TONE_VAR[tag.tone] }}>
+                    {tag.label}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
 
-        {!connected && (
-          <div className="calendar-connect-card">
-            <div>
-              <span className="operator-eyebrow">Read-only connection</span>
-              <h3>Bring today’s Google Calendar here</h3>
-              <p>The dashboard can see event names, times, and locations. It cannot create, edit, or delete anything in Google Calendar.</p>
-            </div>
-            <div className="calendar-connect-form">
-              <label htmlFor="google-client-id">Google OAuth client ID</label>
-              <input
-                id="google-client-id"
-                value={draftClientId}
-                onChange={(event) => setDraftClientId(event.target.value)}
-                placeholder="123456789-…apps.googleusercontent.com"
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <button className="primary" onClick={() => void connectCalendar()} disabled={calendarState === "connecting"}>
-                {calendarState === "connecting" ? "Connecting…" : "Connect Google Calendar"}
-              </button>
-              {calendarError && <p className="calendar-error" role="alert">{calendarError}</p>}
-              <details>
-                <summary>Where do I get this?</summary>
-                <ol>
-                  <li>Enable the <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noreferrer">Google Calendar API</a>.</li>
-                  <li>Create an OAuth client of type <strong>Web application</strong> in <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">Google Cloud credentials</a>.</li>
-                  <li>Add authorized origins <code>http://127.0.0.1:5173</code>, <code>http://localhost:5173</code>, and <code>https://zacharyjhayes5-beep.github.io</code>.</li>
-                  <li>Paste the generated client ID above.</li>
-                </ol>
-              </details>
-            </div>
-          </div>
-        )}
+          <form
+            className="op-add"
+            onSubmit={(e) => {
+              // Enter in the field submits, exactly as pressing Add does.
+              e.preventDefault();
+              addTask();
+            }}
+          >
+            <input
+              type="text"
+              className="op-field"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Add a task"
+              aria-label="Add a task"
+            />
+            <button type="submit" className="op-btn">
+              Add
+            </button>
+          </form>
+        </div>
 
-        {connected && googleEvents.length === 0 ? (
-          <div className="calendar-empty">
-            <span className="calendar-empty-time">All day</span>
-            <div><strong>Your Google Calendar is clear today.</strong><p>No events were returned from your primary calendar.</p></div>
+        <div className="op-hero-queue">
+          <div className="op-section-head">
+            <span className="kicker">Then</span>
+            <span className="op-rule" aria-hidden="true" />
           </div>
-        ) : connected ? (
-          <ol className="operator-agenda">
-            {googleEvents.map((event) => (
-              <li key={event.id}>
-                <time dateTime={event.start}>{eventTime(event)}</time>
-                <span className="agenda-rule" aria-hidden="true" />
-                {event.htmlLink ? (
-                  <a className="agenda-event" href={event.htmlLink} target="_blank" rel="noreferrer">
-                    <strong>{event.title}</strong>
-                    <span>{event.location || (event.allDay ? "All-day event" : `${format(new Date(event.start), "h:mm a")}–${format(new Date(event.end), "h:mm a")}`)}</span>
-                  </a>
-                ) : (
-                  <div className="agenda-event"><strong>{event.title}</strong><span>{event.location || "Google Calendar"}</span></div>
-                )}
-              </li>
-            ))}
-          </ol>
-        ) : dashboardSchedule.length > 0 ? (
-          <>
-            <p className="calendar-fallback-label">Dashboard appointments</p>
-            <ol className="operator-agenda">
-              {dashboardSchedule.map((item) => (
+
+          {queue.length === 0 ? (
+            <p className="op-empty">Nobody is waiting. The queue is genuinely clear.</p>
+          ) : (
+            <ul className="op-queue">
+              {queue.map((item) => (
                 <li key={item.id}>
-                  <time dateTime={item.at}>{item.time}</time>
-                  <span className="agenda-rule" aria-hidden="true" />
-                  <button className="agenda-event" onClick={() => onGo("pipeline", item.prospectId)}>
-                    <strong>{item.title}</strong><span>{item.detail}</span>
+                  <button
+                    type="button"
+                    className="op-queue-row"
+                    onClick={() => item.prospectId && onOpenProspect(item.prospectId)}
+                  >
+                    <span className="op-numeral">{item.numeral}</span>
+                    <span className="op-queue-body">
+                      <span className="op-queue-name">{item.name}</span>
+                      <span className="op-queue-reason">{item.reason}</span>
+                    </span>
+                    <span className="op-queue-action" style={{ color: TONE_VAR[item.tone] }}>
+                      {item.action}
+                    </span>
                   </button>
                 </li>
               ))}
-            </ol>
-          </>
-        ) : null}
-      </section>
-
-      <div className="operator-day-grid">
-        <section className="operator-day-panel">
-          <header><span className="operator-eyebrow">Suggestions</span><h3>{brief.headline}</h3></header>
-          {brief.focus.length === 0 ? <p className="empty">Nothing pressing. Use the open space deliberately.</p> : (
-            <ol className="operator-suggestions">
-              {brief.focus.slice(0, 4).map((line, index) => <li key={line}><span>{String(index + 1).padStart(2, "0")}</span><p>{line}</p></li>)}
-            </ol>
-          )}
-        </section>
-
-        <section className="operator-day-panel">
-          <header><span className="operator-eyebrow">Updates</span><h3>What changed or needs you</h3></header>
-          {updates.length === 0 ? <p className="empty">Nothing urgent right now.</p> : (
-            <ul className="operator-updates">
-              {updates.map((item) => (
-                <li key={item.id}><button onClick={() => onGo(item.target === "todo" ? "todo" : "pipeline", item.prospectId)}><strong>{item.title}</strong><span>{item.detail}</span></button></li>
-              ))}
             </ul>
           )}
-        </section>
-      </div>
+        </div>
+      </section>
+
+      {/* ---------- 2. Vitals ---------- */}
+      <section className="op-vitals" aria-label="Vitals">
+        {vitals.map((v) => (
+          <div className="op-vital" key={v.label}>
+            <span className="micro-label">{v.label}</span>
+            <span className="op-figure">{v.value}</span>
+            <span className="op-vital-sub" style={{ color: TONE_VAR[v.tone] }}>
+              {v.sub}
+            </span>
+          </div>
+        ))}
+      </section>
+
+      {/* ---------- 3. Goal pace, and what is waiting ---------- */}
+      <section className="op-goal-row">
+        <div className="op-panel op-goal">
+          <div className="op-section-head">
+            <h2 className="op-panel-title">Toward {totals.policyGoal} policies</h2>
+            <span className="op-rule" aria-hidden="true" />
+            <span
+              className="op-pace-flag"
+              style={{
+                color: pace.onPace ? "var(--hue-verdigris)" : "var(--hue-terracotta)",
+              }}
+            >
+              {pace.onPace ? "On pace" : `${pace.behindBy} behind`}
+            </span>
+          </div>
+
+          <div
+            className="op-track"
+            role="progressbar"
+            aria-valuenow={Math.round(pace.writtenPct)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${totals.policyCount} of ${totals.policyGoal} policies written`}
+          >
+            <span className="op-track-fill" style={{ width: `${pace.writtenPct}%` }} />
+            {/* Where the count *should* be today. Without this the bar is
+                just a number; with it, the bar is a verdict. */}
+            {pace.valid && (
+              <span className="op-pace-marker" style={{ left: `${pace.elapsedPct}%` }} />
+            )}
+          </div>
+
+          <div className="op-goal-caption">
+            <span>
+              {totals.policyCount} written · {pace.remaining} to go
+            </span>
+            <span>
+              {pace.valid && pace.daysLeft > 0
+                ? `${pace.perWeek.toFixed(1)} per week to finish`
+                : "Period closed"}
+            </span>
+          </div>
+
+          <div className="op-lines">
+            {lines.map((line, index) => {
+              const count = derived.counts[line.id] ?? 0;
+              const pct = line.policyGoal > 0 ? Math.min(100, (count / line.policyGoal) * 100) : 0;
+              const hue = `var(--series-${index + 1})`;
+              return (
+                <div className="op-line" key={line.id}>
+                  <span className="op-line-head">
+                    <span className="op-line-dot" style={{ background: hue }} aria-hidden="true" />
+                    <span className="micro-label">{line.name}</span>
+                  </span>
+                  <span className="op-line-count">
+                    {count}
+                    <span className="op-line-goal"> / {line.policyGoal}</span>
+                  </span>
+                  <span className="op-line-bar" aria-hidden="true">
+                    <span style={{ width: `${pct}%`, background: hue }} />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="op-panel op-panel-quiet op-waiting">
+          <span className="kicker">Waiting on you</span>
+          <ul>
+            {waiting.map((row) => (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  className="op-waiting-row"
+                  onClick={() => onGo(row.id === "no-phone" ? "leads" : "todo")}
+                >
+                  <span>{row.label}</span>
+                  <span className="op-waiting-count" style={{ color: TONE_VAR[row.tone] }}>
+                    {row.count}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ---------- 4. Today ---------- */}
+      <DayCalendar
+        prospects={prospects}
+        opportunities={opportunities}
+        googleCalendarClientId={googleCalendarClientId}
+        onGoogleCalendarClientIdChange={onGoogleCalendarClientIdChange}
+        onOpenProspect={onOpenProspect}
+      />
     </div>
   );
 }

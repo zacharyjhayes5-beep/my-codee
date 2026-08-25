@@ -320,17 +320,19 @@ function App() {
           <OperatorTab
             prospects={prospects}
             tasks={tasks}
+            onTasksChange={setTasks}
             reviews={reviews}
-            calls={calls}
             opportunities={opportunities}
+            lines={lines}
+            period={period}
+            entries={entries}
             googleCalendarClientId={googleCalendarClientId}
             onGoogleCalendarClientIdChange={setGoogleCalendarClientId}
-            onGo={(target, prospectId) => {
-              // Operator still speaks the old names: its "pipeline" means the
-              // household list, which is the Leads screen now.
-              setTab(target === "pipeline" ? "leads" : target);
-              if (prospectId) setFocusProspectId(prospectId);
+            onOpenProspect={(id) => {
+              setFocusProspectId(id);
+              setTab("leads");
             }}
+            onGo={(target) => setTab(target)}
           />
         )}
         {tab === "progress" && (

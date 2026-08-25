@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import { differenceInCalendarDays, format } from "date-fns";
+import { format } from "date-fns";
 import type { Period, PolicyEntry, PolicyLine } from "../types";
 import { seriesColors } from "../lib/defaultData";
 import { countsByCategory, currency, totalsFor } from "../lib/policies";
+import { readPace } from "../lib/pace";
 import { AllAmericanSection } from "./AllAmericanSection";
 import { BookOfBusiness } from "./BookOfBusiness";
 import { Meter } from "./Meter";
@@ -62,29 +63,13 @@ export function ProgressTab({
     [lines, derived],
   );
 
-  const pace = useMemo(() => {
-    const start = parseDay(period.start);
-    const end = parseDay(period.end);
-    const now = new Date();
-    const totalDays = Math.max(1, differenceInCalendarDays(end, start));
-    const elapsedDays = Math.min(
-      totalDays,
-      Math.max(0, differenceInCalendarDays(now, start)),
-    );
-    const daysLeft = Math.max(0, differenceInCalendarDays(end, now));
-    const elapsedPct = (elapsedDays / totalDays) * 100;
-    const weeksLeft = daysLeft / 7;
-    const remaining = Math.max(0, totals.policyGoal - totals.policyCount);
-    return {
-      daysLeft,
-      elapsedPct,
-      expectedTotal: (totals.policyGoal * elapsedPct) / 100,
-      perWeek: weeksLeft >= 1 ? remaining / weeksLeft : remaining,
-      valid: end > start,
-    };
-  }, [period, totals.policyGoal, totals.policyCount]);
+  // Shared with the Operator goal strip. See lib/pace.ts.
+  const pace = useMemo(
+    () => readPace(period, totals.policyCount, totals.policyGoal),
+    [period, totals.policyCount, totals.policyGoal],
+  );
 
-  const paceDelta = totals.policyCount - pace.expectedTotal;
+  const paceDelta = pace.delta;
   const paceLabel =
     Math.abs(paceDelta) < 0.5
       ? "On pace"
