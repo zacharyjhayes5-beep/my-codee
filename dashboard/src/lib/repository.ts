@@ -66,7 +66,6 @@ export const SETTING_KEYS = {
   /** When the last export happened, so the app can say when it has been a while. */
   lastBackupAt: "fb-dashboard:lastBackupAt",
   noticeSeen: "fb-dashboard:storageNoticeSeen",
-  campaigns: "fb-dashboard:campaigns",
   /** Public OAuth application identifier only. Access tokens are never stored. */
   googleCalendarClientId: "fb-dashboard:googleCalendarClientId",
 } as const;
@@ -88,6 +87,21 @@ export const LEGACY_RECORD_KEYS: Record<
   suggestions: "fb-dashboard:suggestions",
   dismissed: "fb-dashboard:dismissed",
 };
+
+/**
+ * Campaign entries shipped into localStorage as though they were a setting.
+ * They are records — one row per logged activity, growing without bound — so
+ * they moved to a store of their own, and this key is now only the source the
+ * one-time migration reads from.
+ *
+ * Deliberately not part of LEGACY_RECORD_KEYS: that set is the collections
+ * the *first* migration moved, and it is iterated as a group. Campaigns
+ * moved later, on their own flag, and folding them in would quietly change
+ * what every one of those loops means.
+ */
+export const LEGACY_CAMPAIGNS_KEY = "fb-dashboard:campaigns";
+
+const CAMPAIGNS_FLAG = "campaignsMovedToIndexedDb";
 
 const MIGRATION_FLAG = "migratedFromLocalStorage";
 const SCHEMA_FLAG = "prospectSchemaVersion";
@@ -290,6 +304,34 @@ async function migrateSuggestionsToReviews(): Promise<ReviewMigrationReport> {
 }
 
 /**
+ * Moves campaign entries out of localStorage and into their own store.
+ *
+ * They were written as a setting, which was wrong twice over: settings are
+ * read whole on every boot, and localStorage is both small and the first
+ * thing a browser clears. Campaign entries are records — one row per logged
+ * activity, added to forever — so they belong beside calls and opportunities.
+ *
+ * Runs once, guarded by a meta flag. The old key is deliberately left in
+ * place rather than deleted: if this migration is ever found to be wrong,
+ * the original data is still sitting there to re-read.
+ */
+async function migrateCampaignsToStore(): Promise<void> {
+  if (await readMeta<boolean>(CAMPAIGNS_FLAG)) return;
+
+  const legacy = readLocal<CampaignEntry[]>(LEGACY_CAMPAIGNS_KEY) ?? [];
+  if (legacy.length > 0) {
+    const existing = await readAll<CampaignEntry>("campaigns");
+    const seen = new Set(existing.map((e) => e.id));
+    const incoming = legacy.filter((e) => e && e.id && !seen.has(e.id));
+    if (incoming.length > 0) {
+      await writeAll("campaigns", [...existing, ...incoming]);
+    }
+  }
+
+  await writeMeta(CAMPAIGNS_FLAG, true);
+}
+
+/**
  * Brings stored prospects up to the current schema. Separate from the
  * localStorage migration above because it has to run for books that already
  * moved to IndexedDB in phase 1 — those are sitting in the old v3 shape.
@@ -329,7 +371,17 @@ export async function initRepository(): Promise<BootResult> {
   if (!usable) {
     const legacy = collectionsFromLegacy();
     // Calls were born in IndexedDB — there is no localStorage fallback for them.
-    cache = { ...legacy, calls: [], reviews: [], audit: [], opportunities: [], ...loadSettings() };
+    cache = {
+      ...legacy,
+      calls: [],
+      reviews: [],
+      audit: [],
+      opportunities: [],
+      // No database means no store to have migrated into; the old key is
+      // still the only place campaign entries can live.
+      campaigns: readLocal<CampaignEntry[]>(LEGACY_CAMPAIGNS_KEY) ?? [],
+      ...loadSettings(),
+    };
     ready = true;
     emit();
     return { usingIndexedDb: false, migration: null, schema: null, reviews: null };
@@ -339,6 +391,7 @@ export async function initRepository(): Promise<BootResult> {
   const schema = await upgradeProspectSchema();
   const reviewMigration = await migrateSuggestionsToReviews();
   await upgradeCallOutcomes();
+  await migrateCampaignsToStore();
 
   cache = {
     // Normalised on the way into the cache, every boot, not only when the
@@ -358,6 +411,7 @@ export async function initRepository(): Promise<BootResult> {
     reviews: await readAll<ReviewProposal>("reviews"),
     audit: await readAll<AuditEntry>("audit"),
     opportunities: await readAll<Opportunity>("opportunities"),
+    campaigns: await readAll<CampaignEntry>("campaigns"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
@@ -375,7 +429,6 @@ function loadSettings() {
     correspondence: readLocal<CorrespondenceNote[]>(SETTING_KEYS.correspondence) ?? [],
     lastBackupAt: readLocal<string>(SETTING_KEYS.lastBackupAt) ?? "",
     noticeSeen: readLocal<boolean>(SETTING_KEYS.noticeSeen) ?? false,
-    campaigns: readLocal<CampaignEntry[]>(SETTING_KEYS.campaigns) ?? [],
     googleCalendarClientId:
       readLocal<string>(SETTING_KEYS.googleCalendarClientId) ??
       import.meta.env.VITE_GOOGLE_CALENDAR_CLIENT_ID ??
@@ -465,6 +518,7 @@ export interface RepositorySnapshot {
     reviews: ReviewProposal[];
     audit: AuditEntry[];
     opportunities: Opportunity[];
+    campaigns: CampaignEntry[];
   };
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
@@ -487,6 +541,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         reviews: await readAll<ReviewProposal>("reviews"),
         audit: await readAll<AuditEntry>("audit"),
         opportunities: await readAll<Opportunity>("opportunities"),
+        campaigns: await readAll<CampaignEntry>("campaigns"),
       }
     : {
         prospects: get("prospects"),
@@ -497,6 +552,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         reviews: [],
         audit: [],
         opportunities: [],
+        campaigns: get("campaigns"),
       };
 
   const dismissed = usable ? ((await readMeta<string[]>(DISMISSED_KEY)) ?? []) : get("dismissed");
@@ -529,6 +585,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     await writeAll("reviews", normalizeProposals(next.records.reviews));
     await writeAll("audit", next.records.audit ?? []);
     await writeAll("opportunities", next.records.opportunities ?? []);
+    await writeAll("campaigns", next.records.campaigns ?? []);
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -544,6 +601,9 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
       ran: true,
       suggestionsConverted: 0,
     } satisfies ReviewMigrationReport);
+    // Likewise: a restore carries its own campaign entries, so the
+    // localStorage migration must not run over the top of them.
+    await writeMeta(CAMPAIGNS_FLAG, true);
   }
 
   for (const [key, value] of Object.entries(next.settings)) {
@@ -559,6 +619,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     reviews: normalizeProposals(next.records.reviews),
     audit: next.records.audit ?? [],
     opportunities: next.records.opportunities ?? [],
+    campaigns: next.records.campaigns ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

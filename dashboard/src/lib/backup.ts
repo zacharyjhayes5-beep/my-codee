@@ -9,6 +9,7 @@ import type {
   Task,
 } from "../types";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
+import type { CampaignEntry } from "./campaigns";
 import { LEGACY_RECORD_KEYS, SETTING_KEYS, type RepositorySnapshot, snapshot } from "./repository";
 
 /**
@@ -38,6 +39,7 @@ export interface BackupRecords {
   reviews: ReviewProposal[];
   audit: AuditEntry[];
   opportunities: Opportunity[];
+  campaigns: CampaignEntry[];
 }
 
 export interface BackupV4 {
@@ -108,6 +110,7 @@ export function countsOf(snap: RepositorySnapshot): Record<string, number> {
     reviews: snap.records.reviews.length,
     audit: snap.records.audit.length,
     opportunities: snap.records.opportunities.length,
+    campaigns: snap.records.campaigns.length,
     dismissed: snap.meta.dismissed.length,
     settings: Object.keys(snap.settings).length,
   };
@@ -128,6 +131,8 @@ function parseRecordSections(file: BackupSectioned): RepositorySnapshot {
       reviews: asArray<ReviewProposal>(file.records?.reviews),
       audit: asArray<AuditEntry>(file.records?.audit),
       opportunities: asArray<Opportunity>(file.records?.opportunities),
+      // Absent from v2 and v3 files, where campaigns were still a setting.
+      campaigns: asArray<CampaignEntry>(file.records?.campaigns),
     },
     meta: { dismissed: asArray<string>(file.meta?.dismissed) },
     settings: file.settings && typeof file.settings === "object" ? { ...file.settings } : {},
@@ -153,6 +158,9 @@ function parseV1(file: BackupV1): RepositorySnapshot {
       reviews: [],
       audit: [],
       opportunities: [],
+      // v1 predates campaigns entirely; a later boot migrates the key if the
+      // browser it is restored into still has one.
+      campaigns: [],
     },
     meta: { dismissed: asArray<string>(data[LEGACY_RECORD_KEYS.dismissed]) },
     settings,

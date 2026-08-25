@@ -3164,588 +3164,6 @@ kbd {
   background: var(--danger-soft);
 }
 
-/* ------------------------------------------------------------------
-   17. Campaigns — a tactile orbital log
-
-   This is intentionally a dark room inside the ivory application. The map is
-   the object: layered brass orbits, shallow perspective and five controls
-   arranged around the central record. No metric is invented; every count is
-   a direct reading of a saved entry.
-   ------------------------------------------------------------------ */
-
-.campaigns-shell {
-  --campaign-ground: #0d0a10;
-  --campaign-surface: #151119;
-  --campaign-surface-2: #1b151f;
-  --campaign-ink: #eee9e4;
-  --campaign-muted: #aaa2b5;
-  --campaign-brass: #c5a74e;
-  --campaign-line: rgba(197, 167, 78, 0.3);
-  display: grid;
-  grid-template-columns: minmax(560px, 1.7fr) minmax(340px, 0.88fr);
-  gap: 1px;
-  min-height: calc(100vh - 168px);
-  margin: calc(var(--space-5) * -1) calc(var(--space-6) * -1) calc(var(--space-6) * -1);
-  border-top: 1px solid rgba(197, 167, 78, 0.22);
-  background: rgba(197, 167, 78, 0.18);
-  color: var(--campaign-ink);
-}
-
-.campaigns-map-panel,
-.campaigns-rail {
-  background:
-    radial-gradient(circle at 55% 45%, rgba(74, 58, 87, 0.14), transparent 46%),
-    var(--campaign-ground);
-}
-
-.campaigns-map-panel {
-  min-width: 0;
-  padding: clamp(22px, 3vw, 44px);
-}
-
-.campaigns-section-head {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  min-height: 42px;
-  margin-bottom: 18px;
-}
-
-.campaigns-section-head::after {
-  content: "";
-  height: 1px;
-  flex: 1;
-  background: linear-gradient(90deg, var(--campaign-line), transparent);
-}
-
-.campaigns-section-head h2,
-.campaigns-form h2 {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-}
-
-.campaigns-section-head h2 {
-  font-size: clamp(1.55rem, 2.2vw, 2.05rem);
-}
-
-.campaigns-section-head span {
-  order: 3;
-  color: var(--campaign-muted);
-  font-size: 0.72rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.campaigns-map {
-  position: relative;
-  aspect-ratio: 1 / 0.93;
-  min-height: 610px;
-  overflow: hidden;
-  border: 1px solid rgba(231, 224, 233, 0.48);
-  background:
-    linear-gradient(rgba(197, 167, 78, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(197, 167, 78, 0.035) 1px, transparent 1px),
-    radial-gradient(circle at 50% 52%, rgba(117, 87, 46, 0.15), transparent 32%),
-    #0e0b11;
-  background-size: 44px 44px, 44px 44px, auto, auto;
-  box-shadow:
-    inset 0 0 0 18px #0e0b11,
-    inset 0 0 0 19px rgba(233, 226, 235, 0.08),
-    inset 0 0 90px rgba(0, 0, 0, 0.82);
-  perspective: 900px;
-  isolation: isolate;
-}
-
-.campaigns-stars {
-  position: absolute;
-  inset: 10%;
-  opacity: 0.55;
-  background-image:
-    radial-gradient(circle, rgba(218, 188, 92, 0.9) 0 1px, transparent 1.6px),
-    radial-gradient(circle, rgba(218, 188, 92, 0.6) 0 1px, transparent 1.5px);
-  background-position: 9px 17px, 43px 61px;
-  background-size: 67px 79px, 89px 71px;
-  mask-image: radial-gradient(circle, black 0 44%, transparent 70%);
-  pointer-events: none;
-}
-
-.campaigns-orbit {
-  position: absolute;
-  left: 50%;
-  top: 51%;
-  border: 1px solid rgba(197, 167, 78, 0.2);
-  border-radius: 50%;
-  transform: translate(-50%, -50%) rotateX(4deg);
-  pointer-events: none;
-}
-
-.campaigns-orbit::before,
-.campaigns-orbit::after {
-  content: "";
-  position: absolute;
-  inset: -5px;
-  border: 1px solid rgba(197, 167, 78, 0.06);
-  border-radius: inherit;
-}
-
-.campaigns-orbit::after {
-  inset: 12%;
-}
-
-.campaigns-orbit-one {
-  width: 79%;
-  aspect-ratio: 1;
-}
-
-.campaigns-orbit-two {
-  width: 69%;
-  aspect-ratio: 1;
-}
-
-.campaigns-orbit-three {
-  width: 32%;
-  aspect-ratio: 1;
-  border-color: rgba(197, 167, 78, 0.34);
-}
-
-.campaigns-spokes {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.campaigns-spokes line {
-  stroke: rgba(197, 167, 78, 0.16);
-  stroke-width: 0.13;
-  vector-effect: non-scaling-stroke;
-  transition: stroke 180ms ease, filter 180ms ease;
-}
-
-.campaigns-spokes line.is-active {
-  stroke: rgba(111, 103, 255, 0.75);
-  stroke-width: 0.32;
-  filter: drop-shadow(0 0 3px rgba(111, 103, 255, 0.85));
-}
-
-.campaigns-hub,
-.campaigns-node {
-  position: absolute;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.campaigns-hub {
-  left: 50%;
-  top: 50%;
-  z-index: 2;
-  display: grid;
-  place-content: center;
-  width: clamp(164px, 23%, 222px);
-  aspect-ratio: 1;
-  border: 1px solid rgba(197, 167, 78, 0.48);
-  background:
-    radial-gradient(circle at 38% 32%, rgba(70, 52, 76, 0.42), transparent 42%),
-    #1a1420;
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.52),
-    0 0 0 8px rgba(197, 167, 78, 0.06),
-    0 0 0 16px rgba(197, 167, 78, 0.08),
-    inset 0 0 32px rgba(0, 0, 0, 0.5);
-}
-
-.campaigns-hub strong {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.45rem, 2.5vw, 2rem);
-  font-weight: 400;
-}
-
-.campaigns-hub span {
-  margin-top: 10px;
-  color: var(--campaign-muted);
-  font-size: 0.61rem;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-}
-
-.campaigns-node {
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: clamp(112px, 17%, 152px);
-  aspect-ratio: 1;
-  padding: 12px;
-  border: 1px solid rgba(197, 167, 78, 0.42);
-  background:
-    radial-gradient(circle at 35% 28%, rgba(58, 46, 66, 0.42), transparent 42%),
-    #151119;
-  color: var(--campaign-ink);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42), inset 0 0 24px rgba(0, 0, 0, 0.34);
-  cursor: pointer;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
-}
-
-.campaigns-node:hover {
-  transform: translate(-50%, -50%) translateY(-2px);
-  border-color: rgba(229, 206, 125, 0.85);
-}
-
-.campaigns-node.is-active {
-  border-color: #6f67ff;
-  box-shadow:
-    0 14px 38px rgba(0, 0, 0, 0.52),
-    0 0 0 7px rgba(75, 103, 208, 0.1),
-    0 0 24px rgba(75, 103, 208, 0.28),
-    inset 0 0 28px rgba(30, 41, 89, 0.35);
-}
-
-.campaigns-node-number {
-  margin-bottom: 7px;
-  color: var(--campaign-brass);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.68rem;
-}
-
-.campaigns-node strong {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
-  font-weight: 400;
-  white-space: nowrap;
-}
-
-.campaigns-node-count {
-  margin-top: 6px;
-  color: var(--campaign-muted);
-  font-size: 0.63rem;
-  letter-spacing: 0.04em;
-}
-
-.campaigns-rail {
-  min-width: 0;
-  padding: clamp(22px, 3vw, 42px) clamp(18px, 2.6vw, 38px);
-  border-left: 1px solid rgba(231, 224, 233, 0.14);
-}
-
-.campaigns-form,
-.campaigns-recent {
-  position: relative;
-  border: 1px solid rgba(231, 224, 233, 0.38);
-  background: linear-gradient(135deg, rgba(30, 24, 34, 0.96), rgba(17, 13, 20, 0.96));
-  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.28);
-}
-
-.campaigns-form::before,
-.campaigns-form::after {
-  content: "";
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  pointer-events: none;
-}
-
-.campaigns-form::before {
-  left: -1px;
-  top: -1px;
-  border-left: 1px solid var(--campaign-brass);
-  border-top: 1px solid var(--campaign-brass);
-}
-
-.campaigns-form::after {
-  right: -1px;
-  bottom: -1px;
-  border-right: 1px solid var(--campaign-brass);
-  border-bottom: 1px solid var(--campaign-brass);
-}
-
-.campaigns-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  padding: clamp(22px, 2.7vw, 34px);
-}
-
-.campaigns-form-kicker {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: #d8c47a;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.campaigns-form-kicker span {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #776cff;
-  box-shadow: 0 0 12px rgba(119, 108, 255, 0.7);
-}
-
-.campaigns-form h2 {
-  font-size: 1.9rem;
-}
-
-.campaigns-form > p {
-  margin: -6px 0 2px;
-  color: var(--campaign-muted);
-  font-size: 0.91rem;
-  line-height: 1.55;
-}
-
-.campaigns-form label {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  color: var(--campaign-muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-.campaigns-form input,
-.campaigns-form textarea {
-  width: 100%;
-  min-height: 44px;
-  padding: 11px 13px;
-  border: 1px solid rgba(197, 167, 78, 0.24);
-  border-radius: 0;
-  background: rgba(8, 6, 10, 0.66);
-  color: var(--campaign-ink);
-  color-scheme: dark;
-  font-size: 0.92rem;
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-.campaigns-form textarea {
-  min-height: 86px;
-  resize: vertical;
-}
-
-.campaigns-form input::placeholder,
-.campaigns-form textarea::placeholder {
-  color: #77717d;
-}
-
-.campaigns-form input:focus,
-.campaigns-form textarea:focus {
-  outline: 0;
-  border-color: #7c72ff;
-  box-shadow: 0 0 0 2px rgba(124, 114, 255, 0.2);
-}
-
-.campaigns-optional {
-  position: absolute;
-  right: 0;
-  color: #736d79;
-  font-size: 0.62rem;
-}
-
-.campaigns-form-actions {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  margin-top: 2px;
-}
-
-.campaigns-save,
-.campaigns-clear {
-  min-height: 42px;
-  border-radius: 0;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.campaigns-save {
-  border: 1px solid var(--campaign-brass);
-  background: transparent;
-  color: #d8c47a;
-}
-
-.campaigns-save:hover:not(:disabled) {
-  background: rgba(197, 167, 78, 0.1);
-}
-
-.campaigns-save:disabled {
-  border-color: rgba(170, 162, 181, 0.24);
-  color: #716b77;
-  cursor: not-allowed;
-}
-
-.campaigns-clear {
-  padding: 0 10px;
-  border: 0;
-  background: transparent;
-  color: #c9b65f;
-}
-
-.campaigns-recent {
-  margin-top: 16px;
-  padding: 23px;
-  border-color: rgba(197, 167, 78, 0.2);
-  box-shadow: none;
-}
-
-.campaigns-recent-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(231, 224, 233, 0.12);
-}
-
-.campaigns-recent h3 {
-  margin: 0;
-  color: #dfce92;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.campaigns-recent-head > span,
-.campaigns-empty {
-  color: var(--campaign-muted);
-  font-size: 0.78rem;
-}
-
-.campaigns-empty {
-  margin: 18px 0 0;
-}
-
-.campaigns-recent ol {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.campaigns-recent li {
-  position: relative;
-  padding: 15px 42px 2px 0;
-  border-bottom: 1px solid rgba(231, 224, 233, 0.08);
-}
-
-.campaigns-recent li:last-child {
-  border-bottom: 0;
-}
-
-.campaigns-recent li > div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.campaigns-recent li strong {
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.campaigns-recent time,
-.campaigns-recent li p {
-  color: var(--campaign-muted);
-  font-size: 0.76rem;
-}
-
-.campaigns-recent li p {
-  margin: 5px 0 9px;
-  white-space: pre-line;
-}
-
-.campaigns-recent li > button {
-  position: absolute;
-  right: 0;
-  top: 43px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #a59dab;
-  font-size: 0.68rem;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--t-fast), color var(--t-fast);
-}
-
-.campaigns-recent li:hover > button,
-.campaigns-recent li > button:focus-visible {
-  opacity: 1;
-}
-
-.campaigns-recent li > button:hover {
-  color: #e58d86;
-}
-
-@media (max-width: 1120px) {
-  .campaigns-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .campaigns-rail {
-    border-top: 1px solid rgba(231, 224, 233, 0.14);
-    border-left: 0;
-  }
-
-  .campaigns-map {
-    min-height: 600px;
-  }
-}
-
-@media (max-width: 720px) {
-  .campaigns-shell {
-    min-height: 0;
-    margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) calc(var(--space-5) * -1);
-  }
-
-  .campaigns-map-panel {
-    padding: 18px 12px 28px;
-  }
-
-  .campaigns-section-head span {
-    display: none;
-  }
-
-  .campaigns-map {
-    min-height: 500px;
-    height: 500px;
-    aspect-ratio: auto;
-    box-shadow: inset 0 0 0 8px #0e0b11, inset 0 0 0 9px rgba(233, 226, 235, 0.08);
-  }
-
-  .campaigns-node {
-    width: 98px;
-  }
-
-  .campaigns-hub {
-    width: 138px;
-  }
-
-  .campaigns-node-count {
-    display: none;
-  }
-
-  .campaigns-rail {
-    padding: 18px 12px 28px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .campaigns-node,
-  .campaigns-spokes line {
-    transition: none;
-  }
-}
-
 /* ============================================================
    18. Nocturne — the application-wide material
 
@@ -4308,10 +3726,6 @@ td strong {
 
   .palette-trigger::before {
     content: "Search";
-  }
-
-  .campaigns-shell {
-    margin: -20px -14px -48px;
   }
 }
 
@@ -5923,5 +5337,388 @@ main {
   .lead-row {
     padding-left: 20px;
     padding-right: 20px;
+  }
+}
+
+/* ============================================================
+   22. Campaigns — a hub, five spokes, and a form per channel
+
+   The map carries no SVG filter anywhere. Its glow is stacked
+   low-opacity rings and radial gradients, because blur filters break
+   rasterisation on export.
+   ============================================================ */
+
+.camp {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 344px;
+  gap: 32px;
+  align-items: start;
+}
+
+/* ---------- The map ---------- */
+
+.camp-map-panel {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid var(--line-field);
+  background: linear-gradient(180deg, rgba(28, 26, 33, 0.6), rgba(13, 12, 16, 0.75));
+}
+
+.camp-map-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 50% at 50% 45%,
+    rgba(201, 168, 106, 0.05),
+    transparent 70%
+  );
+}
+
+/* A hairline frame inside the panel edge — the only doubled line here. */
+.camp-map-frame {
+  position: absolute;
+  inset: 14px;
+  pointer-events: none;
+  border: 1px solid var(--line-track);
+}
+
+.camp-map {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* The single slow rotation in the design. */
+.camp-spin {
+  transform-origin: 360px 360px;
+  animation: camp-rotate 140s linear infinite;
+}
+
+@keyframes camp-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.camp-dust {
+  animation-name: camp-twinkle;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes camp-twinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.camp-node {
+  cursor: pointer;
+}
+
+.camp-node circle,
+.camp-node text {
+  transition: opacity var(--t-select);
+}
+
+.camp-node:focus-visible {
+  outline: 1px solid var(--gold-500);
+  outline-offset: 2px;
+}
+
+/* ---------- The rail ---------- */
+
+.camp-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.camp-form,
+.camp-recent {
+  position: relative;
+  padding: 18px;
+  background: linear-gradient(180deg, var(--ink-panel-a), var(--ink-panel-b));
+}
+
+.camp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--line-header);
+}
+
+.camp-recent {
+  border: 1px solid var(--line-quiet);
+}
+
+/* Corner ticks: two borders on a small empty box, nothing more. */
+.camp-tick {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.camp-tick-tl {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid var(--gold-500);
+  border-left: 1px solid var(--gold-500);
+}
+
+.camp-tick-br {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid var(--gold-500);
+  border-bottom: 1px solid var(--gold-500);
+}
+
+.camp-form-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.camp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.camp-form-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+
+.camp-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: var(--text-muted);
+}
+
+/* ---------- Fields ---------- */
+
+.camp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.camp-label {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.camp-field input,
+.camp-field textarea {
+  width: 100%;
+  border: 1px solid var(--line-field);
+  border-radius: 0;
+  padding: 9px 11px;
+  background: var(--ink-field);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--t-hover);
+}
+
+.camp-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.camp-field input::placeholder,
+.camp-field textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.camp-field input:focus,
+.camp-field textarea:focus {
+  border-color: var(--gold-500);
+}
+
+/* ---------- Actions ---------- */
+
+.camp-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.camp-save {
+  border: 1px solid var(--gold-500);
+  border-radius: 0;
+  padding: 10px 18px;
+  background: var(--gold-500);
+  color: var(--on-gold);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.camp-save:hover:not(:disabled) {
+  background: var(--gold-300);
+  border-color: var(--gold-300);
+}
+
+.camp-save:disabled {
+  border-color: var(--line-button);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.camp-clear {
+  border: none;
+  padding: 10px 4px;
+  background: none;
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.camp-clear:hover {
+  color: var(--gold-300);
+}
+
+/* ---------- Recent entries ---------- */
+
+.camp-recent-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.camp-count {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.camp-empty {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.camp-entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.camp-entries li {
+  position: relative;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-row);
+}
+
+.camp-entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.camp-entry-title {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.camp-entry-date {
+  flex: 0 0 auto;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.camp-entry-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  text-wrap: pretty;
+  color: var(--text-muted);
+}
+
+/* Quiet until the row is approached — a delete control should not be the
+   loudest thing in a list of things you wrote. */
+.camp-delete {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0;
+  cursor: pointer;
+  transition:
+    opacity var(--t-hover),
+    color var(--t-hover);
+}
+
+.camp-entries li:hover .camp-delete,
+.camp-delete:focus-visible {
+  opacity: 1;
+}
+
+.camp-delete:hover {
+  color: var(--hue-terracotta);
+}
+
+/* ---------- Below 1100px ---------- */
+
+@media (max-width: 1100px) {
+  .camp {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .camp-map-panel {
+    padding: 14px;
   }
 }

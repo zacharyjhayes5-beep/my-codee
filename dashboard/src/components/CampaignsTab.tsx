@@ -1,14 +1,19 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
   CHANNELS,
-  draftIsComplete,
+  channelSpec,
+  chords,
+  countsByChannel,
+  draftHasContent,
   emptyCampaignDraft,
   entryDetail,
   entryFromDraft,
   entryTitle,
+  particles,
   type CampaignChannel,
   type CampaignDraft,
   type CampaignEntry,
+  type DraftField,
 } from "../lib/campaigns";
 
 interface CampaignsTabProps {
@@ -16,13 +21,7 @@ interface CampaignsTabProps {
   onChange: (entries: CampaignEntry[]) => void;
 }
 
-const nodePositions: Record<CampaignChannel, { x: number; y: number }> = {
-  mailing: { x: 50, y: 14 },
-  "cold-calls": { x: 82, y: 39 },
-  community: { x: 70, y: 78 },
-  "social-media": { x: 30, y: 78 },
-  referrals: { x: 18, y: 39 },
-};
+const HUB = 360;
 
 function displayDate(value: string): string {
   const [year, month, day] = value.split("-").map(Number);
@@ -32,15 +31,28 @@ function displayDate(value: string): string {
   );
 }
 
+/**
+ * Campaigns — five channels, logged as you work them.
+ *
+ * The map is one SVG rather than positioned elements, so the spokes, the
+ * rings and the nodes stay in register at any size. There are no SVG filters
+ * anywhere in it: the glow is stacked low-opacity rings and radial gradients,
+ * because blur filters break when the page is rasterised for export.
+ */
 export function CampaignsTab({ entries, onChange }: CampaignsTabProps) {
   const [active, setActive] = useState<CampaignChannel>("mailing");
   const [draft, setDraft] = useState<CampaignDraft>(emptyCampaignDraft);
-  const channel = CHANNELS.find((item) => item.id === active) ?? CHANNELS[0];
+
+  const channel = channelSpec(active);
+  const counts = useMemo(() => countsByChannel(entries), [entries]);
+  const dust = useMemo(() => particles(), []);
+  const mesh = useMemo(() => chords(), []);
+
   const recent = useMemo(
     () =>
       entries
-        .filter((entry) => entry.channel === active)
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        .filter((e) => e.channel === active)
+        .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
     [active, entries],
   );
 
@@ -49,204 +61,397 @@ export function CampaignsTab({ entries, onChange }: CampaignsTabProps) {
     setDraft(emptyCampaignDraft());
   }
 
-  function patch(field: keyof CampaignDraft, value: string) {
+  function patch(field: DraftField, value: string) {
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (!draftIsComplete(active, draft)) return;
+    if (!draftHasContent(active, draft)) return;
     onChange([entryFromDraft(active, draft), ...entries]);
     setDraft(emptyCampaignDraft());
   }
 
+  const canSave = draftHasContent(active, draft);
+
   return (
-    <section className="campaigns-shell" aria-label="Campaign activity">
-      <div className="campaigns-map-panel">
-        <div className="campaigns-section-head">
-          <h2>Channel Map</h2>
-          <span>Select a node to log</span>
-        </div>
+    <div className="camp">
+      {/* ---------- The map ---------- */}
+      <section className="camp-map-panel" aria-labelledby="camp-map-title">
+        <span className="camp-map-wash" aria-hidden="true" />
+        <span className="camp-map-frame" aria-hidden="true" />
 
-        <div className="campaigns-map">
-          <div className="campaigns-stars" aria-hidden="true" />
-          <div className="campaigns-orbit campaigns-orbit-one" aria-hidden="true" />
-          <div className="campaigns-orbit campaigns-orbit-two" aria-hidden="true" />
-          <div className="campaigns-orbit campaigns-orbit-three" aria-hidden="true" />
+        <h2 id="camp-map-title" className="sr-only">
+          Channel map
+        </h2>
 
-          <svg className="campaigns-spokes" viewBox="0 0 100 100" aria-hidden="true">
-            {CHANNELS.map((item) => (
-              <line
-                key={item.id}
-                className={item.id === active ? "is-active" : ""}
-                x1="50"
-                y1="50"
-                x2={nodePositions[item.id].x}
-                y2={nodePositions[item.id].y}
+        <svg
+          className="camp-map"
+          viewBox="0 0 720 720"
+          preserveAspectRatio="xMidYMid meet"
+          role="presentation"
+        >
+          <defs>
+            <radialGradient id="camp-glow">
+              <stop offset="0%" stopColor="#c9a86a" stopOpacity="0.16" />
+              <stop offset="55%" stopColor="#c9a86a" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#c9a86a" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="camp-hub-fill" cx="30%" cy="16%">
+              <stop offset="0%" stopColor="#2a2530" />
+              <stop offset="100%" stopColor="#121016" />
+            </radialGradient>
+            <radialGradient id="camp-node-fill" cx="30%" cy="16%">
+              <stop offset="0%" stopColor="#221f28" />
+              <stop offset="100%" stopColor="#100f14" />
+            </radialGradient>
+            {CHANNELS.map((c) => (
+              <radialGradient id={`camp-halo-${c.id}`} key={c.id}>
+                <stop offset="50%" stopColor={c.hue} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={c.hue} stopOpacity="0" />
+              </radialGradient>
+            ))}
+          </defs>
+
+          {/* 1. Ground glow */}
+          <circle cx={HUB} cy={HUB} r={340} fill="url(#camp-glow)" />
+
+          {/* 2. Concentric rings */}
+          <circle
+            cx={HUB}
+            cy={HUB}
+            r={300}
+            fill="none"
+            stroke="#c9a86a"
+            strokeOpacity="0.1"
+            strokeWidth="1"
+          />
+          <circle
+            cx={HUB}
+            cy={HUB}
+            r={262}
+            fill="none"
+            stroke="#c9a86a"
+            strokeOpacity="0.16"
+            strokeWidth="1"
+          />
+
+          {/* 3. The one moving thing in the design, besides the dust. */}
+          <circle
+            className="camp-spin"
+            cx={HUB}
+            cy={HUB}
+            r={180}
+            fill="none"
+            stroke="#c9a86a"
+            strokeOpacity="0.09"
+            strokeWidth="1"
+            strokeDasharray="1 9"
+          />
+
+          {/* 4. Dust — seeded, so it never reshuffles on a re-render. */}
+          <g opacity="0.5">
+            {dust.map((p, i) => (
+              <circle
+                key={i}
+                className="camp-dust"
+                cx={p.x}
+                cy={p.y}
+                r={p.r}
+                fill="#c9a86a"
+                style={{ animationDuration: `${p.duration}s`, animationDelay: `${p.delay}s` }}
               />
             ))}
-          </svg>
+          </g>
 
-          <div className="campaigns-hub" aria-label={`${entries.length} total campaign entries`}>
-            <strong>Campaigns</strong>
-            <span>{entries.length ? `${entries.length} total entries` : "five channels"}</span>
-          </div>
+          {/* 5. Wireframe — every chord between two nodes */}
+          {mesh.map((c, i) => (
+            <line
+              key={i}
+              x1={c.x1}
+              y1={c.y1}
+              x2={c.x2}
+              y2={c.y2}
+              stroke="#c9a86a"
+              strokeOpacity="0.07"
+              strokeWidth="1"
+            />
+          ))}
 
-          {CHANNELS.map((item) => {
-            const count = entries.filter((entry) => entry.channel === item.id).length;
-            const position = nodePositions[item.id];
+          {/* 6. Static spokes, each in its own channel's hue */}
+          {CHANNELS.map((c) => (
+            <line
+              key={c.id}
+              x1={HUB}
+              y1={HUB}
+              x2={c.x}
+              y2={c.y}
+              stroke={c.hue}
+              strokeOpacity="0.28"
+              strokeWidth="1"
+            />
+          ))}
+
+          {/* 7. The lit spoke */}
+          <line
+            x1={HUB}
+            y1={HUB}
+            x2={channel.x}
+            y2={channel.y}
+            stroke={channel.hue}
+            strokeOpacity="0.95"
+            strokeWidth="1.4"
+          />
+
+          {/* 8. Nodes */}
+          {CHANNELS.map((c) => {
+            const on = c.id === active;
             return (
-              <button
-                key={item.id}
-                type="button"
-                className={`campaigns-node node-${item.id}${item.id === active ? " is-active" : ""}`}
-                style={{ left: `${position.x}%`, top: `${position.y}%` }}
-                onClick={() => choose(item.id)}
-                aria-pressed={item.id === active}
+              <g
+                key={c.id}
+                className="camp-node"
+                role="button"
+                tabIndex={0}
+                aria-pressed={on}
+                aria-label={`${c.label} — ${counts[c.id]} ${counts[c.id] === 1 ? "entry" : "entries"}`}
+                onClick={() => choose(c.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    choose(c.id);
+                  }
+                }}
               >
-                <span className="campaigns-node-number">{item.numeral}</span>
-                <strong>{item.label}</strong>
-                <span className="campaigns-node-count">{count ? `${count} logged` : "No entries"}</span>
-              </button>
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={94}
+                  fill={`url(#camp-halo-${c.id})`}
+                  opacity={on ? 1 : 0}
+                />
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={66}
+                  fill="url(#camp-node-fill)"
+                  stroke={c.hue}
+                  strokeOpacity="0.45"
+                  strokeWidth="1"
+                />
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={66}
+                  fill="none"
+                  stroke={c.hue}
+                  strokeOpacity="0.95"
+                  strokeWidth="1"
+                  opacity={on ? 1 : 0}
+                />
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={73}
+                  fill="none"
+                  stroke={c.hue}
+                  strokeOpacity="0.3"
+                  strokeWidth="1"
+                  opacity={on ? 1 : 0}
+                />
+                <text
+                  x={c.x}
+                  y={c.y - 22}
+                  textAnchor="middle"
+                  fill={c.hue}
+                  style={{ font: "400 12px var(--font-display)", letterSpacing: "1.6px" }}
+                >
+                  {c.numeral}
+                </text>
+                <text
+                  x={c.x}
+                  y={c.y + 4}
+                  textAnchor="middle"
+                  fill="#f1efe9"
+                  style={{ font: "400 17px var(--font-display)" }}
+                >
+                  {c.label}
+                </text>
+                <text
+                  x={c.x}
+                  y={c.y + 26}
+                  textAnchor="middle"
+                  fill="#8f8b84"
+                  style={{ font: "400 9.5px var(--font-ui)", letterSpacing: "1.6px" }}
+                >
+                  {counts[c.id] === 0 ? "NONE" : `${counts[c.id]} LOGGED`}
+                </text>
+              </g>
             );
           })}
-        </div>
-      </div>
 
-      <aside className="campaigns-rail">
-        <form className="campaigns-form" onSubmit={submit}>
-          <div className="campaigns-form-kicker">
-            <span aria-hidden="true" /> Log entry
+          {/* 9. Hub, drawn last so it sits above the spokes */}
+          <circle
+            cx={HUB}
+            cy={HUB}
+            r={112}
+            fill="none"
+            stroke="#c9a86a"
+            strokeOpacity="0.14"
+            strokeWidth="1"
+          />
+          <circle
+            cx={HUB}
+            cy={HUB}
+            r={100}
+            fill="url(#camp-hub-fill)"
+            stroke="#c9a86a"
+            strokeOpacity="0.55"
+            strokeWidth="1"
+          />
+          <circle
+            cx={HUB}
+            cy={HUB}
+            r={92}
+            fill="none"
+            stroke="#c9a86a"
+            strokeOpacity="0.22"
+            strokeWidth="1"
+          />
+          <text
+            x={HUB}
+            y={345}
+            textAnchor="middle"
+            fill="#f6f2ea"
+            style={{ font: "400 27px var(--font-display)" }}
+          >
+            Campaigns
+          </text>
+          <line
+            x1={HUB - 38}
+            y1={360}
+            x2={HUB + 38}
+            y2={360}
+            stroke="#c9a86a"
+            strokeOpacity="0.4"
+            strokeWidth="1"
+          />
+          <text
+            x={HUB}
+            y={380}
+            textAnchor="middle"
+            fill="#8f8b84"
+            style={{ font: "400 9px var(--font-ui)", letterSpacing: "2.6px" }}
+          >
+            FIVE CHANNELS
+          </text>
+          <text
+            x={HUB}
+            y={400}
+            textAnchor="middle"
+            fill="#dfc9a1"
+            style={{ font: "400 10.5px var(--font-ui)" }}
+          >
+            {entries.length} {entries.length === 1 ? "entry" : "entries"}
+          </text>
+        </svg>
+
+        {/* The map is geometry; this is the same information as a list, for
+            anything that cannot read a diagram. */}
+        <ul className="sr-only">
+          {CHANNELS.map((c) => (
+            <li key={c.id}>
+              {c.numeral}. {c.label} — {counts[c.id]} {counts[c.id] === 1 ? "entry" : "entries"}
+              {c.id === active ? " (selected)" : ""}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* ---------- The rail ---------- */}
+      <aside className="camp-rail">
+        <form className="camp-form" onSubmit={submit}>
+          <span className="camp-tick camp-tick-tl" aria-hidden="true" />
+          <span className="camp-tick camp-tick-br" aria-hidden="true" />
+
+          <div className="camp-form-kicker">
+            <span className="camp-dot" style={{ background: channel.hue }} aria-hidden="true" />
+            <span className="kicker">Log entry</span>
           </div>
-          <h2>{channel.label}</h2>
-          <p>{channel.description}</p>
 
-          {active === "mailing" && (
-            <label>
-              Campaign
-              <input
-                value={draft.campaign}
-                onChange={(event) => patch("campaign", event.target.value)}
-                placeholder="e.g. Q3 renewal postcard"
-                required
-              />
-            </label>
-          )}
+          <h2 className="camp-form-title">{channel.label}</h2>
+          <p className="camp-hint">{channel.hint}</p>
 
-          {active === "cold-calls" && (
-            <label>
-              Calls made
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={draft.callsMade}
-                onChange={(event) => patch("callsMade", event.target.value)}
-                placeholder="e.g. 30"
-                required
-              />
-            </label>
-          )}
-
-          {(active === "community" || active === "social-media") && (
-            <label>
-              Description
-              <textarea
-                value={draft.description}
-                onChange={(event) => patch("description", event.target.value)}
-                placeholder={
-                  active === "community"
-                    ? "What you attended, supported, or worked on"
-                    : "What you posted, recorded, or prepared"
-                }
-                required
-              />
-            </label>
-          )}
-
-          {active === "referrals" && (
-            <>
-              <label>
-                Referred by
-                <input
-                  value={draft.referredBy}
-                  onChange={(event) => patch("referredBy", event.target.value)}
-                  placeholder="Person who made the introduction"
-                  required
-                />
-              </label>
-              <label>
-                People referred
+          {channel.fields.map((f) => (
+            <label className="camp-field" key={f.key}>
+              <span className="camp-label">{f.label}</span>
+              {f.multiline ? (
                 <textarea
-                  value={draft.referredPeople}
-                  onChange={(event) => patch("referredPeople", event.target.value)}
-                  placeholder="Names, one per line or separated by commas"
-                  required
+                  rows={3}
+                  value={draft[f.key]}
+                  placeholder={f.placeholder}
+                  onChange={(e) => patch(f.key, e.target.value)}
                 />
-              </label>
-            </>
-          )}
-
-          <label>
-            Date
-            <input
-              type="date"
-              value={draft.date}
-              onChange={(event) => patch("date", event.target.value)}
-              required
-            />
-          </label>
-
-          {(active === "mailing" || active === "cold-calls" || active === "referrals") && (
-            <label>
-              Notes <span className="campaigns-optional">Optional</span>
-              <textarea
-                value={draft.notes}
-                onChange={(event) => patch("notes", event.target.value)}
-                placeholder="Anything worth remembering"
-              />
+              ) : (
+                <input
+                  type={f.key === "date" ? "date" : f.numeric ? "number" : "text"}
+                  {...(f.numeric ? { min: 0, step: 1 } : {})}
+                  value={draft[f.key]}
+                  placeholder={f.placeholder}
+                  onChange={(e) => patch(f.key, e.target.value)}
+                />
+              )}
             </label>
-          )}
+          ))}
 
-          <div className="campaigns-form-actions">
-            <button className="campaigns-save" type="submit" disabled={!draftIsComplete(active, draft)}>
+          <div className="camp-actions">
+            <button type="submit" className="camp-save" disabled={!canSave}>
               Save entry
             </button>
-            <button className="campaigns-clear" type="button" onClick={() => setDraft(emptyCampaignDraft())}>
+            <button
+              type="button"
+              className="camp-clear"
+              onClick={() => setDraft(emptyCampaignDraft())}
+            >
               Clear
             </button>
           </div>
         </form>
 
-        <div className="campaigns-recent">
-          <div className="campaigns-recent-head">
-            <h3>Recent entries</h3>
-            <span>{recent.length} {recent.length === 1 ? "entry" : "entries"}</span>
+        <div className="camp-recent">
+          <span className="camp-tick camp-tick-tl" aria-hidden="true" />
+          <div className="camp-recent-head">
+            <span className="kicker">Recent</span>
+            <span className="camp-count">
+              {recent.length} {recent.length === 1 ? "entry" : "entries"}
+            </span>
           </div>
+
           {recent.length === 0 ? (
-            <p className="campaigns-empty">Nothing logged here yet.</p>
+            <p className="camp-empty">Nothing logged for this channel yet.</p>
           ) : (
-            <ol>
+            <ul className="camp-entries">
               {recent.map((entry) => (
                 <li key={entry.id}>
-                  <div>
-                    <strong>{entryTitle(entry)}</strong>
-                    <time dateTime={entry.date}>{displayDate(entry.date)}</time>
+                  <div className="camp-entry-head">
+                    <span className="camp-entry-title">{entryTitle(entry)}</span>
+                    <time dateTime={entry.date} className="camp-entry-date">
+                      {displayDate(entry.date)}
+                    </time>
                   </div>
-                  {entryDetail(entry) && <p>{entryDetail(entry)}</p>}
+                  {entryDetail(entry) && <p className="camp-entry-sub">{entryDetail(entry)}</p>}
                   <button
                     type="button"
-                    onClick={() => onChange(entries.filter((candidate) => candidate.id !== entry.id))}
-                    aria-label={`Delete ${entryTitle(entry)}`}
+                    className="camp-delete"
+                    onClick={() => onChange(entries.filter((c) => c.id !== entry.id))}
                   >
-                    Delete
+                    Delete<span className="sr-only"> {entryTitle(entry)}</span>
                   </button>
                 </li>
               ))}
-            </ol>
+            </ul>
           )}
         </div>
       </aside>
-    </section>
+    </div>
   );
 }
