@@ -5908,3 +5908,123 @@ main .active {
     padding: 8px 10px;
   }
 }
+
+/* ============================================================
+   24. The data panel — back up and restore
+
+   This was two ghost buttons, 36px tall and unlabelled, at the foot of a
+   2,000px screen. It is the control that protects the only copy of the
+   book, and it could not be found. It is a panel now, and it says so.
+   ============================================================ */
+
+.data-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 26px;
+  padding: 26px 28px;
+  border: 1px solid var(--line-panel);
+  border-left: 1px solid var(--gold-500);
+  background: linear-gradient(180deg, var(--ink-panel-a), var(--ink-panel-b));
+}
+
+.data-panel h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+
+.data-panel p {
+  max-width: 62ch;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  text-wrap: pretty;
+  color: var(--text-muted);
+}
+
+.data-panel p strong {
+  font-weight: 500;
+  color: var(--gold-300);
+}
+
+.data-panel .backup-panel {
+  margin-top: 6px;
+}
+
+.data-panel .backup-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* The primary of the two: this is the one he came here to press. */
+.data-panel .backup-buttons .ghost-btn:first-child {
+  border: 1px solid var(--gold-500);
+  background: var(--gold-500);
+  color: var(--on-gold);
+}
+
+.data-panel .backup-buttons .ghost-btn:first-child:hover:not(:disabled) {
+  border-color: var(--gold-300);
+  background: var(--gold-300);
+}
+
+.data-panel .ghost-btn {
+  border: 1px solid var(--line-button);
+  border-radius: 0;
+  padding: 11px 20px;
+  background: none;
+  color: var(--gold-300);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.data-panel .ghost-btn:hover:not(:disabled) {
+  border-color: var(--line-button-hover);
+}
+
+.data-panel .backup-status {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.data-panel .backup-status.good {
+  color: var(--hue-verdigris);
+}
+
+.data-panel .backup-status.bad {
+  color: var(--hue-terracotta);
+}
+
+/* The count line's toggle for completed tasks. Reads as part of the
+   sentence it sits in, not as a control competing with the list. */
+.op-count-toggle {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.op-count-toggle:hover {
+  color: var(--gold-300);
+}

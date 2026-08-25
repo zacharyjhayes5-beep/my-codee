@@ -70,10 +70,18 @@ export function OperatorTab({
 }: OperatorTabProps) {
   const day = today();
   const [draft, setDraft] = useState("");
+  const [showDone, setShowDone] = useState(false);
 
-  /* ---------- Hero: the to-do list ---------- */
+  /* ---------- Hero: the to-do list ----------
 
-  const openCount = tasks.filter((t) => !t.done).length;
+     Completed tasks are hidden by default. They accumulate forever, and a
+     hero list you have to scroll past forty struck-through lines to reach
+     is not a list of what you owe today. The count keeps them in view, and
+     the toggle brings them back. */
+
+  const openTasks = useMemo(() => tasks.filter((t) => !t.done), [tasks]);
+  const doneTasks = useMemo(() => tasks.filter((t) => t.done), [tasks]);
+  const visibleTasks = showDone ? [...openTasks, ...doneTasks] : openTasks;
 
   function toggleTask(id: string) {
     onTasksChange((prev) =>
@@ -179,15 +187,32 @@ export function OperatorTab({
             <span className="kicker">To-do</span>
             <span className="op-rule" aria-hidden="true" />
             <span className="op-count">
-              {openCount} open · {tasks.length} total
+              {openTasks.length} open
+              {doneTasks.length > 0 && (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="op-count-toggle"
+                    aria-pressed={showDone}
+                    onClick={() => setShowDone((v) => !v)}
+                  >
+                    {showDone ? "hide" : "show"} {doneTasks.length} done
+                  </button>
+                </>
+              )}
             </span>
           </div>
 
           <ul className="op-tasks">
-            {tasks.length === 0 && (
-              <li className="op-empty">Nothing on the list. Add the first thing below.</li>
+            {visibleTasks.length === 0 && (
+              <li className="op-empty">
+                {tasks.length === 0
+                  ? "Nothing on the list. Add the first thing below."
+                  : "Everything on the list is done."}
+              </li>
             )}
-            {tasks.map((task) => {
+            {visibleTasks.map((task) => {
               const tag = dueTag(task, day);
               const household = task.prospectId ? byId.get(task.prospectId) : undefined;
               return (

@@ -391,7 +391,20 @@ function App() {
         {tab === "vault" && (
           <>
             <VaultTab />
-            <BackupPanel onExported={() => setLastBackupAt(new Date().toISOString())} />
+            {/* Two unlabelled buttons at the foot of a very tall page were
+                impossible to find, and this is the control that protects the
+                only copy of the book. It gets a heading and says what it is. */}
+            <section className="data-panel" aria-labelledby="backup-title">
+              <span className="kicker">Your data</span>
+              <h2 id="backup-title">Back up and restore</h2>
+              <p>
+                Everything you have entered lives in this browser, on this computer.
+                <strong> Back up</strong> saves all of it to a file you keep.
+                <strong> Restore</strong> reads one back in — on this machine or any other.
+                Nothing happens automatically; it only happens when you press it.
+              </p>
+              <BackupPanel onExported={() => setLastBackupAt(new Date().toISOString())} />
+            </section>
           </>
         )}
         {tab === "walkthrough" && (

@@ -70,6 +70,8 @@ export function CommandPalette({
       { id: "go-pipeline", label: "Pipeline", detail: "Opportunities by stage, and what has gone quiet", run: () => onGoTo("pipeline") },
       { id: "go-campaigns", label: "Campaigns", detail: "Five channels, logged as you work them", run: () => onGoTo("campaigns") },
       { id: "go-vault", label: "Vault", detail: "Everything you have written, searchable", run: () => onGoTo("vault") },
+      // Safety-critical and easy to lose track of, so it is findable by name.
+      { id: "go-backup", label: "Back up", detail: "Save everything to a file — on the Vault screen", run: () => onGoTo("vault") },
       // Off the nav by design. The palette is the only direct way in.
       { id: "go-walkthrough", label: "Walkthrough", detail: "The property area by area", run: () => onGoTo("walkthrough") },
       { id: "go-todo", label: "To-Do", detail: "Tasks and the review inbox", run: () => onGoTo("todo") },
