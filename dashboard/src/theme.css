@@ -243,7 +243,7 @@ body {
 .brand-text strong {
   color: #f7f4ed;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
@@ -274,7 +274,7 @@ body {
 .page-head-text h1 {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--text-primary);
   text-transform: none;
@@ -352,7 +352,7 @@ h5 {
   text-transform: none;
   letter-spacing: -0.01em;
   text-shadow: none;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 h2 {
@@ -371,7 +371,7 @@ h5 {
   font-size: 0.85rem;
   letter-spacing: 0;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* Section headings across the older components. Sentence case, quiet, and
@@ -381,7 +381,7 @@ h5 {
 .up-next h4,
 .review-queue h4 {
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
   text-transform: none;
   letter-spacing: -0.01em;
@@ -728,7 +728,7 @@ label {
   background: var(--surface-2);
   color: var(--text-secondary);
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
   text-align: left;
@@ -992,7 +992,7 @@ label {
 .op-cmd-label {
   font-family: var(--font-sans);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0;
   color: var(--text-primary);
 }
@@ -1013,7 +1013,7 @@ th {
   text-transform: none;
   letter-spacing: 0;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-secondary);
   text-align: left;
   padding: 10px 12px;
@@ -1250,7 +1250,7 @@ th,
 
 .command-center > .op-panel:first-child .cc-headline-text {
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
@@ -1263,7 +1263,7 @@ th,
   padding-top: var(--space-5);
   border-top: 2px solid var(--navy);
   font-size: 1.05rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
 }
 
@@ -1360,7 +1360,7 @@ th,
   align-items: center;
   gap: 4px;
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.5;
   letter-spacing: 0.01em;
   padding: 1px 6px;
@@ -1490,7 +1490,7 @@ th,
   background: var(--cognac-soft);
   color: var(--cognac-ink);
   font-size: 0.75rem;
-  font-weight: 650;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1529,7 +1529,7 @@ th,
 
 .research-name {
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
 }
 
@@ -2976,7 +2976,7 @@ kbd {
 }
 
 .wt-obj:hover {
-  background: rgba(20, 28, 38, 0.94);
+  background: rgba(19, 18, 23, 0.94);
   border-color: rgba(255, 255, 255, 0.4);
 }
 
@@ -3179,7 +3179,7 @@ kbd {
   display: block;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 58% 5%, rgba(91, 66, 111, 0.09), transparent 40rem),
+    radial-gradient(circle at 58% 5%, rgba(201, 168, 106, 0.09), transparent 40rem),
     var(--page);
 }
 .brand-mark {
@@ -3198,7 +3198,7 @@ kbd {
   width: 100%;
   height: 100%;
   color: var(--cognac-2);
-  font: 400 1rem/1 Georgia, "Times New Roman", serif;
+  font: 400 1rem/1 var(--font-display);
 }
 
 .brand-text {
@@ -3210,7 +3210,7 @@ kbd {
 
 .brand-text strong {
   color: var(--text-primary);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -3247,7 +3247,7 @@ kbd {
 
 .page-head-text h1 {
   color: var(--text-primary);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.65rem, 2.2vw, 2.1rem);
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -3263,7 +3263,7 @@ kbd {
 .palette-trigger {
   border: 1px solid rgba(197, 167, 78, 0.25);
   border-radius: 0;
-  background: rgba(21, 17, 25, 0.75);
+  background: rgba(19, 18, 23, 0.75);
   color: var(--text-secondary);
 }
 
@@ -3291,7 +3291,7 @@ h3,
 .up-next h4,
 .review-queue h4 {
   color: var(--text-primary);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-weight: 400;
   letter-spacing: 0.01em;
 }
@@ -3299,7 +3299,7 @@ h3,
 h4,
 h5 {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .section-title,
@@ -3312,7 +3312,7 @@ h5 {
 .tier-section > h3,
 .aa-section > h3 {
   color: var(--text-primary);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
 }
 
 .op-panel,
@@ -3375,7 +3375,7 @@ h5 {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background:
-    linear-gradient(145deg, rgba(33, 26, 38, 0.82), rgba(18, 14, 22, 0.94));
+    linear-gradient(145deg, rgba(26, 24, 30, 0.82), rgba(14, 13, 17, 0.94));
   box-shadow: var(--shadow-1);
 }
 
@@ -3418,7 +3418,7 @@ button {
 .mode-switch button,
 .filter-chip {
   border: 1px solid var(--border);
-  background: rgba(21, 17, 25, 0.72);
+  background: rgba(19, 18, 23, 0.72);
   color: var(--text-secondary);
 }
 
@@ -3482,7 +3482,7 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--navy);
-  box-shadow: 0 0 0 2px rgba(118, 108, 255, 0.18);
+  box-shadow: 0 0 0 2px rgba(201, 168, 106, 0.18);
 }
 
 label,
@@ -3503,7 +3503,7 @@ label,
 .meter-label {
   color: var(--text-muted);
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
@@ -3512,7 +3512,7 @@ label,
 .table-wrap,
 .scroller {
   border-color: var(--border);
-  background: rgba(13, 10, 16, 0.72);
+  background: rgba(13, 12, 16, 0.72);
 }
 
 .lead-table thead th,
@@ -3626,7 +3626,7 @@ td strong {
 
 .op-cmd:hover {
   border-color: rgba(197, 167, 78, 0.38);
-  background: linear-gradient(145deg, rgba(42, 32, 47, 0.88), rgba(18, 14, 22, 0.95));
+  background: linear-gradient(145deg, rgba(32, 29, 37, 0.88), rgba(14, 13, 17, 0.95));
 }
 
 .op-cmd-label,
@@ -3675,7 +3675,7 @@ td strong {
 .vault-panel,
 .map-panel {
   border-color: var(--border);
-  background: linear-gradient(145deg, rgba(31, 24, 36, 0.93), rgba(15, 11, 18, 0.96));
+  background: linear-gradient(145deg, rgba(26, 24, 30, 0.93), rgba(13, 12, 16, 0.96));
 }
 
 @media (max-width: 1180px) {  .brand-text span {
@@ -3745,8 +3745,8 @@ td strong {
   background:
     linear-gradient(rgba(197, 167, 78, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(197, 167, 78, 0.035) 1px, transparent 1px),
-    radial-gradient(circle at 72% 20%, rgba(92, 68, 112, 0.16), transparent 38%),
-    linear-gradient(145deg, rgba(29, 22, 34, 0.94), rgba(13, 10, 16, 0.98));
+    radial-gradient(circle at 72% 20%, rgba(201, 168, 106, 0.16), transparent 38%),
+    linear-gradient(145deg, rgba(24, 23, 29, 0.94), rgba(13, 12, 16, 0.98));
   background-size: 52px 52px, 52px 52px, auto, auto;
   box-shadow: var(--shadow-2);
 }
@@ -3765,7 +3765,7 @@ td strong {
   margin-bottom: 8px;
   color: var(--cognac-2);
   font-size: 0.67rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
@@ -3773,7 +3773,7 @@ td strong {
 .operator-calendar-head h2,
 .operator-day-panel h3 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-weight: 400;
 }
 
@@ -3825,7 +3825,7 @@ td strong {
 
 .calendar-empty strong {
   color: var(--text-primary);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 1.12rem;
   font-weight: 400;
 }
@@ -3877,7 +3877,7 @@ td strong {
 
 .agenda-event strong {
   color: var(--text-primary);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 400;
 }
@@ -3897,7 +3897,7 @@ td strong {
   min-height: 260px;
   padding: clamp(22px, 2.5vw, 32px);
   border-top: 1px solid rgba(197, 167, 78, 0.34);
-  background: linear-gradient(145deg, rgba(27, 21, 31, 0.72), rgba(13, 10, 16, 0.74));
+  background: linear-gradient(145deg, rgba(23, 22, 27, 0.72), rgba(13, 12, 16, 0.74));
 }
 
 .operator-day-panel h3 {
@@ -3921,7 +3921,7 @@ td strong {
 
 .operator-suggestions li > span {
   color: var(--cognac);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 0.72rem;
 }
 
@@ -3980,7 +3980,7 @@ td strong {
   border-radius: 0;
   color: var(--cognac-2);
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   list-style: none;
 }
@@ -4005,7 +4005,7 @@ td strong {
   margin-top: 20px;
   padding: 24px;
   border: 1px solid var(--border);
-  background: linear-gradient(145deg, rgba(29, 22, 34, 0.96), rgba(13, 10, 16, 0.98));
+  background: linear-gradient(145deg, rgba(24, 23, 29, 0.96), rgba(13, 12, 16, 0.98));
   box-shadow: var(--shadow-2);
 }
 
@@ -4106,13 +4106,13 @@ td strong {
   padding: clamp(25px, 3vw, 40px);
   border: 1px solid rgba(197, 167, 78, 0.24);
   background:
-    radial-gradient(circle at 12% 20%, rgba(91, 73, 151, 0.13), transparent 38%),
+    radial-gradient(circle at 12% 20%, rgba(201, 168, 106, 0.13), transparent 38%),
     rgba(12, 9, 14, 0.62);
 }
 
 .calendar-connect-card h3 {
   margin: 10px 0 12px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.35rem, 2vw, 1.8rem);
   font-weight: 400;
 }
@@ -4132,7 +4132,7 @@ td strong {
 .calendar-connect-form label {
   color: var(--text-muted);
   font-size: 0.67rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
@@ -4462,13 +4462,21 @@ main {
     padding: 0 20px;
   }
 
+  /* The nav is the reason the bar exists, so it is the last thing to give
+     up room: the date and the org line go first, then the wordmark, and
+     only after all three does the nav start to scroll. */
   .topbar-nav {
+    flex: 0 1 auto;
     overflow-x: auto;
     scrollbar-width: none;
   }
 
   .topbar-nav::-webkit-scrollbar {
     display: none;
+  }
+
+  .topbar-right {
+    flex: 0 1 auto;
   }
 
   .topbar-org,
@@ -5720,5 +5728,170 @@ main {
 
   .camp-map-panel {
     padding: 14px;
+  }
+}
+
+/* ============================================================
+   23. Conformance — the screens the revamp did not rebuild
+
+   Pipeline, To-Do, Progress and the household record were mounted or
+   kept, not redrawn. They already read the tokens, so they arrived in
+   ink and gold on their own — but they still set their own type, and a
+   figure in bold Inter beside one in Cormorant reads as two different
+   applications.
+
+   This section only asserts the shared rules: every figure is display
+   type, every small label is tracked uppercase, and nothing is bolder
+   than the design allows. Layout is left exactly as those screens
+   already had it.
+   ============================================================ */
+
+/* ---------- Figures ----------
+   Every number that matters is Cormorant at 400. The weights below were
+   600–700, which is the single loudest thing left in the interface. */
+
+.todo-stat-value,
+.pipe-stat-value,
+.stat-value,
+.stage-value,
+.opp-value,
+.meter-value,
+.tank-value,
+.eod-value,
+.eod-figure,
+.aa-req-value,
+.stage-count {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+}
+
+/* ---------- Small labels ---------- */
+
+.todo-stat-label,
+.pipe-stat-label,
+.stat-label,
+.stat-sub {
+  font-family: var(--font-ui);
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.stat-sub {
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+}
+
+/* ---------- Headings ----------
+   Panel titles across the older screens, brought onto the display face.
+   Sized by their own rules; only family, weight and case are asserted. */
+
+main h2,
+main h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: var(--text-primary);
+}
+
+/* The campaign form title and the map keep their own sizes. */
+main .camp-form-title,
+main .op-panel-title {
+  letter-spacing: 0.03em;
+}
+
+/* ---------- Nothing is bold ----------
+   The design has three weights: 300, 400, 500. Anything heavier came
+   from the previous material. */
+
+main strong,
+main b {
+  font-weight: 500;
+}
+
+/* ---------- The storage notice ----------
+   It is the first thing on the screen for a new book, so it has to look
+   like it belongs to this application rather than the last one. */
+
+.storage-notice {
+  border: 1px solid var(--line-panel);
+  border-left: 1px solid var(--gold-500);
+  background: linear-gradient(180deg, var(--ink-panel-a), var(--ink-panel-b));
+}
+
+.storage-notice strong {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--gold-200);
+}
+
+/* A quiet way through to a screen that is no longer on the nav. */
+.op-link {
+  flex: 0 0 auto;
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.op-link:hover {
+  color: var(--gold-300);
+}
+
+/* The design has three weights — 300, 400, 500. These were the last
+   things left above it. */
+.operator-eyebrow,
+.stage-count,
+main label,
+main summary,
+main .active {
+  font-weight: 400;
+}
+
+main summary,
+main .active {
+  font-weight: 500;
+}
+
+/* Under 900px the wordmark goes too, leaving the monogram. Five
+   destinations matter more than the name of an application you are
+   already looking at. */
+@media (max-width: 900px) {
+  .topbar {
+    gap: 14px;
+    padding: 0 14px;
+  }
+
+  .topbar-wordmark,
+  .topbar-brand-rule {
+    display: none;
+  }
+
+  .topbar-item {
+    padding: 0 10px;
+  }
+
+  /* The shortcut is the useful half of the label. */
+  .topbar-search-word {
+    display: none;
+  }
+
+  .topbar-search {
+    padding: 8px 10px;
   }
 }

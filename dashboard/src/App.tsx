@@ -293,7 +293,8 @@ function App() {
             onClick={() => setPaletteOpen(true)}
             aria-haspopup="dialog"
           >
-            Search {PALETTE_HINT}
+            <span className="topbar-search-word">Search </span>
+            {PALETTE_HINT}
           </button>
         </div>
       </header>

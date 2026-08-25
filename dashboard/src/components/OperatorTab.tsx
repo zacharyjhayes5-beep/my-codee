@@ -29,7 +29,7 @@ interface OperatorTabProps {
   /** Open a household on the Leads screen. */
   onOpenProspect: (prospectId: string) => void;
   /** Jump to another screen, for the "waiting on you" rows. */
-  onGo: (target: "leads" | "todo") => void;
+  onGo: (target: "leads" | "todo" | "progress") => void;
 }
 
 /** A hue token, chosen by tone name. Status always carries a label too. */
@@ -297,6 +297,9 @@ export function OperatorTab({
             >
               {pace.onPace ? "On pace" : `${pace.behindBy} behind`}
             </span>
+            <button type="button" className="op-link" onClick={() => onGo("progress")}>
+              Open the book
+            </button>
           </div>
 
           <div

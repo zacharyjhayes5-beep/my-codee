@@ -37,28 +37,64 @@ npm run lint       # oxlint
 
 ## Tabs
 
-| Tab | File | What it does |
+The nav carries **five** destinations. Three more screens are still routed and
+still work, but are deliberately off the bar.
+
+| Destination | File | What it does |
 | --- | --- | --- |
-| Operator | `OperatorTab.tsx` | Home: vitals, progress orb, command deck, big goal |
-| Leads | `ProspectsTab.tsx` | Household profiles built from Granola call notes |
+| Operator | `OperatorTab.tsx` | To-do + who is up next, four vitals, goal pace |
+| Leads | `ProspectsTab.tsx` | Every household, filtered by intent |
 | Pipeline | `PipelineTab.tsx` | Opportunities by stage, what's due, what's gone quiet |
-| To-Do | `TodoTab.tsx` | Tasks in four urgency buckets, with Obsidian/Gmail import |
-| Progress | `ProgressTab.tsx` | Book of business, earnings, goals, pace, NADP tiers |
-| Walkthrough | `WalkthroughTab.tsx` | The property in 3D, area by area, with underwriting detail |
-| Vault | `VaultTab.tsx` | The Obsidian vault as an orbital map, searched and read in place |
-| Lead Map | `LeadMap.tsx` | Force-directed graph of prospects, lines and areas |
+| Campaigns | `CampaignsTab.tsx` | Five outreach channels, logged as you work them |
+| Vault | `VaultTab.tsx` | The Obsidian vault as an orbital map |
 
-Navigation is a permanent navy sidebar in `App.tsx`; the tab ids are unchanged
-(`prospects` still backs the Leads item, so nothing in the data or the routing
-moved when the label changed). Each entry carries the page title and standfirst
-that `.page-head` renders.
+| Off the nav | File | Reached from |
+| --- | --- | --- |
+| Progress | `ProgressTab.tsx` | "Open the book" on the Operator goal strip, or ⌘K |
+| To-Do | `TodoTab.tsx` | "Reviews to approve" in Waiting on you, or ⌘K |
+| Walkthrough | `WalkthroughTab.tsx` | A household record, or ⌘K |
+| Lead Map | `LeadMap.tsx` | The "Lead map" toggle on Leads |
 
-**Leads is a table, not a grid of cards.** `ProspectsTab` renders a sortable
-`<table>`; a row expands into the full `ProspectCard` in a detail row, so every
-control the card ever had is still there. `leadStatus()` derives the working
-state — New, Needs research, Follow-up due, Needs review, Scheduled, Contacted,
-Closed — from fields the record already carries. It stores nothing, and the
-order of its checks is the priority order.
+**Progress and To-Do keep their routes on purpose.** The handoff wanted both
+folded into Operator and their tabs deleted. Operator absorbed what it could —
+the goal strip is the whole of Progress's pace reading, and the to-do list and
+review counts are in the hero and the Waiting on you panel. But **Progress is
+also the only place a policy can be entered**, and To-Do is the only place a
+review proposal can be approved. Deleting those screens would have removed the
+data entry the new Operator reads from. Both are one click from where their
+numbers appear; do not "finish the job" by cutting them.
+
+Navigation is a 70px sticky top bar in `App.tsx` — type only, no icons. The
+tab ids changed with the revamp: **what used to be called `pipeline` (the
+household list) is now `leads`**, and `pipeline` now means `PipelineTab`.
+`PAGE` in `App.tsx` carries the kicker, title and standfirst each screen
+renders.
+
+**Leads is a table, not a grid of cards** — but it is a CSS grid now, not a
+`<table>`. Five columns (Household, Stage, Lines held, Next step, Last touch),
+each row one button that expands into the full `ProspectCard` beneath it, so
+every control the card ever had is still there.
+
+**Its filters are intents, not stages.** Needs a move / Gone quiet / All
+households / Won. A stage dropdown made you translate "what should I do" into
+"which stage is that" every time; these four ask the question directly, and
+each carries its count. The old sortable headers and the Status column are
+gone — sorting five columns by hand is a feature for a screen you browse, and
+this one is worked.
+
+`lib/leadView.ts` holds the derivations Leads and Operator share, because both
+show the same household: stage tone, last touch, whether it has gone quiet, and
+the one thing owed to it.
+
+- **Quiet is derived, never stored** — `lastTouchAt` against an eleven-day
+  threshold (`QUIET_AFTER_DAYS`). A household goes quiet because the calendar
+  moved, not because anything happened to the record, so it has to be
+  recomputed on read.
+- **`nextStepOf()` is never blank.** It falls through the household's own next
+  action, an open task, an open opportunity, and finally a sentence derived
+  from the stage. Next step is the widest cell and the only one at full text
+  weight; an empty one is a dead end.
+- `leadStatus()` is gone with the Status column it fed.
 
 ## Decisions already made — don't relitigate these
 
@@ -109,34 +145,50 @@ own requirement; `annuity: true` in `lib/policies.ts` marks them, and
 `lifeBreakdown()` does the split. This is deliberately *not* how the goal
 meters and tier gauges count life, which keep annuities in.
 
-**Theme.** Warm ivory ground, deep midnight navy structure, cognac as a rare
-accent. This replaced the original neon-on-black console; there is no dark
-mode and no neon anywhere.
+**Theme — ink and gold.** A dark "quiet luxury" material: near-black ground,
+champagne gold for every rule and accent, serif display type. This replaced the
+"Nocturne" black-violet-and-brass scheme, which had itself replaced a warm
+ivory one, which had replaced the original neon console. There is no light mode.
 
-- **`src/index.css` is the token layer** — ground, surfaces, navy, cognac,
-  warm neutrals, text, borders, radius, shadows, spacing, type, motion, focus.
-  The older neon names (`--accent`, `--neon-red`, `--status-*`) survive as
-  aliases pointing at the new values, which is what let 3,900 lines of
-  component CSS re-material without being rewritten. Change colour here, never
-  in a component.
-- **`src/theme.css` is the design system**, loaded *after* App.css. It owns
-  structure: the shell grid, the navy sidebar, the page header, typographic
-  hierarchy, the leads table, controls, and the rules that strip the old
-  console decoration. App.css is legacy and should shrink over time; put new
-  visual work in theme.css.
-- **Colour must carry meaning.** Navy = interactive, selected, primary.
-  Cognac = the current nav item and newly-arrived leads, and nothing else — if
-  the interface looks orange something is misusing it. Amber = needs
-  attention, red = overdue or failed, sage = good. Anything neutral stays
-  neutral. Status never depends on hue alone; every chip carries its word.
-- **Accessibility is measured, not assumed.** Every text/background pair on
-  all six pages was computed against its *composited* background and clears
-  4.5:1 (3:1 for large text); controls are ≥24px; focus is a visible navy
-  ring. `--text-muted` is deliberately dark — the lighter taupe it replaced
-  measured 4.05 and was the most common failure in the app. `--cognac-ink`
-  exists because cognac that reads well as a 3px marker fails as a label.
-- Motion is 120–180ms, functional only, and still behind
-  `prefers-reduced-motion`.
+- **`src/theme.css` section 0 is the token layer now**, not `index.css`.
+  theme.css loads last (index.css → App.css → theme.css), so a `:root` block at
+  its head is the final word on every custom property the older sheets already
+  read from. The previous names — `--navy`, `--cognac`, `--surface-*`,
+  `--border`, the status colours — survive as aliases pointing at the ink and
+  gold values, which is what let ~9,000 lines of component CSS re-material
+  without being rewritten. `index.css` still holds the original definitions;
+  they are simply overridden. Change colour in theme.css section 0, never in a
+  component.
+- **Border radius is 0.** Nothing is rounded except actual circles — nodes,
+  dots, status pips, which keep `50%` or `999px`. This is the single strongest
+  signal of the style; do not soften it. Elevation is an edge plus a gradient,
+  not a shadow: `--shadow-1/2/3` all resolve to `none`.
+- **Two families, three weights.** Cormorant Garamond (display: every figure
+  that matters, every panel title, every proper name) and Inter (everything
+  else), at 300/400/500 and never heavier. Both are loaded from Google Fonts in
+  `dashboard/index.html` — before the revamp Inter was *named* in the tokens
+  but never actually fetched, so it had been silently falling back to
+  system-ui.
+- **Every letterspaced uppercase label needs `white-space: nowrap`.** At
+  .16–.24em tracking they wrap unpredictably and break their containers.
+- **Grid seams, not cell borders.** `display: grid; gap: 1px` with the seam
+  colour on the container and opaque cell fills gives true hairlines.
+- **Colour must still carry meaning, and never alone.** Gold = interactive,
+  active, accent. The six muted jewels are channel identities on Campaigns and
+  status tones elsewhere: terracotta = overdue/quiet/behind, brass = due
+  today/new, verdigris = on pace/quoted/done, cognac = reviewing, slate =
+  mailing, grey = neutral/won. Every status carries its word as well as its
+  hue; the .07–.20 alpha borders are decorative and must never be the only
+  carrier of meaning.
+- Motion is `.18s` for colour on hover and `.25s` for opacity on selection.
+  The only continuous motion in the app is the Campaigns map's slow ring and
+  its particle fade, both behind `prefers-reduced-motion`.
+
+**Sections 19–23 of theme.css are the revamp**: the shell and top bar,
+Operator, Leads, Campaigns, and a conformance layer that asserts the shared
+type rules over the screens the revamp did not redraw (Pipeline, To-Do,
+Progress, the household record). If a figure shows up in bold Inter, section 23
+is where it gets claimed.
 
 **The Progress tab is the one exception to "no 3D", and it is deliberate.**
 He asked for it directly and repeatedly — "like the dashboard is a 3d object
@@ -334,11 +386,10 @@ committed for the live site to see it.
   whose filename matches nothing lands in Unsorted; that is where a new topic
   area shows up, and the fix is a rule, not a rename.
 
-**The dark viewport is the third exception to the ivory theme, scoped exactly
-like the other two.** Section 16 of `theme.css` holds it, all under `.vault-*`.
-A starfield has to be dark; everything the eye moves to afterwards — search,
-results, the note — is back in ivory and navy. Cognac marks search hits, which
-is consistent with cognac meaning "the thing you are looking at".
+**The dark viewport used to be an exception to an ivory theme.** The whole
+application is dark now, so it no longer is — but section 16 of `theme.css`
+still scopes it under `.vault-*`, and that scoping is worth keeping. Gold marks
+search hits, consistent with gold meaning "the thing you are looking at".
 
 `components/vault/Orrery.tsx` is the renderer, and is **lazily imported** for
 the same reason the walkthrough's scene is: it bakes sphere sprites on mount.
@@ -360,13 +411,29 @@ Two things in it are easy to get wrong:
 `localStorage` or `indexedDB` directly** — that seam is the whole point of
 phase 1, and the backup depends on it being the only door.
 
-- **IndexedDB** (`fb-dashboard`, v2) holds records: `prospects`, `policies`,
-  `tasks`, `suggestions` and `calls` as one row per record keyed by `id`, plus
-  `reviews` and `audit` — created empty and **not read or written by anything
-  yet** — and a `meta` store for `dismissed`, the migration flag and the
-  prospect schema version. `lib/db.ts` has the primitives.
+- **IndexedDB** (`fb-dashboard`, **v4**) holds records, one row per record
+  keyed by `id`: `prospects`, `policies`, `tasks`, `suggestions`, `calls`,
+  `reviews`, `audit`, `opportunities` and `campaigns`. Plus a `meta` store for
+  `dismissed` and the migration flags. `lib/db.ts` has the primitives; adding a
+  store means adding it to `RECORD_STORES` *and* bumping `DB_VERSION`.
 - **localStorage** holds small settings only: `fb-dashboard:period`, `:owner`,
-  `:persistency`, `:lines:v3`.
+  `:persistency`, `:lines:v3`, `:correspondence`, `:lastBackupAt`,
+  `:storageNoticeSeen`, `:googleCalendarClientId`.
+
+**Campaign entries moved out of localStorage in v4, and that was a bug fix.**
+They had shipped as a *setting* — `fb-dashboard:campaigns`, read whole on every
+boot, in the one storage area a browser clears first — despite being records
+that grow without bound. `migrateCampaignsToStore()` moves them once, guarded
+by the `campaignsMovedToIndexedDb` meta flag, and leaves the old key in place
+as a rollback point. `LEGACY_CAMPAIGNS_KEY` is deliberately **not** part of
+`LEGACY_RECORD_KEYS`: that set is the collections the *first* migration moved
+and is iterated as a group, so folding campaigns in silently changed what every
+one of those loops meant. A test caught it.
+
+**The backup carries campaigns now.** It did not before the move — an export
+would have silently omitted every entry. If you add a record store, add it to
+`RepositorySnapshot`, `snapshot()`, `replaceAll()`, `BackupRecords` and
+`parseRecordSections()` in the same change, or backups quietly lose it.
 - The cache is filled by `initRepository()` in `main.tsx` *before* the first
   render, which is why `useStored` can stay synchronous and no component had to
   become async. Don't move storage reads into components.
@@ -448,15 +515,40 @@ size the whole page.
 
 ## Command Center and transcript review
 
-The Operator tab **is** the Command Center — same slot, still the default. Panel
-order is the design: daily brief, today's schedule, what needs me, follow-ups,
-goal pace, correspondence, end of day. **Operational work above KPIs** — the
-book-of-business figures stay on Progress. Do not promote a metric above the
-day's work.
+The Operator tab **is** the Command Center — same slot, still the default. The
+revamp cut it to **four sections and no more**, in this order:
 
-`lib/dailyBrief.ts` builds the brief. The focus list is ordered deliberately:
-appointments, then clearing overdue work, then quote work, *then* cold-call
-volume — quotes close, dials do not.
+1. **Hero** — the to-do list beside the four households up next.
+2. **Vitals** — exactly four figures: net commission, policies written,
+   households in play, days remaining. Four, not five, and never more.
+3. **Goal pace** — the bar, its lines, and the Waiting on you panel.
+4. **Today's calendar**, at the foot.
+
+**Operational work above KPIs still holds** — what is *owed* is at the top and
+the vitals sit under it. Do not promote a metric above the day's work, and do
+not add a fifth vital.
+
+**The pace bar's marker is the point of it.** A hairline at `elapsedPct` shows
+where the count should be today. A fill on its own reports a number; a fill
+beside the marker delivers a verdict. `lib/pace.ts` computes it and is shared
+with ProgressTab — it was lifted out of that screen precisely so two copies
+could not drift.
+
+`lib/operator.ts` builds the queue and the Waiting on you counts.
+`whatNeedsMe` does the ranking; `upNext` turns the top of it into **one row per
+household**, so one family with three overdue things cannot fill the queue.
+
+**Today's Google Calendar was kept deliberately.** The handoff's Operator
+design does not include it and does not list it for removal — it was written
+against an older snapshot of this app. It is a working read-only OAuth
+connection, so it moved into `DayCalendar.tsx` and sits at the foot rather than
+being deleted. Every line of its connection logic is unchanged.
+
+`lib/dailyBrief.ts` builds the brief. It is no longer rendered on Operator —
+`todaysSchedule` still is, as the calendar's fallback — but the focus list
+ordering is still the right one if it comes back: appointments, then clearing
+overdue work, then quote work, *then* cold-call volume. Quotes close, dials do
+not.
 
 Correspondence is **entered by hand**. There is no mail, calendar or messaging
 connection and this phase did not add one; the triage exists so the shape is
@@ -651,8 +743,9 @@ and is worse than a blank.
 site and a local dev server are two unconnected sets of data — work entered on
 one is invisible on the other, and looks to him like the dashboard "lost" it.
 Before treating missing data as a bug, ask which address he entered it on.
-`components/BackupPanel.tsx` is the bridge: it exports every `fb-dashboard:`
-key to a JSON file and restores it anywhere. It reads the prefix rather than a
+`components/BackupPanel.tsx` is the bridge, rendered at the foot of the Vault
+screen: it exports every `fb-dashboard:` key to a JSON file and restores it
+anywhere. It reads the prefix rather than a
 fixed list, so a new key is included automatically — but a key that does *not*
 carry the prefix will be silently left out of backups.
 
@@ -722,6 +815,23 @@ before any of it.
 | 3 | Call records, the logger, call history |
 | 4 | Outcome rules, caps, automatic follow-up tasks |
 | 5 | Review inbox, conflict handling, append-only audit |
+| — | **Ink & gold revamp** — see the handoff below |
+
+**The ink & gold revamp** (`Agency control center hub design/`) landed after
+phase 5, in five commits, one per step of the handoff's suggested order:
+tokens, top bar, Operator, Leads, Campaigns. The handoff README is the
+specification and is still in the repo; the two `.dc.html` files beside it are
+design references in a bespoke runtime and are **not** production code to copy.
+
+Three things the handoff got wrong, because it was written against an older
+snapshot, and how they were resolved:
+
+- It describes replacing a **cream/light theme**. The app was already dark.
+- Its removal list names `CommandCenter` and `ProgressOrb`. Both were already
+  orphaned — the files exist, nothing imports them.
+- It gives five nav destinations including **Pipeline and Vault**, which were
+  not in the nav. `PipelineTab`, `VaultTab` and `LeadMap` all turned out to be
+  fully built and imported by nothing at all. They were wired in, not written.
 
 **Next is phase 6** — a documented JSON proposal format an external AI session
 can produce, and an import path for it. Still no key in the browser, still no
@@ -739,7 +849,8 @@ the only copy of his book that lives outside one browser.
    waiting on a straight-on photo of the pages with the new numbers.
 2. **Premium goals.** Per-line premium goals are unset (0), so those meters
    read "no goal set" until he enters targets.
-3. **Backup is manual.** Back up / Restore now exist in the header, but he has
+3. **Backup is manual.** Back up / Restore live at the **foot of the Vault
+   screen** — they were in the sidebar, and the sidebar is gone. He still has
    to remember to press the button. Nothing warns him when the last backup is
    old, and nothing carries data between the live site and a local copy on its
    own. The file is format v3; v1 and v2 files still restore, and their

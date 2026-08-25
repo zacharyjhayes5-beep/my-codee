@@ -16,7 +16,7 @@
 .app-header h1 {
   margin: 0 0 4px;
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .app-header p {
@@ -47,7 +47,7 @@
 .tab-bar button.active {
   background: var(--accent);
   color: var(--on-accent);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: var(--glow-blue);
 }
 
@@ -64,7 +64,7 @@
 .boot-error h1 {
   margin: 0;
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .boot-error p {
@@ -209,7 +209,7 @@
 
 .stat-value {
   font-size: 1.8rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .stat-sub {
@@ -248,7 +248,7 @@
 }
 
 .meter-value {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .meter-goal {
@@ -375,7 +375,7 @@
 
 .todo-stat-value {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -445,7 +445,7 @@
 
 .overdue-pill {
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--neon-red);
   letter-spacing: 0.04em;
 }
@@ -503,7 +503,7 @@
 
 .agenda-weekday {
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .agenda-day.is-today .agenda-weekday {
@@ -605,7 +605,7 @@
   border-radius: 999px;
   padding: 2px 9px;
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
@@ -867,7 +867,7 @@
 .book-head h2 {
   margin: 0 0 4px;
   font-size: 1.05rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .section-head p,
@@ -934,7 +934,7 @@
 .book-tabs button.active {
   background: var(--accent);
   color: var(--on-accent);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: var(--glow-blue);
 }
 
@@ -1020,7 +1020,7 @@
 
 .book-table td.computed.strong {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .book-totals {
@@ -1065,7 +1065,7 @@
 .tier-head h2 {
   margin: 0 0 4px;
   font-size: 1.05rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tier-head p {
@@ -1116,7 +1116,7 @@
 .tier-badge {
   margin-left: auto;
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   border-radius: 999px;
   padding: 2px 9px;
@@ -1186,7 +1186,7 @@
 
 .aa-req-value {
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1205,7 +1205,7 @@
 .aa-persistency input {
   width: 5.5rem;
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   background: transparent;
   border: none;
@@ -1504,7 +1504,7 @@
 .cc-headline-text {
   margin: 0;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   text-wrap: balance;
 }
@@ -1784,7 +1784,7 @@
 
 .goal-count em {
   font-style: normal;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.95rem;
   color: var(--text-primary);
 }
@@ -1850,7 +1850,7 @@
 
 .eod-value {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1897,7 +1897,7 @@
 
 .pipe-stat-value {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1939,7 +1939,7 @@
 
 .stage-count {
   font-size: 1.4rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2033,7 +2033,7 @@
 .mode-switch button.active {
   background: var(--accent);
   color: var(--on-accent);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .work-mode {
@@ -2056,7 +2056,7 @@
   border-radius: 0;
   padding: 16px 34px;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   cursor: pointer;
   box-shadow: var(--glow-blue);
@@ -2072,7 +2072,7 @@
 
 .queue-stats em {
   font-style: normal;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
@@ -2133,7 +2133,7 @@
 
 .call-number {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent);
   text-decoration: none;
   font-variant-numeric: tabular-nums;
@@ -2442,7 +2442,7 @@
 
 .stage-chip {
   font-size: 0.66rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
@@ -2789,7 +2789,7 @@
 
 .outcome-chip {
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
@@ -2878,7 +2878,7 @@
 .tank-mark {
   fill: var(--text-muted);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tank-readout {
@@ -2897,7 +2897,7 @@
 
 .tank-value {
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2908,7 +2908,7 @@
 
 .tank-pct {
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
@@ -3194,7 +3194,7 @@
 .chip.on {
   color: var(--on-accent);
   border-color: transparent;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .chip-property.on {
@@ -3244,7 +3244,7 @@
   background: var(--accent);
   border-color: transparent;
   color: var(--on-accent);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: var(--glow-blue);
 }
 
@@ -3297,7 +3297,7 @@
   flex: 1;
   min-width: 0;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   border: 1px solid transparent;
   background: transparent;
   border-radius: 0;
@@ -3313,7 +3313,7 @@
 }
 
 .status-select {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.82rem;
   border: 1px solid var(--border);
   background: var(--surface-2);
@@ -3644,7 +3644,7 @@
 .op-vital-value {
   font-family: var(--mono);
   font-size: 1.6rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.15;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -3712,7 +3712,7 @@
 .orb-pct {
   font-family: var(--mono);
   font-size: 2.6rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
   color: #fff;
   text-shadow: none;
@@ -3802,7 +3802,7 @@
 .op-bhag-text {
   font-family: var(--mono);
   font-size: clamp(1.3rem, 4vw, 2.1rem);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--text-primary);
   text-shadow: none;
@@ -3840,7 +3840,7 @@
   font-style: normal;
   color: var(--accent);
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 @media (max-width: 900px) {
@@ -3853,7 +3853,7 @@
 .app-header h1 {
   font-family: var(--mono);
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
 }
 
@@ -4088,7 +4088,7 @@
   justify-content: space-between;
   gap: 10px;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
   margin-bottom: 12px;
   padding-bottom: 0;
@@ -4132,7 +4132,7 @@
   color: var(--on-accent);
   border: 1px solid transparent;
   box-shadow: none;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .primary-btn:hover:not(:disabled) {
@@ -4186,7 +4186,7 @@
 .tab-bar button.active {
   background: var(--surface-3);
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: none;
 }
 
@@ -4203,7 +4203,7 @@
   font-family: var(--font-sans);
   letter-spacing: 0.02em;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: none;
   box-shadow: var(--shadow-2);
 }
@@ -4277,7 +4277,7 @@ textarea:focus {
 /* Headings: let size and weight carry the hierarchy. */
 .app-header h1 {
   font-size: 1.15rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text-primary);
 }
@@ -4289,7 +4289,7 @@ textarea:focus {
 
 .snapshot-heading {
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-secondary);
   letter-spacing: 0;
 }
@@ -4344,7 +4344,7 @@ h5 {
 .cc-headline-text {
   color: var(--text-primary);
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
@@ -4509,12 +4509,12 @@ h5 {
 /* These were sized and spaced to look like console output. */
 .op-cmd-label {
   letter-spacing: 0;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .op-bhag-text {
   letter-spacing: -0.01em;
-  font-weight: 650;
+  font-weight: 500;
 }
 
 .op-flag {
@@ -4545,7 +4545,7 @@ h5 {
    kept for validation that has actually failed. */
 .call-logger-who {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .required-mark {

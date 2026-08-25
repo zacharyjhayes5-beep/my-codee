@@ -55,9 +55,9 @@ export function StorageNotice({
             another machine shows a different, empty book.
           </p>
           <p>
-            <strong>Back up</strong> in the top right saves everything to a file. Nothing
-            does that for you — it only happens when you press it. Do it after any session
-            where you enter real households or calls.
+            <strong>Back up</strong>, at the foot of the Vault screen, saves everything
+            to a file. Nothing does that for you — it only happens when you press it. Do
+            it after any session where you enter real households or calls.
           </p>
         </div>
         <button
@@ -84,8 +84,8 @@ export function StorageNotice({
         </strong>
         <p>
           {prospects.length} household{prospects.length === 1 ? "" : "s"} live only in this
-          browser. One cleared cache and they are gone. <strong>Back up</strong> is in the
-          top right.
+          browser. One cleared cache and they are gone. <strong>Back up</strong> is at
+          the foot of the Vault screen.
         </p>
       </div>
       <button className="ghost-btn" onClick={() => setOpen(false)}>
