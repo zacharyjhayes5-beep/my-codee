@@ -5825,12 +5825,25 @@ main b {
   background: linear-gradient(180deg, var(--ink-panel-a), var(--ink-panel-b));
 }
 
-.storage-notice strong {
+/* Only the heading — the direct child. A `strong` inside a sentence is
+   emphasis, and dressing it as display type broke the line in two. */
+.storage-notice > div > strong {
+  display: block;
+  margin-bottom: 6px;
   font-family: var(--font-display);
   font-size: 19px;
   font-weight: 400;
   letter-spacing: 0.01em;
   color: var(--gold-200);
+}
+
+.storage-notice p strong {
+  /* App.css blocks every strong in the notice, which split a sentence in
+     two around the word it was only emphasising. */
+  display: inline;
+  margin: 0;
+  font-weight: 500;
+  color: var(--gold-300);
 }
 
 /* A quiet way through to a screen that is no longer on the nav. */
