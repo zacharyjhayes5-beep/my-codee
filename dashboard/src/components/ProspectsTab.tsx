@@ -48,9 +48,10 @@ import {
  * A stage list makes you translate "what should I do" into "which stage is
  * that", every time. These four are the questions actually being asked.
  */
-type Intent = "move" | "quiet" | "all" | "won";
+type Intent = "direct" | "move" | "quiet" | "all" | "won";
 
 const INTENTS: { id: Intent; label: string }[] = [
+  { id: "direct", label: "Direct" },
   { id: "move", label: "Needs a move" },
   { id: "quiet", label: "Gone quiet" },
   { id: "all", label: "All households" },
@@ -69,6 +70,17 @@ const TONE_VAR: Record<string, string> = {
 
 function matchesIntent(p: Prospect, intent: Intent, todayIso: string): boolean {
   switch (intent) {
+    case "direct":
+      /**
+       * Households that came to you directly, rather than off the county roll.
+       *
+       * Every parcel record carries the county's permanent parcel number, and
+       * nothing else does — so the absence of one is what marks a walk-in, a
+       * referral, or anybody you entered yourself. Deliberately not keyed on
+       * `source`: a county export brought in through the importer is still a
+       * county lead, and it arrives with source "import".
+       */
+      return !p.parcelId;
     case "won":
       return p.stage === "Won";
     case "quiet":
