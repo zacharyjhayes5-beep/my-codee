@@ -1,17 +1,21 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { Opportunity, OpportunityStage, Prospect } from "../types";
 import {
   OPPORTUNITY_STAGES,
   daysBetween,
   isStalled,
+  patchOpportunity,
+  premiumTotal,
   stageClassFor,
   summarizeByStage,
 } from "../lib/opportunities";
+import { OpportunityRecord } from "./OpportunityRecord";
 import { today } from "../lib/storage";
 
 interface PipelineTabProps {
   opportunities: Opportunity[];
   prospects: Prospect[];
+  onChange: (opportunities: Opportunity[]) => void;
   onOpenProspect: (prospectId: string) => void;
 }
 
@@ -24,9 +28,22 @@ function money(n: number): string {
  * anybody. It is built to be worked from: what is due, what has gone quiet,
  * and what is still open — not to forecast.
  */
-export function PipelineTab({ opportunities, prospects, onOpenProspect }: PipelineTabProps) {
+export function PipelineTab({
+  opportunities,
+  prospects,
+  onChange,
+  onOpenProspect,
+}: PipelineTabProps) {
   const now = today();
   const [stageFilter, setStageFilter] = useState<OpportunityStage | "All">("All");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  /** History travels with the record, so every edit goes through the patch. */
+  function save(next: Opportunity) {
+    onChange(
+      opportunities.map((o) => (o.id === next.id ? patchOpportunity(o, next) : o)),
+    );
+  }
 
   const byId = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
   const summary = useMemo(() => summarizeByStage(opportunities, now), [opportunities, now]);
@@ -39,7 +56,7 @@ export function PipelineTab({ opportunities, prospects, onOpenProspect }: Pipeli
     .filter((o) => stageFilter === "All" || o.stage === stageFilter)
     .sort((a, b) => (a.nextActionDate || "9999").localeCompare(b.nextActionDate || "9999"));
 
-  const totalOpenValue = open.reduce((sum, o) => sum + (o.estimatedValue ?? 0), 0);
+  const totalOpenValue = open.reduce((sum, o) => sum + premiumTotal(o), 0);
 
   return (
     <div className="tab-panel">
@@ -50,7 +67,7 @@ export function PipelineTab({ opportunities, prospects, onOpenProspect }: Pipeli
         </div>
         <div className="pipe-stat">
           <span className="pipe-stat-value">{money(totalOpenValue)}</span>
-          <span className="pipe-stat-label">Estimated value</span>
+          <span className="pipe-stat-label">Premium in play</span>
         </div>
         <div className={`pipe-stat${dueOrOverdue.length > 0 ? " alert" : ""}`}>
           <span className="pipe-stat-value">{dueOrOverdue.length}</span>
@@ -103,7 +120,7 @@ export function PipelineTab({ opportunities, prospects, onOpenProspect }: Pipeli
                 <th>Household</th>
                 <th>Stage</th>
                 <th>Lines</th>
-                <th>Value</th>
+                <th>Premium</th>
                 <th>Next action</th>
                 <th>Due</th>
               </tr>
@@ -113,35 +130,60 @@ export function PipelineTab({ opportunities, prospects, onOpenProspect }: Pipeli
                 const overdue = Boolean(o.nextActionDate && o.nextActionDate < now);
                 const dueToday = o.nextActionDate === now;
                 const quiet = isStalled(o, now);
+                const isOpen = openId === o.id;
+                const household = byId.get(o.prospectId);
 
                 return (
-                  <tr key={o.id} className={overdue ? "row-overdue" : quiet ? "row-quiet" : ""}>
-                    <td>
-                      <button className="link-btn" onClick={() => onOpenProspect(o.prospectId)}>
-                        {byId.get(o.prospectId)?.name || "Unknown household"}
-                      </button>
-                      {o.appointments.length > 0 && (
-                        <span className="row-appointment">
-                          {o.appointments.length} appointment
-                          {o.appointments.length === 1 ? "" : "s"}
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`stage-chip ${stageClassFor[o.stage]}`}>{o.stage}</span>
-                      {quiet && (
-                        <span className="quiet-note">
-                          {daysBetween(o.updatedAt, now)}d quiet
-                        </span>
-                      )}
-                    </td>
-                    <td>{o.lines.join(", ") || "—"}</td>
-                    <td className="num">{money(o.estimatedValue ?? 0)}</td>
-                    <td>{o.nextAction}</td>
-                    <td className={overdue ? "due-overdue" : dueToday ? "due-today" : ""}>
-                      {o.nextActionDate || "—"}
-                    </td>
-                  </tr>
+                  <Fragment key={o.id}>
+                    <tr
+                      className={`opp-row${isOpen ? " is-open" : ""}${
+                        overdue ? " row-overdue" : quiet ? " row-quiet" : ""
+                      }`}
+                    >
+                      <td>
+                        {/* The name opens the account here rather than leaving
+                            the screen — this is where it is being worked. */}
+                        <button
+                          className="opp-name"
+                          aria-expanded={isOpen}
+                          onClick={() => setOpenId(isOpen ? null : o.id)}
+                        >
+                          {household?.name || "Unknown household"}
+                        </button>
+                        {o.appointments.length > 0 && (
+                          <span className="row-appointment">
+                            {o.appointments.length} appointment
+                            {o.appointments.length === 1 ? "" : "s"}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`stage-chip ${stageClassFor[o.stage]}`}>{o.stage}</span>
+                        {quiet && (
+                          <span className="quiet-note">{daysBetween(o.updatedAt, now)}d quiet</span>
+                        )}
+                      </td>
+                      <td>{o.lines.join(", ") || "—"}</td>
+                      <td className="num">{money(premiumTotal(o))}</td>
+                      <td>{o.nextAction}</td>
+                      <td className={overdue ? "due-overdue" : dueToday ? "due-today" : ""}>
+                        {o.nextActionDate || "—"}
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="opp-detail-row">
+                        <td colSpan={6}>
+                          <OpportunityRecord
+                            opportunity={o}
+                            prospect={household}
+                            onSave={save}
+                            onClose={() => setOpenId(null)}
+                            onOpenHousehold={() => onOpenProspect(o.prospectId)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

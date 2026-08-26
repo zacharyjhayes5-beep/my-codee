@@ -64,6 +64,8 @@ export function blankOpportunity(prospectId: string, overrides: Partial<Opportun
     prospectId,
     stage: "Qualified / Open",
     lines: [],
+    premiums: {},
+    notes: "",
     estimatedValue: null,
     conversionScore: null,
     nextAction: "",
@@ -115,6 +117,44 @@ const TRACKED: (keyof Opportunity)[] = [
   "lines",
   "closedReason",
 ];
+
+/**
+ * Total annual premium across the lines that have been priced.
+ *
+ * Falls back to the old single `estimatedValue` for opportunities written
+ * before premiums were kept per line, so the pipeline's totals do not drop
+ * to zero for every record that predates this.
+ */
+export function premiumTotal(opportunity: Opportunity): number {
+  const priced = Object.values(opportunity.premiums ?? {}).filter(
+    (n): n is number => typeof n === "number" && Number.isFinite(n),
+  );
+  if (priced.length > 0) return priced.reduce((sum, n) => sum + n, 0);
+  return opportunity.estimatedValue ?? 0;
+}
+
+/**
+ * Brings an opportunity up to the current shape.
+ *
+ * Records written before per-line premiums have neither `premiums` nor
+ * `notes`, and a component reading `.premiums` on one of those takes the
+ * whole screen down — the same failure that a household with no `contacts`
+ * array caused twice before. Run on read, idempotent, invents nothing.
+ */
+export function normalizeOpportunity(row: Opportunity): Opportunity {
+  return {
+    ...row,
+    lines: Array.isArray(row.lines) ? row.lines : [],
+    premiums: row.premiums && typeof row.premiums === "object" ? row.premiums : {},
+    notes: typeof row.notes === "string" ? row.notes : "",
+    appointments: Array.isArray(row.appointments) ? row.appointments : [],
+    history: Array.isArray(row.history) ? row.history : [],
+  };
+}
+
+export function normalizeOpportunities(rows: Opportunity[]): Opportunity[] {
+  return (Array.isArray(rows) ? rows : []).map(normalizeOpportunity);
+}
 
 function describe(value: unknown): string {
   if (value === null || value === undefined || value === "") return "empty";
@@ -325,7 +365,7 @@ export function summarizeByStage(all: Opportunity[], asOf = today()): StageSumma
     return {
       stage,
       count: rows.length,
-      value: rows.reduce((sum, o) => sum + (o.estimatedValue ?? 0), 0),
+      value: rows.reduce((sum, o) => sum + premiumTotal(o), 0),
       dueOrOverdue: rows.filter((o) => o.nextActionDate && o.nextActionDate <= asOf).length,
       stalled: rows.filter((o) => isStalled(o, asOf)).length,
     };

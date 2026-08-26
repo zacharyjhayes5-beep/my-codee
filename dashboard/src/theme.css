@@ -6028,3 +6028,241 @@ main .active {
 .op-count-toggle:hover {
   color: var(--gold-300);
 }
+
+/* ============================================================
+   25. The account record on Pipeline
+
+   The pipeline used to be a table you could only read. A row opens into
+   the account itself now — stage, what is being quoted, what each line
+   costs, and a notes field with room to actually write in.
+   ============================================================ */
+
+.opp-name {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.opp-name:hover {
+  color: var(--gold-200);
+}
+
+.opp-row.is-open .opp-name {
+  color: var(--gold-200);
+}
+
+.opp-row.is-open > td {
+  background: var(--wash-row);
+}
+
+.opp-detail-row > td {
+  padding: 0;
+  background: rgba(10, 9, 13, 0.4);
+}
+
+.opp-record {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 26px 28px 28px;
+  border-top: 1px solid var(--line-panel);
+}
+
+.opp-record-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.opp-record-head h3 {
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.opp-record-sub {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.opp-record-actions {
+  display: flex;
+  gap: 18px;
+  flex: 0 0 auto;
+}
+
+/* ---------- The four top fields ---------- */
+
+.opp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+}
+
+.opp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.opp-field input,
+.opp-field select,
+.opp-notes textarea,
+.opp-line-amount input {
+  width: 100%;
+  border: 1px solid var(--line-field);
+  border-radius: 0;
+  padding: 9px 11px;
+  background: var(--ink-field);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--t-hover);
+}
+
+.opp-field input:focus,
+.opp-field select:focus,
+.opp-notes textarea:focus,
+.opp-line-amount input:focus {
+  border-color: var(--gold-500);
+}
+
+.opp-field input::placeholder,
+.opp-notes textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.opp-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---------- Premium per line ---------- */
+
+.opp-premiums {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opp-lines-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line-seam);
+  border: 1px solid var(--line-seam);
+}
+
+.opp-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  background: rgba(15, 14, 18, 0.7);
+  transition: background var(--t-hover);
+}
+
+.opp-line.is-on {
+  background: rgba(26, 24, 30, 0.85);
+}
+
+.opp-line-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.opp-line.is-on .opp-line-toggle {
+  color: var(--text-primary);
+}
+
+.opp-line-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.opp-line-amount input {
+  width: 92px;
+  padding: 7px 9px;
+  text-align: right;
+}
+
+.opp-line-amount input:disabled {
+  border-color: var(--line-row);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* ---------- Notes ----------
+   Twelve rows, because the brief was "a large notes section" and a
+   three-row box is a caption. */
+
+.opp-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opp-notes textarea {
+  min-height: 220px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* ---------- Save ---------- */
+
+.opp-record-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.opp-warn {
+  font-size: 12px;
+  color: var(--hue-terracotta);
+}
+
+.opp-ok {
+  font-size: 12px;
+  color: var(--hue-verdigris);
+}
+
+@media (max-width: 1100px) {
+  .opp-grid,
+  .opp-lines-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .opp-record {
+    padding: 20px;
+  }
+}

@@ -382,6 +382,7 @@ function App() {
           <PipelineTab
             opportunities={opportunities}
             prospects={prospects}
+            onChange={setOpportunities}
             onOpenProspect={(id) => {
               setFocusProspectId(id);
               setTab("leads");

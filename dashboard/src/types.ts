@@ -433,6 +433,25 @@ export interface Opportunity {
   prospectId: string;
   stage: OpportunityStage;
   lines: OpportunityLine[];
+  /**
+   * Annual premium per line — Home, Auto, Umbrella and the rest, each priced
+   * separately because that is how a quote is actually built and how the
+   * household will read it back.
+   *
+   * A line with no figure yet is simply absent rather than zero: nothing has
+   * been quoted is a different fact from quoted at nothing.
+   */
+  premiums: Partial<Record<OpportunityLine, number>>;
+  /**
+   * Everything worth remembering about the account, in the agent's own words.
+   * Free text on purpose — it is the field that carries what no structured
+   * field anticipated.
+   */
+  notes: string;
+  /**
+   * Superseded by `premiums`, which sums to the same thing with the detail
+   * kept. Retained so records written before per-line pricing still read.
+   */
   estimatedValue: number | null;
   /** Working probability signal, mirrored from the household's score. */
   conversionScore: number | null;

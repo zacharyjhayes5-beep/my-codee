@@ -24,6 +24,7 @@ import {
 } from "./callSchema";
 import { migratedLines, migratedProspects, migratedTasks } from "./migrate";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
+import { normalizeOpportunities } from "./opportunities";
 import type {
   AuditEntry,
   Call,
@@ -410,7 +411,10 @@ export async function initRepository(): Promise<BootResult> {
     calls: await readAll<Call>("calls"),
     reviews: await readAll<ReviewProposal>("reviews"),
     audit: await readAll<AuditEntry>("audit"),
-    opportunities: await readAll<Opportunity>("opportunities"),
+    // Normalised on the way in, for the same reason prospects are: a record
+    // written before per-line premiums has no `premiums` object, and a screen
+    // reading one takes the whole app down.
+    opportunities: normalizeOpportunities(await readAll<Opportunity>("opportunities")),
     campaigns: await readAll<CampaignEntry>("campaigns"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
@@ -584,7 +588,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     // here means a restore lands already current.
     await writeAll("reviews", normalizeProposals(next.records.reviews));
     await writeAll("audit", next.records.audit ?? []);
-    await writeAll("opportunities", next.records.opportunities ?? []);
+    await writeAll("opportunities", normalizeOpportunities(next.records.opportunities ?? []));
     await writeAll("campaigns", next.records.campaigns ?? []);
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
@@ -618,7 +622,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     calls: next.records.calls ?? [],
     reviews: normalizeProposals(next.records.reviews),
     audit: next.records.audit ?? [],
-    opportunities: next.records.opportunities ?? [],
+    opportunities: normalizeOpportunities(next.records.opportunities ?? []),
     campaigns: next.records.campaigns ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
