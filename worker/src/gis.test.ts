@@ -56,6 +56,11 @@ describe("fetchAllParcels", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects an empty first page instead of recording a false successful scan", async () => {
+    const fetcher = vi.fn().mockResolvedValue(ok({ features: [] }));
+    await expect(fetchAllParcels(fetcher)).rejects.toThrow(/empty first page/);
+  });
+
   it("throws on an HTTP error rather than returning a partial scan", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response("nope", { status: 500 }));
     await expect(fetchAllParcels(fetcher)).rejects.toThrow(GisError);

@@ -103,6 +103,16 @@ export async function fetchAllParcels(
     }
 
     const features = body.features ?? [];
+
+    // A complete residential scan has thousands of rows. The county service
+    // occasionally returns a successful-looking empty first page; accepting
+    // that response creates a false "ok" run with zero leads. Treat it as a
+    // transient source failure so the ledger stays untouched and the run is
+    // visibly retryable.
+    if (page === 0 && features.length === 0) {
+      throw new GisError("GIS returned an empty first page; refusing a false successful scan");
+    }
+
     for (const f of features) all.push(f.attributes);
 
     if (!body.exceededTransferLimit || features.length === 0) return all;

@@ -25,7 +25,7 @@ database_id = "a2cf8737-159f-4cd7-8c1d-198a4ef3b071"
 # Grand Rapids, with any shortfall filled from the other two.
 BATCH_MODE = "full"
 
-# Weekdays at 11:00 UTC — 7am Eastern in summer, 6am in winter. The batch is
+# Every day at 11:00 UTC — 7am Eastern in summer, 6am in winter. The batch is
 # waiting before the working day starts either way.
 [triggers]
-crons = ["0 11 * * 1-5"]
+crons = ["0 11 * * *"]
