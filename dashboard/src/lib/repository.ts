@@ -28,6 +28,7 @@ import { normalizeOpportunities } from "./opportunities";
 import type {
   AuditEntry,
   Call,
+  Meeting,
   Opportunity,
   Period,
   PolicyEntry,
@@ -132,6 +133,7 @@ interface Cache {
   lastBackupAt: string;
   noticeSeen: boolean;
   campaigns: CampaignEntry[];
+  meetings: Meeting[];
   googleCalendarClientId: string;
 }
 
@@ -381,6 +383,8 @@ export async function initRepository(): Promise<BootResult> {
       // No database means no store to have migrated into; the old key is
       // still the only place campaign entries can live.
       campaigns: readLocal<CampaignEntry[]>(LEGACY_CAMPAIGNS_KEY) ?? [],
+      // Born in IndexedDB; there is no localStorage fallback for them.
+      meetings: [],
       ...loadSettings(),
     };
     ready = true;
@@ -416,6 +420,7 @@ export async function initRepository(): Promise<BootResult> {
     // reading one takes the whole app down.
     opportunities: normalizeOpportunities(await readAll<Opportunity>("opportunities")),
     campaigns: await readAll<CampaignEntry>("campaigns"),
+    meetings: await readAll<Meeting>("meetings"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
@@ -523,6 +528,7 @@ export interface RepositorySnapshot {
     audit: AuditEntry[];
     opportunities: Opportunity[];
     campaigns: CampaignEntry[];
+    meetings: Meeting[];
   };
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
@@ -546,6 +552,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         audit: await readAll<AuditEntry>("audit"),
         opportunities: await readAll<Opportunity>("opportunities"),
         campaigns: await readAll<CampaignEntry>("campaigns"),
+        meetings: await readAll<Meeting>("meetings"),
       }
     : {
         prospects: get("prospects"),
@@ -557,6 +564,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         audit: [],
         opportunities: [],
         campaigns: get("campaigns"),
+        meetings: get("meetings"),
       };
 
   const dismissed = usable ? ((await readMeta<string[]>(DISMISSED_KEY)) ?? []) : get("dismissed");
@@ -590,6 +598,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     await writeAll("audit", next.records.audit ?? []);
     await writeAll("opportunities", normalizeOpportunities(next.records.opportunities ?? []));
     await writeAll("campaigns", next.records.campaigns ?? []);
+    await writeAll("meetings", next.records.meetings ?? []);
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -624,6 +633,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     audit: next.records.audit ?? [],
     opportunities: normalizeOpportunities(next.records.opportunities ?? []),
     campaigns: next.records.campaigns ?? [],
+    meetings: next.records.meetings ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type {
+  Meeting,
   Opportunity,
   PolicyEntry,
   PolicyLine,
@@ -14,6 +15,8 @@ import { dueTag, upNext, waitingOnYou } from "../lib/operator";
 import { isTerminal } from "../lib/leadView";
 import { today } from "../lib/storage";
 import { DayCalendar } from "./DayCalendar";
+import { MeetingsPanel } from "./MeetingsPanel";
+import { meetingsIn } from "../lib/meetings";
 
 interface OperatorTabProps {
   prospects: Prospect[];
@@ -21,6 +24,8 @@ interface OperatorTabProps {
   onTasksChange: (updater: (prev: Task[]) => Task[]) => void;
   reviews: ReviewProposal[];
   opportunities: Opportunity[];
+  meetings: Meeting[];
+  onMeetingsChange: (updater: (prev: Meeting[]) => Meeting[]) => void;
   lines: PolicyLine[];
   period: Period;
   entries: PolicyEntry[];
@@ -60,6 +65,8 @@ export function OperatorTab({
   onTasksChange,
   reviews,
   opportunities,
+  meetings,
+  onMeetingsChange,
   lines,
   period,
   entries,
@@ -176,8 +183,43 @@ export function OperatorTab({
     [tasks, reviews, prospects, day],
   );
 
+  /* ---------- Meetings ----------
+     Bucketed by their own date, so a meeting crosses from next week into
+     this week on its own when the week turns. */
+
+  const thisWeek = useMemo(() => meetingsIn(meetings, "this", day), [meetings, day]);
+  const nextWeek = useMemo(() => meetingsIn(meetings, "next", day), [meetings, day]);
+
+  function addMeeting(meeting: Meeting) {
+    onMeetingsChange((prev) => [...prev, meeting]);
+  }
+
+  function removeMeeting(id: string) {
+    onMeetingsChange((prev) => prev.filter((m) => m.id !== id));
+  }
+
   return (
     <div className="operator">
+      {/* ---------- Meetings, above everything ---------- */}
+      <section className="op-meetings">
+        <MeetingsPanel
+          kicker="Meetings scheduled this week"
+          meetings={thisWeek}
+          today={day}
+          emptyText="Nothing booked this week yet."
+          onAdd={addMeeting}
+          onRemove={removeMeeting}
+        />
+        <MeetingsPanel
+          kicker="Meetings scheduled next week"
+          meetings={nextWeek}
+          today={day}
+          emptyText="Nothing booked for next week yet."
+          onAdd={addMeeting}
+          onRemove={removeMeeting}
+        />
+      </section>
+
       {/* ---------- 1. Hero ---------- */}
       <section className="op-hero">
         <span className="op-hero-wash" aria-hidden="true" />

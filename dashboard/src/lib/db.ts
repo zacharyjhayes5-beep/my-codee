@@ -5,8 +5,11 @@
  */
 
 export const DB_NAME = "fb-dashboard";
-/** v2 added calls, reviews and audit. v3 adds opportunities. v4 adds campaigns. */
-export const DB_VERSION = 4;
+/**
+ * v2 added calls, reviews and audit. v3 adds opportunities. v4 adds
+ * campaigns. v5 adds meetings.
+ */
+export const DB_VERSION = 5;
 
 /** Stores holding one row per record, keyed by the record's own id. */
 export const RECORD_STORES = [
@@ -19,6 +22,7 @@ export const RECORD_STORES = [
   "audit",
   "opportunities",
   "campaigns",
+  "meetings",
 ] as const;
 export type RecordStore = (typeof RECORD_STORES)[number];
 

@@ -6315,3 +6315,181 @@ main .active {
 .opp-record-foot {
   flex-wrap: wrap;
 }
+
+/* ============================================================
+   26. Meetings — this week and next, above everything else
+
+   The same material as the hero beside them: two cells of one bordered
+   section, split by a hairline. They sit first on the screen because
+   they are the first thing that matters, and they look like their
+   neighbours so that being first is the only thing that says so.
+   ============================================================ */
+
+.op-meetings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line-hero);
+  background: var(--line-quiet);
+}
+
+.mtg-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 26px 28px;
+  background: linear-gradient(140deg, var(--ink-hero-a), var(--ink-hero-b));
+}
+
+.mtg-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mtg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-row);
+}
+
+/* A meeting that has already happened stays on the list until it is
+   cleared — the week is not over just because the day is. */
+.mtg-row.is-past .mtg-day,
+.mtg-row.is-past .mtg-name {
+  color: var(--text-faint);
+}
+
+.mtg-when {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 0 0 62px;
+}
+
+.mtg-day {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--gold-300);
+}
+
+.mtg-date {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.mtg-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mtg-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+}
+
+.mtg-meta {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.mtg-remove {
+  flex: 0 0 auto;
+  border: none;
+  padding: 0 2px;
+  background: none;
+  color: var(--text-faint);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--t-hover),
+    color var(--t-hover);
+}
+
+.mtg-row:hover .mtg-remove,
+.mtg-remove:focus-visible {
+  opacity: 1;
+}
+
+.mtg-remove:hover {
+  color: var(--hue-terracotta);
+}
+
+/* ---------- Adding one ---------- */
+
+.mtg-open-add {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 10px 0 0;
+  border: none;
+  border-top: 1px solid var(--line-row);
+  width: 100%;
+  background: none;
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.mtg-open-add:hover {
+  color: var(--gold-300);
+}
+
+.mtg-add {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-row);
+}
+
+.mtg-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.mtg-add-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.mtg-add .op-btn:disabled {
+  border-color: var(--line-row);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+@media (max-width: 1100px) {
+  .op-meetings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mtg-panel {
+    padding: 22px;
+  }
+}

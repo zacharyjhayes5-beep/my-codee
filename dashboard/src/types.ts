@@ -518,3 +518,22 @@ export interface AuditEntry {
   /** Short human-readable line, so the log reads without decoding. */
   summary: string;
 }
+
+/**
+ * A meeting on the calendar, entered by hand.
+ *
+ * Deliberately not derived from anything. The households, the opportunities
+ * and the Google feed all have their own ideas about what is scheduled; this
+ * is the agent's own list, and it is only ever what he typed.
+ */
+export interface Meeting {
+  id: string;
+  /** Who it is with. Free text — not linked to a household on purpose. */
+  name: string;
+  /** ISO yyyy-mm-dd. The day of the week is derived from this, never stored. */
+  date: string;
+  /** Free text, so "9:30 am", "after lunch" and "TBC" are all sayable. */
+  time: string;
+  place: string;
+  createdAt: string;
+}

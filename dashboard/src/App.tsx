@@ -121,6 +121,7 @@ function App() {
   const [lastBackupAt, setLastBackupAt] = useStored("lastBackupAt");
   const [noticeSeen, setNoticeSeen] = useStored("noticeSeen");
   const [campaigns, setCampaigns] = useStored("campaigns");
+  const [meetings, setMeetings] = useStored("meetings");
   const [googleCalendarClientId, setGoogleCalendarClientId] = useStored(
     "googleCalendarClientId",
   );
@@ -324,6 +325,8 @@ function App() {
             onTasksChange={setTasks}
             reviews={reviews}
             opportunities={opportunities}
+            meetings={meetings}
+            onMeetingsChange={setMeetings}
             lines={lines}
             period={period}
             entries={entries}
