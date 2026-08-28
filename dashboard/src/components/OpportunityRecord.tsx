@@ -12,6 +12,7 @@ interface OpportunityRecordProps {
   opportunity: Opportunity;
   prospect: Prospect | undefined;
   onSave: (next: Opportunity) => void;
+  onRemove: () => void;
   onClose: () => void;
   onOpenHousehold: () => void;
 }
@@ -36,16 +37,20 @@ export function OpportunityRecord({
   opportunity,
   prospect,
   onSave,
+  onRemove,
   onClose,
   onOpenHousehold,
 }: OpportunityRecordProps) {
   const [form, setForm] = useState<Opportunity>(opportunity);
   const [saved, setSaved] = useState(false);
+  /** Removing takes two presses. One is how a live quote vanishes by accident. */
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   // A different row opened, or the record changed underneath — take the new one.
   useEffect(() => {
     setForm(opportunity);
     setSaved(false);
+    setConfirmRemove(false);
   }, [opportunity]);
 
   function patch(changes: Partial<Opportunity>) {
@@ -221,6 +226,28 @@ export function OpportunityRecord({
         </button>
         {!validation.ok && <span className="opp-warn">{validationMessage(validation)}</span>}
         {validation.ok && saved && !dirty && <span className="opp-ok">Saved.</span>}
+
+        <span className="opp-foot-spacer" />
+
+        {/* Takes the account off the pipeline. The household stays on Leads —
+            this drops a piece of work, not a person. */}
+        {confirmRemove ? (
+          <>
+            <span className="opp-warn">
+              Remove this account? {prospect?.name || "The household"} stays on Leads.
+            </span>
+            <button type="button" className="opp-remove-confirm" onClick={onRemove}>
+              Remove
+            </button>
+            <button type="button" className="camp-clear" onClick={() => setConfirmRemove(false)}>
+              Keep it
+            </button>
+          </>
+        ) : (
+          <button type="button" className="opp-remove" onClick={() => setConfirmRemove(true)}>
+            Remove from pipeline
+          </button>
+        )}
       </div>
     </div>
   );

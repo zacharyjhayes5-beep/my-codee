@@ -45,6 +45,18 @@ export function PipelineTab({
     );
   }
 
+  /**
+   * Take an account off the pipeline.
+   *
+   * The opportunity goes; the household does not. A piece of work being
+   * dropped — a duplicate, a quote that folded into somebody else's — says
+   * nothing about whether the person is still worth calling.
+   */
+  function remove(id: string) {
+    onChange(opportunities.filter((o) => o.id !== id));
+    setOpenId(null);
+  }
+
   const byId = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
   const summary = useMemo(() => summarizeByStage(opportunities, now), [opportunities, now]);
 
@@ -177,6 +189,7 @@ export function PipelineTab({
                             opportunity={o}
                             prospect={household}
                             onSave={save}
+                            onRemove={() => remove(o.id)}
                             onClose={() => setOpenId(null)}
                             onOpenHousehold={() => onOpenProspect(o.prospectId)}
                           />

@@ -6266,3 +6266,52 @@ main .active {
     padding: 20px;
   }
 }
+
+/* ---------- Removing an account from the pipeline ----------
+   Quiet until it is needed, and never adjacent to Save. Losing a live
+   quote to a misplaced click is not a recoverable kind of mistake. */
+
+.opp-foot-spacer {
+  flex: 1;
+}
+
+.opp-remove {
+  border: none;
+  padding: 10px 4px;
+  background: none;
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.opp-remove:hover {
+  color: var(--hue-terracotta);
+}
+
+.opp-remove-confirm {
+  border: 1px solid var(--hue-terracotta);
+  border-radius: 0;
+  padding: 10px 18px;
+  background: var(--hue-terracotta);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.opp-remove-confirm:hover {
+  background: transparent;
+  color: var(--hue-terracotta);
+}
+
+.opp-record-foot {
+  flex-wrap: wrap;
+}
