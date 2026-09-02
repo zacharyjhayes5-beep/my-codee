@@ -28,12 +28,12 @@ import {
   isQuiet,
   isTerminal,
   lastTouchLabel,
-  linesHeldLabel,
   nextStepOf,
   stageTone,
   townOf,
 } from "../lib/leadView";
 import { LeadMap } from "./LeadMap";
+import { EditableCell } from "./EditableCell";
 import {
   DEFAULT_ENDPOINT,
   GisSyncError,
@@ -233,7 +233,15 @@ export function ProspectsTab({
           (p.notes ?? []).some((n) => n.body.toLowerCase().includes(q))
         );
       })
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.name.localeCompare(b.name));
+      /**
+       * By name, and deliberately not by "recently edited".
+       *
+       * The table is typed into now. Sorting on `updatedAt` meant every save
+       * threw the row you had just finished to the top of the list, so
+       * working down two hundred households adding phone numbers moved the
+       * ground under you on every entry. Alphabetical does not move.
+       */
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   }, [prospects, search, stageFilter, intent, day]);
 
   function patchProspect(id: string, patch: Partial<Prospect>) {
@@ -530,7 +538,7 @@ export function ProspectsTab({
           <div className="lead-head" role="row">
             <span className="column-header">Household</span>
             <span className="column-header">Stage</span>
-            <span className="column-header">Lines held</span>
+            <span className="column-header">Phone</span>
             <span className="column-header">Next step</span>
             <span className="column-header lead-right">Last touch</span>
           </div>
@@ -540,18 +548,21 @@ export function ProspectsTab({
             const quiet = isQuiet(p, day);
             return (
               <Fragment key={p.id}>
-                <button
-                  type="button"
-                  className={`lead-row${open ? " is-open" : ""}`}
-                  aria-expanded={open}
-                  onClick={() => setExpandedId(open ? null : p.id)}
-                >
+                {/* Not a <button> any more: a button may not contain form
+                    controls, and every cell here is one. The name is the
+                    control that opens the record. */}
+                <div className={`lead-row${open ? " is-open" : ""}`}>
                   <span className="lead-cell-name">
-                    <span className="lead-name">{p.name || "Untitled household"}</span>
+                    <button
+                      type="button"
+                      className="lead-open"
+                      aria-expanded={open}
+                      onClick={() => setExpandedId(open ? null : p.id)}
+                    >
+                      {p.name || "Untitled household"}
+                    </button>
                     <span className="lead-town">
                       {townOf(p) || "No town on file"}
-                      {/* Tags read inline, so the table can be scanned
-                          without opening a single row. */}
                       {(p.tags ?? []).map((tag) => {
                         const c = tagColor(tag.color);
                         return (
@@ -567,14 +578,38 @@ export function ProspectsTab({
                     </span>
                   </span>
 
-                  <span className="lead-stage" style={{ color: TONE_VAR[stageTone(p.stage)] }}>
-                    {p.stage}
-                  </span>
+                  <select
+                    className="cell-select"
+                    value={p.stage}
+                    aria-label={`Stage for ${p.name || "this household"}`}
+                    style={{ color: TONE_VAR[stageTone(p.stage)] }}
+                    onChange={(e) => patchProspect(p.id, { stage: e.target.value as Stage })}
+                  >
+                    {prospectStages.map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
+                  </select>
 
-                  <span className="lead-lines">{linesHeldLabel(p)}</span>
+                  {/* Most of the book has no phone, and this is where that
+                      gets fixed — in the list, not one card at a time. */}
+                  <EditableCell
+                    type="tel"
+                    value={p.phone}
+                    placeholder="Add a number"
+                    ariaLabel={`Phone for ${p.name || "this household"}`}
+                    className="cell-phone"
+                    onCommit={(next) => patchProspect(p.id, { phone: next })}
+                  />
 
-                  {/* The most important cell on the screen. Never muted. */}
-                  <span className="lead-next">{nextStepOf(p, tasks, opportunities)}</span>
+                  <EditableCell
+                    value={p.nextAction}
+                    placeholder={nextStepOf(p, tasks, opportunities)}
+                    ariaLabel={`Next step for ${p.name || "this household"}`}
+                    className="cell-next"
+                    onCommit={(next) => patchProspect(p.id, { nextAction: next })}
+                  />
 
                   <span
                     className="lead-touch"
@@ -582,7 +617,7 @@ export function ProspectsTab({
                   >
                     {lastTouchLabel(p, day)}
                   </span>
-                </button>
+                </div>
 
                 {open && (
                   <div className="lead-detail">

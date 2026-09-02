@@ -6493,3 +6493,102 @@ main .active {
     padding: 22px;
   }
 }
+
+/* ============================================================
+   27. Editable cells
+
+   The table reads exactly as it did — until a cell is hovered or
+   focused, when it admits to being a field. That is the point: the
+   screen stays quiet, and nothing costs four clicks to change.
+   ============================================================ */
+
+.cell-input,
+.cell-select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 0;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color var(--t-hover),
+    background var(--t-hover);
+}
+
+.cell-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* The cue that a cell can be typed into, shown only when reached for. */
+.lead-row:hover .cell-input,
+.lead-row:hover .cell-select {
+  border-color: var(--line-row);
+}
+
+.cell-input:hover,
+.cell-select:hover {
+  border-color: var(--line-field);
+}
+
+.cell-input:focus,
+.cell-select:focus {
+  border-color: var(--gold-500);
+  background: var(--ink-field);
+}
+
+/* Stage keeps its tone; the arrow only appears on approach. */
+.cell-select {
+  appearance: none;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cell-select option {
+  background: var(--ink-800);
+  color: var(--text-primary);
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.cell-phone {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Next step is still the most important cell on the screen. */
+.cell-next {
+  color: var(--text-primary);
+}
+
+/* The name opens the record; it is the only thing in the row that does. */
+.lead-open {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--t-hover);
+}
+
+.lead-open:hover,
+.lead-row.is-open .lead-open {
+  color: var(--gold-200);
+}
+
+/* The row no longer clicks as a whole, so it no longer pretends to. */
+.lead-row {
+  cursor: default;
+}

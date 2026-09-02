@@ -50,15 +50,20 @@ export function isTerminal(prospect: Prospect): boolean {
 }
 
 /**
- * When this household was last touched.
+ * When this household was last *contacted*.
  *
- * Contact first, then the last recorded outcome, then whenever the record
- * itself last moved. Returns "" when a household has genuinely never been
- * touched — which is different from being touched a long time ago, and the
- * callers treat it differently.
+ * Contact first, then the last recorded outcome, and then nothing. It used to
+ * fall back to `updatedAt`, which was wrong twice over: a county lead that
+ * arrived yesterday and has never been spoken to read as "Yesterday", and
+ * editing any field at all — a phone number, a next step — would reset the
+ * clock and quietly pull the household out of Gone quiet. Touching a record
+ * is not touching a person.
+ *
+ * Returns "" when nobody has ever been reached, which is a different fact
+ * from having been reached a long time ago, and the callers treat it so.
  */
 export function lastTouchOf(prospect: Prospect): string {
-  return prospect.lastContactedAt || prospect.lastOutcomeAt || prospect.updatedAt || "";
+  return prospect.lastContactedAt || prospect.lastOutcomeAt || "";
 }
 
 /** Whole days between two ISO days; null when either is missing. */
