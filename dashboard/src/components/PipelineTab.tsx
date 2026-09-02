@@ -6,10 +6,10 @@ import {
   isStalled,
   patchOpportunity,
   premiumTotal,
-  stageClassFor,
   summarizeByStage,
 } from "../lib/opportunities";
 import { OpportunityRecord } from "./OpportunityRecord";
+import { EditableCell } from "./EditableCell";
 import { today } from "../lib/storage";
 
 interface PipelineTabProps {
@@ -170,16 +170,44 @@ export function PipelineTab({
                         )}
                       </td>
                       <td>
-                        <span className={`stage-chip ${stageClassFor[o.stage]}`}>{o.stage}</span>
+                        <select
+                          className="cell-select"
+                          value={o.stage}
+                          aria-label={`Stage for ${household?.name || "this account"}`}
+                          onChange={(e) =>
+                            save({ ...o, stage: e.target.value as OpportunityStage })
+                          }
+                        >
+                          {OPPORTUNITY_STAGES.map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                        </select>
                         {quiet && (
                           <span className="quiet-note">{daysBetween(o.updatedAt, now)}d quiet</span>
                         )}
                       </td>
                       <td>{o.lines.join(", ") || "—"}</td>
+                      {/* Per-line premium needs six fields; the row shows the
+                          total and the record breaks it down. */}
                       <td className="num">{money(premiumTotal(o))}</td>
-                      <td>{o.nextAction}</td>
+                      <td>
+                        <EditableCell
+                          value={o.nextAction}
+                          placeholder="What happens next"
+                          ariaLabel={`Next action for ${household?.name || "this account"}`}
+                          onCommit={(next) => save({ ...o, nextAction: next })}
+                        />
+                      </td>
                       <td className={overdue ? "due-overdue" : dueToday ? "due-today" : ""}>
-                        {o.nextActionDate || "—"}
+                        <input
+                          type="date"
+                          className="cell-input cell-date"
+                          value={o.nextActionDate}
+                          aria-label={`Due date for ${household?.name || "this account"}`}
+                          onChange={(e) => save({ ...o, nextActionDate: e.target.value })}
+                        />
                       </td>
                     </tr>
                     {isOpen && (

@@ -14,7 +14,10 @@ interface OpportunityRecordProps {
   onSave: (next: Opportunity) => void;
   onRemove: () => void;
   onClose: () => void;
-  onOpenHousehold: () => void;
+  /** Absent when the record is already open inside the household. */
+  onOpenHousehold?: () => void;
+  /** A brand-new account: saving creates it rather than patching one. */
+  isNew?: boolean;
 }
 
 function money(n: number): string {
@@ -40,6 +43,7 @@ export function OpportunityRecord({
   onRemove,
   onClose,
   onOpenHousehold,
+  isNew = false,
 }: OpportunityRecordProps) {
   const [form, setForm] = useState<Opportunity>(opportunity);
   const [saved, setSaved] = useState(false);
@@ -77,7 +81,7 @@ export function OpportunityRecord({
 
   const validation = useMemo(() => validateOpportunity(form), [form]);
   const total = premiumTotal(form);
-  const dirty = JSON.stringify(form) !== JSON.stringify(opportunity);
+  const dirty = isNew || JSON.stringify(form) !== JSON.stringify(opportunity);
 
   return (
     <div className="opp-record">
@@ -88,11 +92,13 @@ export function OpportunityRecord({
           {prospect?.area && <span className="opp-record-sub">{prospect.area}</span>}
         </div>
         <div className="opp-record-actions">
-          <button type="button" className="op-link" onClick={onOpenHousehold}>
-            Open household
-          </button>
+          {onOpenHousehold && (
+            <button type="button" className="op-link" onClick={onOpenHousehold}>
+              Open household
+            </button>
+          )}
           <button type="button" className="op-link" onClick={onClose}>
-            Close
+            {isNew ? "Cancel" : "Close"}
           </button>
         </div>
       </div>
@@ -231,7 +237,7 @@ export function OpportunityRecord({
 
         {/* Takes the account off the pipeline. The household stays on Leads —
             this drops a piece of work, not a person. */}
-        {confirmRemove ? (
+        {isNew ? null : confirmRemove ? (
           <>
             <span className="opp-warn">
               Remove this account? {prospect?.name || "The household"} stays on Leads.

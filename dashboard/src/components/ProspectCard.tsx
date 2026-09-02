@@ -301,6 +301,7 @@ export function ProspectCard({
           <h4>Opportunities</h4>
           <OpportunityPanel
             prospectId={prospect.id}
+            prospect={prospect}
             opportunities={opportunities}
             onSave={onSaveOpportunity}
             onRemove={onRemoveOpportunity}

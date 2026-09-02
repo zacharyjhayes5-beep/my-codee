@@ -6592,3 +6592,45 @@ main .active {
 .lead-row {
   cursor: default;
 }
+
+/* Pipeline rows are typed into as well, so their cells behave like the
+   ones on Leads. */
+
+.pipeline-table .cell-input,
+.pipeline-table .cell-select {
+  border-color: transparent;
+}
+
+.pipeline-table tr:hover .cell-input,
+.pipeline-table tr:hover .cell-select {
+  border-color: var(--line-row);
+}
+
+.cell-date {
+  font-variant-numeric: tabular-nums;
+  color-scheme: dark;
+}
+
+/* An account inside a household reads as one thing, not a card in a card. */
+.opportunity-row.is-open {
+  border-color: var(--line-panel);
+  background: rgba(10, 9, 13, 0.35);
+}
+
+.opportunity-row .opp-record {
+  border-top: none;
+  padding: 4px 0 8px;
+}
+
+.opportunity-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  font-family: var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
