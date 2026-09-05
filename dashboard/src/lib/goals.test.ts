@@ -245,7 +245,7 @@ describe("what needs me", () => {
   });
 
   it("ignores written and lost business", () => {
-    const won = blankOpportunity("p1", { stage: "Written", nextActionDate: "2026-08-01" });
+    const won = blankOpportunity("p1", { stage: "Won", nextActionDate: "2026-08-01" });
     expect(whatNeedsMe({ ...base, opportunities: [won] })).toHaveLength(0);
   });
 

@@ -58,7 +58,7 @@ export function PipelineTab({
     const before = opportunities.find((o) => o.id === next.id);
     onChange(opportunities.map((o) => (o.id === next.id ? patchOpportunity(o, next) : o)));
 
-    if (next.stage === "Written") {
+    if (next.stage === "Won") {
       const result = applyWritten(next, byId.get(next.prospectId), entries);
       if (result) {
         onEntriesChange(() => result.entries);
@@ -68,7 +68,7 @@ export function PipelineTab({
           );
         }
       }
-    } else if (before?.stage === "Written") {
+    } else if (before?.stage === "Won") {
       onEntriesChange((prev) => undoWritten(prev, next.id));
     }
   }
@@ -88,7 +88,7 @@ export function PipelineTab({
   const byId = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
   const summary = useMemo(() => summarizeByStage(opportunities, now), [opportunities, now]);
 
-  const open = opportunities.filter((o) => o.stage !== "Written" && o.stage !== "Lost");
+  const open = opportunities.filter((o) => o.stage !== "Won" && o.stage !== "Lost");
   const dueOrOverdue = open.filter((o) => o.nextActionDate && o.nextActionDate <= now);
   const stalled = open.filter((o) => isStalled(o, now));
 

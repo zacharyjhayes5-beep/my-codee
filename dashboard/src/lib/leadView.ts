@@ -123,7 +123,7 @@ export function nextStepOf(
   if (task) return task.text;
 
   const open = opportunities.find(
-    (o) => o.prospectId === prospect.id && o.stage !== "Written" && o.stage !== "Lost" && o.nextAction,
+    (o) => o.prospectId === prospect.id && o.stage !== "Won" && o.stage !== "Lost" && o.nextAction,
   );
   if (open) return open.nextAction;
 

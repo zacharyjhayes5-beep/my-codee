@@ -88,7 +88,7 @@ export function dueFollowUps(
   }
 
   for (const opportunity of opportunities) {
-    if (opportunity.stage === "Written" || opportunity.stage === "Lost") continue;
+    if (opportunity.stage === "Won" || opportunity.stage === "Lost") continue;
     if (!opportunity.nextActionDate || opportunity.nextActionDate > today) continue;
     items.push({
       id: `opp-${opportunity.id}`,

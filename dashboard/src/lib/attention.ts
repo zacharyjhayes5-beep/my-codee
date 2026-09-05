@@ -62,7 +62,7 @@ export function whatNeedsMe(input: AttentionInput, limit = 5): AttentionItem[] {
   const items: AttentionItem[] = [];
 
   for (const opportunity of opportunities) {
-    if (opportunity.stage === "Written" || opportunity.stage === "Lost") continue;
+    if (opportunity.stage === "Won" || opportunity.stage === "Lost") continue;
 
     const appointmentToday = opportunity.appointments.find((a) => localDay(a.at) === today);
     if (appointmentToday) {

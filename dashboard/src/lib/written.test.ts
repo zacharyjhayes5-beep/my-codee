@@ -2,8 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { Opportunity, PolicyEntry, Prospect } from "../types";
 import { blankOpportunity } from "./opportunities";
 import { blankProspect } from "./prospectSchema";
-import { countsByCategory } from "./policies";
-import { alreadyWritten, applyWritten, policiesFromOpportunity, undoWritten } from "./written";
+import { countsByCategory, totalsFor } from "./policies";
+import {
+  NEW_BUSINESS_RATE,
+  alreadyWritten,
+  applyWritten,
+  policiesFromOpportunity,
+  undoWritten,
+} from "./written";
 
 /** One id for the whole file: blankOpportunity mints a new one on each call. */
 const BASE = blankOpportunity("hh-1");
@@ -11,7 +17,7 @@ const BASE = blankOpportunity("hh-1");
 function account(over: Partial<Opportunity> = {}): Opportunity {
   return {
     ...BASE,
-    stage: "Written",
+    stage: "Won",
     lines: ["Home", "Auto", "Umbrella"],
     premiums: { Home: 1375, Auto: 670, Umbrella: 155 },
     nextAction: "Issue",
@@ -22,7 +28,7 @@ function account(over: Partial<Opportunity> = {}): Opportunity {
 
 const household: Prospect = blankProspect({ id: "hh-1", name: "Dave Credo", stage: "Quoting" });
 
-describe("marking an account written", () => {
+describe("marking an account won", () => {
   it("writes one policy per line, carrying that line's premium", () => {
     const rows = policiesFromOpportunity(account(), household, "2026-09-01");
     expect(rows).toHaveLength(3);
@@ -47,13 +53,19 @@ describe("marking an account written", () => {
   });
 
   /**
-   * The one thing it must not do. A rate invented here is money on the
-   * screen that nobody earned.
+   * New business earns a quarter of premium — his figure. The workbook's
+   * formula has to land on exactly that, so it is asserted in money rather
+   * than in the rate alone.
    */
-  it("never invents a commission rate", () => {
+  it("earns a quarter of premium, and no multiplier on top", () => {
     const rows = policiesFromOpportunity(account(), household, "2026-09-01");
-    expect(rows.every((r) => r.percentEarned === 0)).toBe(true);
+    expect(rows.every((r) => r.percentEarned === NEW_BUSINESS_RATE)).toBe(true);
     expect(rows.every((r) => r.multiplier === 0)).toBe(true);
+
+    const totals = totalsFor(rows);
+    expect(totals.premium).toBe(2200);
+    expect(totals.net).toBe(550); // a quarter of 2,200
+    expect(totals.net).toBeCloseTo(totals.premium * 0.25, 10);
   });
 
   it("moves the household to Won", () => {
@@ -104,7 +116,7 @@ describe("marking an account written", () => {
     const a = applyWritten(account(), household, [], "2026-09-01")!;
     const other: Opportunity = {
       ...blankOpportunity("hh-2"),
-      stage: "Written",
+      stage: "Won",
       lines: ["Home"],
       premiums: { Home: 900 },
       nextAction: "Issue",

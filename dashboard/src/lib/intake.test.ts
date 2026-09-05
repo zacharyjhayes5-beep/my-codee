@@ -340,7 +340,7 @@ describe("pipeline views", () => {
   const opps = [
     blankOpportunity("p1", { stage: "Quoting", estimatedValue: 1200, nextActionDate: "2026-08-01" }),
     blankOpportunity("p2", { stage: "Quoting", estimatedValue: 800, nextActionDate: "2099-01-01" }),
-    blankOpportunity("p3", { stage: "Written", estimatedValue: 2000, nextActionDate: "2099-01-01" }),
+    blankOpportunity("p3", { stage: "Won", estimatedValue: 2000, nextActionDate: "2099-01-01" }),
   ];
 
   it("counts and values each stage", () => {

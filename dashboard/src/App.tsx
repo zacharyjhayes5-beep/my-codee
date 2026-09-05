@@ -83,7 +83,7 @@ const PAGE: Record<Tab, { kicker: string; title: string; standfirst: string }> =
     standfirst: "Tasks by urgency, the week ahead, and the review inbox.",
   },
   progress: {
-    kicker: "Written",
+    kicker: "Won",
     title: "Progress",
     standfirst: "What you have sold, against the number.",
   },

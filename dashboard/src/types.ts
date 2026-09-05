@@ -396,7 +396,7 @@ export type OpportunityStage =
   | "Quoting"
   | "Quote Presented"
   | "Decision Pending"
-  | "Written"
+  | "Won"
   | "Lost"
   | "Nurture";
 

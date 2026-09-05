@@ -23,7 +23,7 @@ export const OPPORTUNITY_STAGES: OpportunityStage[] = [
   "Quoting",
   "Quote Presented",
   "Decision Pending",
-  "Written",
+  "Won",
   "Lost",
   "Nurture",
 ];
@@ -38,7 +38,7 @@ export const OPPORTUNITY_LINES: OpportunityLine[] = [
 ];
 
 /** Stages where nothing further is expected to happen on its own. */
-export const CLOSED_STAGES: OpportunityStage[] = ["Written", "Lost"];
+export const CLOSED_STAGES: OpportunityStage[] = ["Won", "Lost"];
 
 export const stageClassFor: Record<OpportunityStage, string> = {
   "Qualified / Open": "badge-muted",
@@ -46,7 +46,7 @@ export const stageClassFor: Record<OpportunityStage, string> = {
   Quoting: "badge-info",
   "Quote Presented": "badge-serious",
   "Decision Pending": "badge-warning",
-  Written: "badge-good",
+  Won: "badge-good",
   Lost: "badge-critical",
   Nurture: "badge-muted",
 };
@@ -142,8 +142,13 @@ export function premiumTotal(opportunity: Opportunity): number {
  * array caused twice before. Run on read, idempotent, invents nothing.
  */
 export function normalizeOpportunity(row: Opportunity): Opportunity {
+  // The closing stage was called "Written" until it was renamed to match what
+  // he actually says. Records from before the rename carry the old word.
+  const stage = ((row.stage as string) === "Written" ? "Won" : row.stage) as Opportunity["stage"];
+
   return {
     ...row,
+    stage,
     lines: Array.isArray(row.lines) ? row.lines : [],
     premiums: row.premiums && typeof row.premiums === "object" ? row.premiums : {},
     notes: typeof row.notes === "string" ? row.notes : "",
@@ -237,7 +242,7 @@ export function opportunityFromCall(
   quoteReady: boolean,
 ): { next: Opportunity[]; created: boolean } | null {
   const mine = existing.filter(
-    (o) => o.prospectId === call.prospectId && o.stage !== "Written" && o.stage !== "Lost",
+    (o) => o.prospectId === call.prospectId && o.stage !== "Won" && o.stage !== "Lost",
   );
   const current = mine[0];
 

@@ -34,6 +34,7 @@ import {
 } from "../lib/leadView";
 import { LeadMap } from "./LeadMap";
 import { EditableCell } from "./EditableCell";
+import { accountForPromotion, patchPromotes } from "../lib/promote";
 import {
   DEFAULT_ENDPOINT,
   GisSyncError,
@@ -250,6 +251,16 @@ export function ProspectsTab({
     onChange((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: today() } : p))
     );
+
+    /**
+     * Writing a next step is the moment a name becomes work, so it is the
+     * moment the household joins the pipeline. Nothing has to be remembered
+     * and no second form has to be found.
+     */
+    if (before && patchPromotes(patch)) {
+      const account = accountForPromotion({ ...before, ...patch }, opportunities);
+      if (account) onOpportunitiesChange([...opportunities, account]);
+    }
 
     // Only the decisions worth a record — not every keystroke in a text field.
     if (before) {

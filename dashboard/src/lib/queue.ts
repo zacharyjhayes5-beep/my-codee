@@ -186,7 +186,7 @@ function tierFor(
   const mine = opportunities.filter((o) => o.prospectId === prospect.id);
   const hotDue = mine.find(
     (o) =>
-      o.stage !== "Written" &&
+      o.stage !== "Won" &&
       o.stage !== "Lost" &&
       o.nextActionDate &&
       o.nextActionDate <= today,

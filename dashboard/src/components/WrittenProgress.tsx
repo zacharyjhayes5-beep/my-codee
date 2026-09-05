@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { PolicyEntry, Period, PolicyLine, Prospect } from "../types";
 import { countsByCategory, currency, lineById, totalsFor } from "../lib/policies";
 import { readPace, lineTotals } from "../lib/pace";
+import { NEW_BUSINESS_RATE } from "../lib/written";
 
 interface WrittenProgressProps {
   entries: PolicyEntry[];
@@ -148,7 +149,7 @@ export function WrittenProgress({
             className="op-vital-sub"
             style={{ color: unrated > 0 ? "var(--hue-brass)" : "var(--hue-grey)" }}
           >
-            {unrated > 0 ? `${unrated} without a rate` : "every policy rated"}
+            {unrated > 0 ? `${unrated} written before the rate` : "25% of premium"}
           </span>
         </div>
         <div className="op-vital">
@@ -170,33 +171,17 @@ export function WrittenProgress({
         <section className="op-panel op-panel-quiet rate-prompt">
           <span className="kicker">Commission rate</span>
           <p>
-            {unrated} {unrated === 1 ? "policy has" : "policies have"} a premium but no rate, so
-            they earn nothing on this screen. Nothing here guesses one — put your percentage and
-            multiplier in and it applies to every unrated policy.
+            {unrated} {unrated === 1 ? "policy was" : "policies were"} written before the rate was
+            set, so {unrated === 1 ? "it earns" : "they earn"} nothing on this screen. Everything
+            written from now on uses 25%.
           </p>
-          <form
-            className="rate-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const form = e.currentTarget;
-              const pct = Number((form.elements.namedItem("pct") as HTMLInputElement).value);
-              const mult = Number((form.elements.namedItem("mult") as HTMLInputElement).value);
-              if (!Number.isFinite(pct) || pct <= 0) return;
-              applyRate(pct / 100, Number.isFinite(mult) ? mult : 0);
-            }}
+          <button
+            type="button"
+            className="camp-save"
+            onClick={() => applyRate(NEW_BUSINESS_RATE, 0)}
           >
-            <label className="opp-field">
-              <span className="camp-label">Percentage earned</span>
-              <input name="pct" type="number" step="0.1" min="0" placeholder="e.g. 9" />
-            </label>
-            <label className="opp-field">
-              <span className="camp-label">Multiplier</span>
-              <input name="mult" type="number" step="0.05" min="0" placeholder="e.g. 0.5" />
-            </label>
-            <button type="submit" className="camp-save">
-              Apply
-            </button>
-          </form>
+            Apply 25% to {unrated === 1 ? "it" : "them"}
+          </button>
         </section>
       )}
 

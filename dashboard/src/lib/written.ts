@@ -9,21 +9,17 @@ import { newId, today } from "./storage";
 import { premiumTotal } from "./opportunities";
 
 /**
- * What happens when an account is marked Written.
+ * What happens when an account is marked Won.
  *
- * Marking Written used to change a word on a screen and nothing else: the
+ * Marking it Won used to change a word on a screen and nothing else: the
  * household stayed open, the book of business stayed empty, and every goal
  * on Operator kept reading zero next to business that had actually been
  * sold. This is the seam that was missing.
  *
- * Two rules govern it:
- *
- *   - It only ever fills in what the account already knows — the lines and
- *     the premium against each. It never invents a commission rate, because
- *     an invented rate is money on a screen that nobody earned. Rate and
- *     multiplier land at zero and the Progress screen asks for them.
- *   - It is keyed on the account, so marking Written twice, or editing an
- *     account that is already Written, does not write the book twice.
+ * It fills in what the account already knows — the lines, the premium
+ * against each — and the commission rate he gave, and nothing else. It is
+ * keyed on the account, so marking Won twice, or editing an account that is
+ * already Won, does not write the book twice.
  */
 
 /**
@@ -44,6 +40,20 @@ const LINE_TO_CATALOGUE: Record<OpportunityLine, { id: string; book: Book } | nu
   // the closest personal line, and he can retype it on the book.
   Other: null,
 };
+
+/**
+ * New business earns a quarter of the premium.
+ *
+ * His own figure, stated as a fact about his contract rather than derived
+ * from anything here. It lives as one named constant so there is a single
+ * place to change it, and it is applied as the percentage earned with no
+ * multiplier on top — the workbook's formula then reduces to exactly a
+ * quarter of premium:
+ *
+ *   gross = premium x 0.25
+ *   net   = gross + (gross x 0) = gross
+ */
+export const NEW_BUSINESS_RATE = 0.25;
 
 /** Marks every policy this seam created, so it is never counted twice. */
 export function writtenTag(opportunityId: string, line: OpportunityLine): string {
@@ -90,10 +100,7 @@ export function policiesFromOpportunity(
       lineOfBusiness: mapped.id,
       policyNumber: "",
       premium: opportunity.premiums?.[line] ?? 0,
-      // Never guessed. The Progress screen asks for these once and applies
-      // them; a rate invented here would put money on the screen that
-      // nobody earned.
-      percentEarned: 0,
+      percentEarned: NEW_BUSINESS_RATE,
       multiplier: 0,
       lastReview: "",
       notes: writtenTag(opportunity.id, line),
@@ -122,7 +129,7 @@ export function applyWritten(
   entries: PolicyEntry[],
   effectiveDate = today(),
 ): WrittenResult | null {
-  if (opportunity.stage !== "Written") return null;
+  if (opportunity.stage !== "Won") return null;
   if (alreadyWritten(entries, opportunity.id)) return null;
 
   const created = policiesFromOpportunity(opportunity, prospect, effectiveDate);
