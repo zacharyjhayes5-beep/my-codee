@@ -5,6 +5,7 @@ import "./theme.css";
 import { BackupPanel } from "./components/BackupPanel";
 import { OperatorTab } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
+import { WrittenProgress } from "./components/WrittenProgress";
 import { TodoTab } from "./components/TodoTab";
 import { ProspectsTab } from "./components/ProspectsTab";
 import { StorageNotice } from "./components/StorageNotice";
@@ -27,14 +28,16 @@ import type { CoverageItem, PropertyProfile, ReviewProposal } from "./types";
  * Progress are folded into Operator; all three keep working routes and stay
  * reachable from the command palette.
  */
-type NavTab = "operator" | "leads" | "pipeline" | "campaigns" | "vault";
-type QuietTab = "walkthrough" | "todo" | "progress";
+type NavTab = "operator" | "leads" | "pipeline" | "progress" | "campaigns" | "vault";
+// "book" is the full book-of-business editor, off the bar.
+type QuietTab = "walkthrough" | "todo" | "book";
 type Tab = NavTab | QuietTab;
 
 const NAV: { id: NavTab; label: string }[] = [
   { id: "operator", label: "Operator" },
   { id: "leads", label: "Leads" },
   { id: "pipeline", label: "Pipeline" },
+  { id: "progress", label: "Progress" },
   { id: "campaigns", label: "Campaigns" },
   { id: "vault", label: "Vault" },
 ];
@@ -80,9 +83,14 @@ const PAGE: Record<Tab, { kicker: string; title: string; standfirst: string }> =
     standfirst: "Tasks by urgency, the week ahead, and the review inbox.",
   },
   progress: {
-    kicker: "The book",
+    kicker: "Written",
     title: "Progress",
-    standfirst: "The book of business against the period's goal.",
+    standfirst: "What you have sold, against the number.",
+  },
+  book: {
+    kicker: "The book",
+    title: "Book of business",
+    standfirst: "Every policy, the goals, the tiers and All-American.",
   },
 };
 
@@ -340,6 +348,16 @@ function App() {
           />
         )}
         {tab === "progress" && (
+          <WrittenProgress
+            entries={entries}
+            lines={lines}
+            period={period}
+            prospects={prospects}
+            onEntriesChange={setEntries}
+            onOpenBook={() => setTab("book")}
+          />
+        )}
+        {tab === "book" && (
           <ProgressTab
             lines={lines}
             onChange={setLines}
@@ -386,6 +404,9 @@ function App() {
             opportunities={opportunities}
             prospects={prospects}
             onChange={setOpportunities}
+            entries={entries}
+            onEntriesChange={setEntries}
+            onProspectsChange={setProspects}
             onOpenProspect={(id) => {
               setFocusProspectId(id);
               setTab("leads");

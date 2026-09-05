@@ -10,7 +10,8 @@ export type PaletteTarget =
   | "vault"
   | "walkthrough"
   | "todo"
-  | "progress";
+  | "progress"
+  | "book";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -75,7 +76,8 @@ export function CommandPalette({
       // Off the nav by design. The palette is the only direct way in.
       { id: "go-walkthrough", label: "Walkthrough", detail: "The property area by area", run: () => onGoTo("walkthrough") },
       { id: "go-todo", label: "To-Do", detail: "Tasks and the review inbox", run: () => onGoTo("todo") },
-      { id: "go-progress", label: "Progress", detail: "The book against the goal", run: () => onGoTo("progress") },
+      { id: "go-progress", label: "Progress", detail: "What you have sold, against the number", run: () => onGoTo("progress") },
+      { id: "go-book", label: "Book of business", detail: "Every policy, the goals and the tiers", run: () => onGoTo("book") },
     ],
     [onGoTo],
   );

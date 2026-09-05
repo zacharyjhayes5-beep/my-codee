@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
-import type { Opportunity, OpportunityStage, Prospect } from "../types";
+import type { Opportunity, OpportunityStage, PolicyEntry, Prospect } from "../types";
 import {
   OPPORTUNITY_STAGES,
   daysBetween,
@@ -10,12 +10,17 @@ import {
 } from "../lib/opportunities";
 import { OpportunityRecord } from "./OpportunityRecord";
 import { EditableCell } from "./EditableCell";
+import { applyWritten, undoWritten } from "../lib/written";
 import { today } from "../lib/storage";
 
 interface PipelineTabProps {
   opportunities: Opportunity[];
   prospects: Prospect[];
   onChange: (opportunities: Opportunity[]) => void;
+  /** The book of business, so Written can post to it. */
+  entries: PolicyEntry[];
+  onEntriesChange: (updater: (prev: PolicyEntry[]) => PolicyEntry[]) => void;
+  onProspectsChange: (updater: (prev: Prospect[]) => Prospect[]) => void;
   onOpenProspect: (prospectId: string) => void;
 }
 
@@ -32,17 +37,40 @@ export function PipelineTab({
   opportunities,
   prospects,
   onChange,
+  entries,
+  onEntriesChange,
+  onProspectsChange,
   onOpenProspect,
 }: PipelineTabProps) {
   const now = today();
   const [stageFilter, setStageFilter] = useState<OpportunityStage | "All">("All");
   const [openId, setOpenId] = useState<string | null>(null);
 
-  /** History travels with the record, so every edit goes through the patch. */
+  /**
+   * History travels with the record, so every edit goes through the patch.
+   *
+   * Marking an account Written also posts it to the book and moves the
+   * household to Won. Moving it back out takes those policies away again,
+   * because a stage set by mistake has to be correctable without leaving the
+   * book claiming business that is not there.
+   */
   function save(next: Opportunity) {
-    onChange(
-      opportunities.map((o) => (o.id === next.id ? patchOpportunity(o, next) : o)),
-    );
+    const before = opportunities.find((o) => o.id === next.id);
+    onChange(opportunities.map((o) => (o.id === next.id ? patchOpportunity(o, next) : o)));
+
+    if (next.stage === "Written") {
+      const result = applyWritten(next, byId.get(next.prospectId), entries);
+      if (result) {
+        onEntriesChange(() => result.entries);
+        if (result.prospect) {
+          onProspectsChange((prev) =>
+            prev.map((p) => (p.id === result.prospect!.id ? result.prospect! : p)),
+          );
+        }
+      }
+    } else if (before?.stage === "Written") {
+      onEntriesChange((prev) => undoWritten(prev, next.id));
+    }
   }
 
   /**
