@@ -7024,3 +7024,240 @@ main .active {
     padding: 22px;
   }
 }
+
+/* ============================================================
+   29. Pipeline kanban
+
+   Scoped entirely under .kanban — nothing here reaches another tab.
+   Values are the design's; the tokens are the app's, so the board sits
+   in the same material as everything around it.
+   ============================================================ */
+
+.kanban {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- Above the board ---------- */
+
+.kanban-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.kanban-add {
+  border: 1px solid rgba(201, 168, 106, 0.45);
+  border-radius: 0;
+  padding: 10px 16px;
+  background: rgba(201, 168, 106, 0.1);
+  color: var(--gold-200);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--t-hover);
+}
+
+.kanban-add:hover {
+  background: rgba(201, 168, 106, 0.18);
+}
+
+.kanban-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(201, 168, 106, 0.24), transparent);
+}
+
+.kanban-meta {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+/* ---------- The four columns ----------
+   A 1px grid gap over a tinted container, so the gutters are true
+   hairlines rather than two borders meeting. */
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  align-items: stretch;
+  border: 1px solid var(--line-seam);
+  background: var(--line-seam);
+}
+
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 460px;
+  padding: 18px 16px 20px;
+  /* Split rather than the shorthand: only the colour changes on hover, and
+     only the colour should transition. */
+  background-color: transparent;
+  background-image: linear-gradient(180deg, rgba(24, 22, 28, 0.7), rgba(13, 12, 16, 0.85));
+  transition: background-color var(--t-hover);
+}
+
+/* The column under a dragged card. */
+.kanban-column.is-hover {
+  background-image: none;
+  background-color: rgba(201, 168, 106, 0.09);
+}
+
+.kanban-column-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-seam);
+}
+
+.kanban-column-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.kanban-dot {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.kanban-stage {
+  flex: 1;
+  min-width: 0;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.kanban-count {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-variant-numeric: lining-nums;
+  line-height: 1;
+}
+
+.kanban-column-total {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+/* ---------- Cards ---------- */
+
+.kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kanban-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 14px 15px;
+  border: 1px solid var(--line-header);
+  background: linear-gradient(160deg, rgba(30, 28, 35, 0.9), rgba(15, 14, 18, 0.92));
+  cursor: pointer;
+  transition:
+    border-color var(--t-hover),
+    transform 0.12s;
+}
+
+.kanban-card:hover {
+  border-color: rgba(201, 168, 106, 0.55);
+  transform: translateY(-1px);
+}
+
+/* Held while the card is in flight, so the origin reads as a gap. */
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kanban-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+}
+
+.kanban-place {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.kanban-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.kanban-chip {
+  padding: 3px 7px;
+  border: 1px solid var(--line-header);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.kanban-card-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 3px;
+  border-top: 1px solid var(--line-row);
+}
+
+.kanban-premium {
+  font-family: var(--font-display);
+  font-size: 18px;
+  white-space: nowrap;
+  color: var(--gold-300);
+}
+
+.kanban-age {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.kanban-empty {
+  padding: 14px 2px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #5f5c58;
+}
+
+@media (max-width: 1100px) {
+  .kanban-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kanban-column {
+    min-height: 320px;
+  }
+}
