@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Opportunity, PolicyEntry, Prospect } from "../types";
 import { PipelineBoard } from "./PipelineBoard";
-import { dealsFromOpportunities, type Deal } from "../lib/deals";
+import { QuoteDrawer } from "./QuoteDrawer";
+import { blankDeal, dealsFromOpportunities, removeDeal, upsertDeal, type Deal } from "../lib/deals";
 
 interface PipelineTabProps {
   opportunities: Opportunity[];
@@ -17,9 +18,9 @@ interface PipelineTabProps {
 /**
  * The pipeline, as a board.
  *
- * STEP ONE OF THREE. The board holds its cards in local state and nothing
- * else: dragging moves a card on screen and is forgotten on reload. The quote
- * drawer is step two and persistence is step three.
+ * STEPS ONE AND TWO OF THREE. The board and its drawer hold their cards in
+ * local state and nothing else: an edit shows on screen and is forgotten on
+ * reload. Persistence is step three.
  *
  * Two things are deliberately disconnected until step three, and both are
  * regressions against what was here yesterday:
@@ -41,9 +42,34 @@ export function PipelineTab({ opportunities, prospects }: PipelineTabProps) {
     dealsFromOpportunities(opportunities, prospects),
   );
 
+  /** The card open in the drawer, and whether it is one the board has yet. */
+  const [editing, setEditing] = useState<Deal | null>(null);
+  const isNew = editing !== null && !deals.some((d) => d.id === editing.id);
+
   return (
     <div className="tab-panel">
-      <PipelineBoard deals={deals} onChange={setDeals} />
+      <PipelineBoard
+        deals={deals}
+        onChange={setDeals}
+        onOpen={setEditing}
+        onAdd={() => setEditing(blankDeal())}
+      />
+
+      {editing && (
+        <QuoteDrawer
+          deal={editing}
+          isNew={isNew}
+          onSave={(next) => {
+            setDeals((prev) => upsertDeal(prev, next));
+            setEditing(null);
+          }}
+          onDelete={(id) => {
+            setDeals((prev) => removeDeal(prev, id));
+            setEditing(null);
+          }}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

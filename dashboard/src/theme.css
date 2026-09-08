@@ -7261,3 +7261,344 @@ main .active {
     min-height: 320px;
   }
 }
+
+/* ---------- The quote drawer ----------
+   Scoped under .quote-*, opened from a card on the board. */
+
+.quote-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(6, 5, 8, 0.62);
+  backdrop-filter: blur(2px);
+}
+
+.quote-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  width: 460px;
+  max-width: 92vw;
+  overflow: auto;
+  border-left: 1px solid rgba(201, 168, 106, 0.28);
+  background: linear-gradient(200deg, var(--ink-700), #0f0e13 60%);
+  box-shadow: -30px 0 60px rgba(0, 0, 0, 0.5);
+}
+
+.quote-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 26px 28px 18px;
+  border-bottom: 1px solid var(--line-panel);
+  background: rgba(16, 15, 20, 0.94);
+  backdrop-filter: blur(8px);
+}
+
+.quote-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quote-close {
+  border: 1px solid rgba(201, 168, 106, 0.24);
+  border-radius: 0;
+  padding: 6px 9px;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.quote-close:hover {
+  border-color: var(--line-focus);
+  color: var(--gold-200);
+}
+
+.quote-heading {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+}
+
+.quote-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 24px 28px 34px;
+}
+
+.quote-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quote-legend {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.quote-legend-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.quote-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(201, 168, 106, 0.2), transparent);
+}
+
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quote-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.quote-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.quote-field input,
+.quote-field select,
+.quote-field textarea,
+.quote-row select,
+.quote-amount input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line-header);
+  border-radius: 0;
+  padding: 10px 11px;
+  background: rgba(10, 9, 13, 0.7);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--t-hover);
+}
+
+.quote-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.quote-field input:focus,
+.quote-field select:focus,
+.quote-field textarea:focus,
+.quote-row select:focus,
+.quote-amount:focus-within {
+  border-color: rgba(201, 168, 106, 0.55);
+}
+
+.quote-field input::placeholder,
+.quote-field textarea::placeholder,
+.quote-amount input::placeholder {
+  color: var(--text-faint);
+}
+
+/* ---------- Stage picker ---------- */
+
+.quote-stages {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.quote-stage {
+  border: 1px solid var(--line-panel);
+  border-radius: 0;
+  padding: 10px 4px;
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color var(--t-hover),
+    color var(--t-hover);
+}
+
+.quote-stage:hover {
+  border-color: var(--line-focus);
+}
+
+/* The selected stage takes its own accent, set inline from the stage hue. */
+.quote-stage.is-on {
+  background: rgba(201, 168, 106, 0.08);
+}
+
+/* ---------- Quote lines ---------- */
+
+.quote-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quote-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.quote-amount {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--line-header);
+  background: rgba(10, 9, 13, 0.7);
+  color: var(--text-faint);
+  font-size: 13px;
+  transition: border-color var(--t-hover);
+}
+
+.quote-amount > span {
+  padding: 0 2px 0 11px;
+}
+
+/* The field inside already has the box; it must not draw a second one. */
+.quote-amount input {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 10px 11px 10px 4px;
+}
+
+.quote-row-remove {
+  border: 1px solid var(--line-panel);
+  border-radius: 0;
+  padding: 9px 10px;
+  background: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.quote-row-remove:hover {
+  border-color: rgba(156, 90, 72, 0.6);
+  color: var(--hue-terracotta);
+}
+
+.quote-rows-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-seam);
+}
+
+.quote-add-line {
+  border: 1px dashed rgba(201, 168, 106, 0.32);
+  border-radius: 0;
+  padding: 9px 14px;
+  background: none;
+  color: var(--gold-300);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color var(--t-hover);
+}
+
+.quote-add-line:hover {
+  border-color: rgba(201, 168, 106, 0.65);
+}
+
+.quote-total {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.quote-total-figure {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-variant-numeric: lining-nums;
+  line-height: 1;
+  color: var(--gold-300);
+}
+
+/* ---------- Save and delete ---------- */
+
+.quote-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.quote-save {
+  flex: 1;
+  border: 1px solid var(--line-focus);
+  border-radius: 0;
+  padding: 13px 16px;
+  background: rgba(201, 168, 106, 0.12);
+  color: #e9d7ac;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--t-hover);
+}
+
+.quote-save:hover {
+  background: rgba(201, 168, 106, 0.22);
+}
+
+.quote-delete {
+  border: 1px solid rgba(156, 90, 72, 0.35);
+  border-radius: 0;
+  padding: 13px 16px;
+  background: none;
+  color: var(--hue-terracotta);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color var(--t-hover);
+}
+
+.quote-delete:hover {
+  border-color: rgba(156, 90, 72, 0.7);
+}
