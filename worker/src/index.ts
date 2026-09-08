@@ -14,6 +14,7 @@
  */
 
 import { authorize, type AuthEnv } from "./auth";
+import { sortBraindump } from "./braindump";
 import type { BatchMode } from "./config";
 import { batchSize } from "./config";
 import { runIngestion } from "./ingest";
@@ -28,6 +29,8 @@ export interface Env extends AuthEnv {
   SHEETS_WEBHOOK_URL?: string;
   /** Shared secret the Apps Script checks. Worker secret. */
   SHEETS_WEBHOOK_SECRET?: string;
+  /** For splitting a braindump. Worker secret — never in the frontend. */
+  ANTHROPIC_API_KEY?: string;
 }
 
 /**
@@ -170,6 +173,23 @@ export default {
 
       if (url.pathname === "/runs" && request.method === "GET") {
         return json({ runs: await recentRuns(env.DB) }, 200, request);
+      }
+
+      /**
+       * Split a spoken braindump into four buckets.
+       *
+       * Exists only to keep the API key off the browser. A 502 here is not a
+       * failure the user sees — the dashboard has its own splitter and uses
+       * it whenever this does not answer cleanly.
+       */
+      if (url.pathname === "/braindump/sort" && request.method === "POST") {
+        const body = (await request.json().catch(() => ({}))) as { text?: unknown };
+        const text = typeof body.text === "string" ? body.text : "";
+        if (!text.trim()) return json({ error: "text is required" }, 400, request);
+
+        const items = await sortBraindump(text, env);
+        if (!items) return json({ error: "could not sort" }, 502, request);
+        return json({ items }, 200, request);
       }
 
       return json({ error: "not found" }, 404, request);

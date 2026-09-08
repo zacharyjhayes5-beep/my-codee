@@ -12,6 +12,7 @@ import { StorageNotice } from "./components/StorageNotice";
 import { CommandPalette } from "./components/CommandPalette";
 import { WalkthroughTab } from "./components/WalkthroughTab";
 import { CampaignsTab } from "./components/CampaignsTab";
+import { BraindumpTab } from "./components/BraindumpTab";
 import { PipelineTab } from "./components/PipelineTab";
 import { VaultTab } from "./components/VaultTab";
 import { useStored, whenPersisted } from "./lib/repository";
@@ -28,7 +29,14 @@ import type { CoverageItem, PropertyProfile, ReviewProposal } from "./types";
  * Progress are folded into Operator; all three keep working routes and stay
  * reachable from the command palette.
  */
-type NavTab = "operator" | "leads" | "pipeline" | "progress" | "campaigns" | "vault";
+type NavTab =
+  | "operator"
+  | "leads"
+  | "pipeline"
+  | "progress"
+  | "campaigns"
+  | "braindump"
+  | "vault";
 // "book" is the full book-of-business editor, off the bar.
 type QuietTab = "walkthrough" | "todo" | "book";
 type Tab = NavTab | QuietTab;
@@ -39,6 +47,7 @@ const NAV: { id: NavTab; label: string }[] = [
   { id: "pipeline", label: "Pipeline" },
   { id: "progress", label: "Progress" },
   { id: "campaigns", label: "Campaigns" },
+  { id: "braindump", label: "Braindump" },
   { id: "vault", label: "Vault" },
 ];
 
@@ -66,6 +75,12 @@ const PAGE: Record<Tab, { kicker: string; title: string; standfirst: string }> =
     kicker: "Outreach",
     title: "Campaigns",
     standfirst: "Five channels, logged as you work them.",
+  },
+  braindump: {
+    kicker: "Voice log",
+    title: "Braindump",
+    standfirst:
+      "Say it once. It files itself into completed, thoughts, to-do and questions, by the day.",
   },
   vault: {
     kicker: "Knowledge",
@@ -130,6 +145,7 @@ function App() {
   const [noticeSeen, setNoticeSeen] = useStored("noticeSeen");
   const [campaigns, setCampaigns] = useStored("campaigns");
   const [meetings, setMeetings] = useStored("meetings");
+  const [braindump, setBraindump] = useStored("braindump");
   const [googleCalendarClientId, setGoogleCalendarClientId] = useStored(
     "googleCalendarClientId",
   );
@@ -368,6 +384,7 @@ function App() {
           />
         )}
         {tab === "campaigns" && <CampaignsTab entries={campaigns} onChange={setCampaigns} />}
+        {tab === "braindump" && <BraindumpTab rows={braindump} onChange={setBraindump} />}
         {tab === "todo" && (
           <TodoTab
             tasks={tasks}

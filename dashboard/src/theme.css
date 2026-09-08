@@ -6713,3 +6713,314 @@ main .active {
 .rate-form .opp-field {
   flex: 0 0 180px;
 }
+
+/* ============================================================
+   28. Braindump — say it once, it files itself
+
+   The handoff put this in App.css. It is here instead because App.css
+   is the legacy sheet the design system has been shrinking for months,
+   and every tab built since has gone in theme.css. Same class naming,
+   same tokens; only the file differs.
+   ============================================================ */
+
+.braindump {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+/* ---------- Capture ---------- */
+
+.braindump-capture {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  padding: 26px 28px;
+  border: 1px solid var(--line-hero);
+  background: linear-gradient(140deg, var(--ink-hero-a), var(--ink-hero-b));
+}
+
+/* A light that travels the top edge while the text is being filed. */
+.braindump-capture.is-filing::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-300), transparent);
+  animation: bd-sweep 1.1s linear infinite;
+}
+
+@keyframes bd-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+
+.braindump-capture-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.braindump-mic {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line-button);
+  border-radius: 50%;
+  color: var(--gold-300);
+  transition:
+    border-color var(--t-hover),
+    box-shadow var(--t-hover),
+    color var(--t-hover);
+}
+
+.braindump-mic.is-live {
+  border-color: var(--gold-500);
+  color: var(--gold-200);
+  box-shadow: 0 0 34px rgba(201, 168, 106, 0.28);
+}
+
+/* ---------- The waveform ---------- */
+
+.braindump-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  height: 20px;
+}
+
+.braindump-wave > span {
+  width: 2px;
+  height: 4px;
+  background: var(--line-check);
+  transition: background var(--t-hover);
+}
+
+.braindump-wave > span.is-live {
+  background: var(--gold-500);
+  animation: bd-wave 0.9s ease-in-out infinite;
+}
+
+@keyframes bd-wave {
+  0%,
+  100% {
+    height: 4px;
+  }
+  50% {
+    height: 18px;
+  }
+}
+
+.braindump-status {
+  flex: 0 0 auto;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.braindump-input {
+  width: 100%;
+  min-height: 128px;
+  border: 1px solid var(--line-field);
+  border-radius: 0;
+  padding: 14px 16px;
+  background: var(--ink-field);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--t-hover);
+}
+
+.braindump-input::placeholder {
+  color: var(--text-faint);
+}
+
+.braindump-input:focus {
+  border-color: var(--line-focus);
+}
+
+.braindump-capture-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.braindump-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ---------- Day tabs ---------- */
+
+.braindump-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.braindump-day {
+  border: 1px solid var(--line-panel);
+  border-radius: 0;
+  padding: 9px 15px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--t-hover),
+    background var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.braindump-day:hover {
+  border-color: var(--line-focus);
+}
+
+.braindump-day.is-current {
+  border-color: var(--line-focus);
+  background: rgba(201, 168, 106, 0.12);
+  color: var(--gold-200);
+}
+
+/* ---------- The four columns ---------- */
+
+.braindump-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line-seam);
+  background: var(--line-seam);
+}
+
+.braindump-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 22px 20px;
+  background: linear-gradient(180deg, var(--ink-panel-a), var(--ink-panel-b));
+}
+
+/* Cormorant serves oldstyle figures, where a bare 1 reads as an I. */
+.braindump-count {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-variant-numeric: lining-nums;
+  line-height: 1;
+  color: var(--gold-300);
+}
+
+.braindump-items {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.braindump-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line-row);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  animation: bd-in 0.25s ease-out both;
+}
+
+@keyframes bd-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.braindump-item label,
+.braindump-text {
+  flex: 1;
+  min-width: 0;
+  cursor: inherit;
+  text-wrap: pretty;
+}
+
+.braindump-item label {
+  cursor: pointer;
+}
+
+.braindump-item.is-done label {
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+
+.braindump-item .op-check {
+  margin-top: 2px;
+}
+
+/* ---------- What was actually said ---------- */
+
+.braindump-raw ul {
+  display: flex;
+  flex-direction: column;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.braindump-raw li {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-row);
+}
+
+.braindump-raw p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  text-wrap: pretty;
+  color: var(--text-muted);
+}
+
+.braindump-clock {
+  flex: 0 0 62px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+@media (max-width: 1100px) {
+  .braindump-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .braindump-capture {
+    padding: 22px;
+  }
+}

@@ -10,7 +10,7 @@ import type {
 } from "../types";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import type { CampaignEntry } from "./campaigns";
-import type { Meeting } from "../types";
+import type { BraindumpRow, Meeting } from "../types";
 import { LEGACY_RECORD_KEYS, SETTING_KEYS, type RepositorySnapshot, snapshot } from "./repository";
 
 /**
@@ -42,6 +42,7 @@ export interface BackupRecords {
   opportunities: Opportunity[];
   campaigns: CampaignEntry[];
   meetings: Meeting[];
+  braindump: BraindumpRow[];
 }
 
 export interface BackupV4 {
@@ -114,6 +115,7 @@ export function countsOf(snap: RepositorySnapshot): Record<string, number> {
     opportunities: snap.records.opportunities.length,
     campaigns: snap.records.campaigns.length,
     meetings: snap.records.meetings.length,
+    braindump: snap.records.braindump.length,
     dismissed: snap.meta.dismissed.length,
     settings: Object.keys(snap.settings).length,
   };
@@ -138,6 +140,7 @@ function parseRecordSections(file: BackupSectioned): RepositorySnapshot {
       campaigns: asArray<CampaignEntry>(file.records?.campaigns),
       // Absent from every file written before meetings existed.
       meetings: asArray<Meeting>(file.records?.meetings),
+      braindump: asArray<BraindumpRow>(file.records?.braindump),
     },
     meta: { dismissed: asArray<string>(file.meta?.dismissed) },
     settings: file.settings && typeof file.settings === "object" ? { ...file.settings } : {},
@@ -167,6 +170,7 @@ function parseV1(file: BackupV1): RepositorySnapshot {
       // browser it is restored into still has one.
       campaigns: [],
       meetings: [],
+      braindump: [],
     },
     meta: { dismissed: asArray<string>(data[LEGACY_RECORD_KEYS.dismissed]) },
     settings,

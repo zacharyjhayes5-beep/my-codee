@@ -7,6 +7,7 @@ export type PaletteTarget =
   | "leads"
   | "pipeline"
   | "campaigns"
+  | "braindump"
   | "vault"
   | "walkthrough"
   | "todo"
@@ -70,6 +71,7 @@ export function CommandPalette({
       { id: "go-leads", label: "Leads", detail: "Every household and the one thing owed to it", run: () => onGoTo("leads") },
       { id: "go-pipeline", label: "Pipeline", detail: "Opportunities by stage, and what has gone quiet", run: () => onGoTo("pipeline") },
       { id: "go-campaigns", label: "Campaigns", detail: "Five channels, logged as you work them", run: () => onGoTo("campaigns") },
+      { id: "go-braindump", label: "Braindump", detail: "Say it once; it files itself", run: () => onGoTo("braindump") },
       { id: "go-vault", label: "Vault", detail: "Everything you have written, searchable", run: () => onGoTo("vault") },
       // Safety-critical and easy to lose track of, so it is findable by name.
       { id: "go-backup", label: "Back up", detail: "Save everything to a file — on the Vault screen", run: () => onGoTo("vault") },

@@ -537,3 +537,28 @@ export interface Meeting {
   place: string;
   createdAt: string;
 }
+
+export type BraindumpCategory = "completed" | "thoughts" | "todo" | "questions";
+
+/**
+ * One line of a day's braindump.
+ *
+ * Two kinds share the store: the verbatim dump exactly as it was dictated,
+ * and the items it was split into. Keeping the raw text as a row of its own
+ * means whatever the splitter made of it, what he actually said survives.
+ */
+export interface BraindumpRow {
+  id: string;
+  /** Local day, "YYYY-MM-DD". Never a UTC date — the day is his day. */
+  day: string;
+  /** ISO timestamp. */
+  at: string;
+  kind: "item" | "dump";
+  text: string;
+  /** Only on kind: "item". */
+  category?: BraindumpCategory;
+  /** Only on kind: "item" — true once a to-do has been checked off. */
+  done?: boolean;
+  /** True when the item was filed as a to-do, so it can be un-done. */
+  wasTodo?: boolean;
+}

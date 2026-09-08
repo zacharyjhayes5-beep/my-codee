@@ -27,6 +27,7 @@ import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import { normalizeOpportunities } from "./opportunities";
 import type {
   AuditEntry,
+  BraindumpRow,
   Call,
   Meeting,
   Opportunity,
@@ -134,6 +135,7 @@ interface Cache {
   noticeSeen: boolean;
   campaigns: CampaignEntry[];
   meetings: Meeting[];
+  braindump: BraindumpRow[];
   googleCalendarClientId: string;
 }
 
@@ -385,6 +387,7 @@ export async function initRepository(): Promise<BootResult> {
       campaigns: readLocal<CampaignEntry[]>(LEGACY_CAMPAIGNS_KEY) ?? [],
       // Born in IndexedDB; there is no localStorage fallback for them.
       meetings: [],
+      braindump: [],
       ...loadSettings(),
     };
     ready = true;
@@ -421,6 +424,7 @@ export async function initRepository(): Promise<BootResult> {
     opportunities: normalizeOpportunities(await readAll<Opportunity>("opportunities")),
     campaigns: await readAll<CampaignEntry>("campaigns"),
     meetings: await readAll<Meeting>("meetings"),
+    braindump: await readAll<BraindumpRow>("braindump"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
@@ -529,6 +533,7 @@ export interface RepositorySnapshot {
     opportunities: Opportunity[];
     campaigns: CampaignEntry[];
     meetings: Meeting[];
+    braindump: BraindumpRow[];
   };
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
@@ -553,6 +558,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         opportunities: await readAll<Opportunity>("opportunities"),
         campaigns: await readAll<CampaignEntry>("campaigns"),
         meetings: await readAll<Meeting>("meetings"),
+        braindump: await readAll<BraindumpRow>("braindump"),
       }
     : {
         prospects: get("prospects"),
@@ -565,6 +571,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         opportunities: [],
         campaigns: get("campaigns"),
         meetings: get("meetings"),
+        braindump: get("braindump"),
       };
 
   const dismissed = usable ? ((await readMeta<string[]>(DISMISSED_KEY)) ?? []) : get("dismissed");
@@ -599,6 +606,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     await writeAll("opportunities", normalizeOpportunities(next.records.opportunities ?? []));
     await writeAll("campaigns", next.records.campaigns ?? []);
     await writeAll("meetings", next.records.meetings ?? []);
+    await writeAll("braindump", next.records.braindump ?? []);
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -634,6 +642,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     opportunities: normalizeOpportunities(next.records.opportunities ?? []),
     campaigns: next.records.campaigns ?? [],
     meetings: next.records.meetings ?? [],
+    braindump: next.records.braindump ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };
