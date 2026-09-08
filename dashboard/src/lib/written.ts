@@ -55,6 +55,25 @@ const LINE_TO_CATALOGUE: Record<OpportunityLine, { id: string; book: Book } | nu
  */
 export const NEW_BUSINESS_RATE = 0.25;
 
+/**
+ * The catalogue line each *board* line becomes.
+ *
+ * The board offers Farm / Ranch, Renters and Boat / RV, which the older
+ * `lines` field cannot name — it folds all three onto "Other", and Other used
+ * to fall through to personal auto. A boat filed as a car is a wrong book, so
+ * the board's own rows are mapped here instead.
+ */
+const CATALOGUE_FOR_ROW: Record<string, { id: string; book: Book }> = {
+  Auto: { id: "personal-auto", book: "personal" },
+  Home: { id: "homeowners", book: "personal" },
+  Umbrella: { id: "personal-umbrella", book: "personal" },
+  Life: { id: "term-life", book: "life" },
+  "Farm / Ranch": { id: "farmowners", book: "personal" },
+  Commercial: { id: "comm-package", book: "commercial" },
+  Renters: { id: "renters", book: "personal" },
+  "Boat / RV": { id: "boat", book: "personal" },
+};
+
 /** Marks every policy this seam created, so it is never counted twice. */
 export function writtenTag(opportunityId: string, line: OpportunityLine): string {
   return `auto:${opportunityId}:${line}`;
@@ -86,6 +105,36 @@ export function policiesFromOpportunity(
   effectiveDate = today(),
 ): PolicyEntry[] {
   const { firstName, lastName } = splitName(prospect?.name ?? "");
+
+  // The board's rows are the finer record and can repeat a line, so where
+  // they exist they are what gets written. Two autos become two policies.
+  const rows = opportunity.quoteRows ?? [];
+  if (rows.length > 0) {
+    return rows.map((row, i) => {
+      const mapped = CATALOGUE_FOR_ROW[row.line] ?? {
+        id: "personal-auto",
+        book: "personal" as Book,
+      };
+      return {
+        id: newId(),
+        book: mapped.book,
+        effectiveDate,
+        firstName,
+        lastName,
+        companyName: "",
+        deathBenefit: 0,
+        lineOfBusiness: mapped.id,
+        policyNumber: "",
+        premium: parseFloat(String(row.premium).replace(/[^0-9.]/g, "")) || 0,
+        percentEarned: NEW_BUSINESS_RATE,
+        multiplier: 0,
+        lastReview: "",
+        // The index keeps two of the same line apart in the dedupe tag.
+        notes: `${writtenTag(opportunity.id, row.line as OpportunityLine)}:${i}`,
+        prospectId: opportunity.prospectId,
+      };
+    });
+  }
 
   return opportunity.lines.map((line) => {
     const mapped = LINE_TO_CATALOGUE[line] ?? { id: "personal-auto", book: "personal" as Book };

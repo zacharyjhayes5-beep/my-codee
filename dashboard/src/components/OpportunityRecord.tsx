@@ -7,6 +7,7 @@ import {
   validateOpportunity,
   validationMessage,
 } from "../lib/opportunities";
+import { syncQuoteRowsFromPremiums } from "../lib/deals";
 
 interface OpportunityRecordProps {
   opportunity: Opportunity;
@@ -213,7 +214,9 @@ export function OpportunityRecord({
           className="camp-save"
           disabled={!validation.ok || !dirty}
           onClick={() => {
-            onSave(form);
+            // Keep the board's rows in step, or pricing a line here would
+            // save a number the pipeline never shows.
+            onSave(syncQuoteRowsFromPremiums(form));
             setSaved(true);
           }}
         >

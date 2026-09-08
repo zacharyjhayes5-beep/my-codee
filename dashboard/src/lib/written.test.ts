@@ -129,3 +129,59 @@ describe("marking an account won", () => {
     expect(after[0].premium).toBe(900);
   });
 });
+
+describe("a card written from the board", () => {
+  const boardAccount = (): Opportunity => ({
+    ...BASE,
+    stage: "Won",
+    lines: ["Auto", "Home", "Other"],
+    premiums: { Auto: 1, Home: 1 },
+    quoteRows: [
+      { line: "Auto", premium: "1840" },
+      { line: "Auto", premium: "920" },
+      { line: "Boat / RV", premium: "500" },
+      { line: "Renters", premium: "310" },
+      { line: "Farm / Ranch", premium: "2400" },
+    ],
+  });
+
+  it("writes the board's rows rather than the coarser lines", () => {
+    const rows = policiesFromOpportunity(boardAccount(), household, "2026-09-01");
+    expect(rows).toHaveLength(5);
+  });
+
+  /** Two autos are two policies, not one. */
+  it("keeps a repeated line as two policies", () => {
+    const rows = policiesFromOpportunity(boardAccount(), household, "2026-09-01");
+    const autos = rows.filter((r) => r.lineOfBusiness === "personal-auto");
+    expect(autos).toHaveLength(2);
+    expect(autos.map((a) => a.premium).sort((a, b) => a - b)).toEqual([920, 1840]);
+  });
+
+  /** A boat filed as a car is a wrong book. */
+  it("files the line types the old field could not name", () => {
+    const rows = policiesFromOpportunity(boardAccount(), household, "2026-09-01");
+    const byLine = Object.fromEntries(rows.map((r) => [r.lineOfBusiness, r.premium]));
+    expect(byLine.boat).toBe(500);
+    expect(byLine.renters).toBe(310);
+    expect(byLine.farmowners).toBe(2400);
+  });
+
+  it("still earns a quarter of premium", () => {
+    const rows = policiesFromOpportunity(boardAccount(), household, "2026-09-01");
+    const totals = totalsFor(rows);
+    expect(totals.premium).toBe(5970);
+    expect(totals.net).toBeCloseTo(5970 * 0.25, 6);
+  });
+
+  it("does not post the same card twice", () => {
+    const first = applyWritten(boardAccount(), household, [], "2026-09-01")!;
+    expect(first.added).toBe(5);
+    expect(applyWritten(boardAccount(), household, first.entries, "2026-09-02")).toBeNull();
+  });
+
+  it("takes all five back when the card leaves Won", () => {
+    const first = applyWritten(boardAccount(), household, [], "2026-09-01")!;
+    expect(undoWritten(first.entries, BASE.id)).toHaveLength(0);
+  });
+});

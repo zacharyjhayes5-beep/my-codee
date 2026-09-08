@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Opportunity, PolicyEntry, Prospect } from "../types";
 import { PipelineBoard } from "./PipelineBoard";
 import { QuoteDrawer } from "./QuoteDrawer";
-import { blankDeal, dealsFromOpportunities, removeDeal, upsertDeal, type Deal } from "../lib/deals";
+import {
+  OPPORTUNITY_STAGE_FOR,
+  blankDeal,
+  dealsFromOpportunities,
+  recordsFromDeal,
+  type Deal,
+  type DealStage,
+} from "../lib/deals";
+import { blankProspect } from "../lib/prospectSchema";
+import { applyWritten, undoWritten } from "../lib/written";
+import { today } from "../lib/storage";
 
 interface PipelineTabProps {
   opportunities: Opportunity[];
   prospects: Prospect[];
   onChange: (opportunities: Opportunity[]) => void;
-  /** The book of business, so Written can post to it. Re-wired in step 3. */
   entries: PolicyEntry[];
   onEntriesChange: (updater: (prev: PolicyEntry[]) => PolicyEntry[]) => void;
   onProspectsChange: (updater: (prev: Prospect[]) => Prospect[]) => void;
@@ -18,39 +27,133 @@ interface PipelineTabProps {
 /**
  * The pipeline, as a board.
  *
- * STEPS ONE AND TWO OF THREE. The board and its drawer hold their cards in
- * local state and nothing else: an edit shows on screen and is forgotten on
- * reload. Persistence is step three.
+ * The board is a *view* over the opportunity records the rest of the
+ * dashboard already reads — not a second store beside them. That is what
+ * keeps Operator's queue, the daily brief, the call queue and the book of
+ * business agreeing with what is on screen here, and it is why marking a
+ * card Won still posts its policies to the book.
  *
- * Two things are deliberately disconnected until step three, and both are
- * regressions against what was here yesterday:
- *
- *   - marking a card Written no longer posts to the book of business, so
- *     Progress will not see it;
- *   - the opportunity records the rest of the app reads — Operator's queue,
- *     the daily brief, the call queue — are untouched by anything done here.
- *
- * The seam that did that work is still in `lib/written.ts`, unused rather
- * than deleted.
+ * There is no separate `pipeline_deals` table and no HTTP endpoint, which
+ * the handoff asked for. This application is local-first: IndexedDB through
+ * `lib/repository.ts` is the system of record, the Worker exists only to
+ * ingest county leads, and a table there would not be the truth about
+ * anything. Writes here are synchronous and durable, so an optimistic patch
+ * with a revert has nothing to be optimistic about — the equivalent is
+ * simply writing through the repository, which is what this does.
  */
-export function PipelineTab({ opportunities, prospects }: PipelineTabProps) {
-  /**
-   * Seeded from the opportunities the app already holds, so the board shows
-   * his own households at review rather than invented ones.
-   */
-  const [deals, setDeals] = useState<Deal[]>(() =>
-    dealsFromOpportunities(opportunities, prospects),
+export function PipelineTab({
+  opportunities,
+  prospects,
+  onChange,
+  entries,
+  onEntriesChange,
+  onProspectsChange,
+}: PipelineTabProps) {
+  const deals = useMemo(
+    () => dealsFromOpportunities(opportunities, prospects),
+    [opportunities, prospects],
   );
 
-  /** The card open in the drawer, and whether it is one the board has yet. */
+  /** The card open in the drawer. Held by value so edits are on a copy. */
   const [editing, setEditing] = useState<Deal | null>(null);
-  const isNew = editing !== null && !deals.some((d) => d.id === editing.id);
+  const isNew = editing !== null && !opportunities.some((o) => o.id === editing.id);
+
+  /**
+   * Marking a card Won posts its policies to the book and moves the
+   * household; moving it back out takes them away again. Unchanged from what
+   * the list view did — the board is just another way to set the stage.
+   */
+  function settleBook(next: Opportunity, before: Opportunity | undefined) {
+    if (next.stage === "Won") {
+      const result = applyWritten(next, prospects.find((p) => p.id === next.prospectId), entries);
+      if (result) {
+        onEntriesChange(() => result.entries);
+        if (result.prospect) {
+          onProspectsChange((prev) =>
+            prev.map((p) => (p.id === result.prospect!.id ? result.prospect! : p)),
+          );
+        }
+      }
+    } else if (before?.stage === "Won") {
+      onEntriesChange((prev) => undoWritten(prev, next.id));
+    }
+  }
+
+  /** A drag. Writes the stage and restarts the card's clock. */
+  function moveTo(id: string, stage: DealStage) {
+    const before = opportunities.find((o) => o.id === id);
+    if (!before) return;
+
+    const next: Opportunity = {
+      ...before,
+      stage: OPPORTUNITY_STAGE_FOR[stage] as Opportunity["stage"],
+      stageEnteredAt: new Date().toISOString(),
+      updatedAt: today(),
+    };
+    onChange(opportunities.map((o) => (o.id === id ? next : o)));
+    settleBook(next, before);
+  }
+
+  function save(deal: Deal) {
+    const before = opportunities.find((o) => o.id === deal.id);
+
+    // A card added on the board is a household nobody has entered yet, so it
+    // becomes one — the pipeline never holds a name that Leads cannot find.
+    let household = before
+      ? prospects.find((p) => p.id === before.prospectId)
+      : prospects.find((p) => p.name.trim().toLowerCase() === deal.name.trim().toLowerCase());
+
+    let created: Prospect | null = null;
+    if (!household) {
+      created = blankProspect({
+        name: deal.name || "Untitled household",
+        area: deal.place ? `${deal.place}, MI` : "",
+        phone: deal.phone,
+        stage: "Quoting",
+        source: "manual",
+        createdAt: today(),
+        updatedAt: today(),
+      });
+      household = created;
+    }
+
+    const records = recordsFromDeal(deal, before, household);
+
+    if (created) {
+      onProspectsChange((prev) => [...prev, records.prospect ?? created!]);
+    } else if (records.prospect) {
+      onProspectsChange((prev) =>
+        prev.map((p) => (p.id === records.prospect!.id ? records.prospect! : p)),
+      );
+    }
+
+    onChange(
+      before
+        ? opportunities.map((o) => (o.id === deal.id ? records.opportunity : o))
+        : [...opportunities, records.opportunity],
+    );
+
+    settleBook(records.opportunity, before);
+    setEditing(null);
+  }
+
+  /**
+   * Delete takes the account off the board. The household stays on Leads —
+   * dropping a piece of work says nothing about whether the person is still
+   * worth calling.
+   */
+  function remove(id: string) {
+    const before = opportunities.find((o) => o.id === id);
+    if (before?.stage === "Won") onEntriesChange((prev) => undoWritten(prev, id));
+    onChange(opportunities.filter((o) => o.id !== id));
+    setEditing(null);
+  }
 
   return (
     <div className="tab-panel">
       <PipelineBoard
         deals={deals}
-        onChange={setDeals}
+        onMove={moveTo}
         onOpen={setEditing}
         onAdd={() => setEditing(blankDeal())}
       />
@@ -59,14 +162,8 @@ export function PipelineTab({ opportunities, prospects }: PipelineTabProps) {
         <QuoteDrawer
           deal={editing}
           isNew={isNew}
-          onSave={(next) => {
-            setDeals((prev) => upsertDeal(prev, next));
-            setEditing(null);
-          }}
-          onDelete={(id) => {
-            setDeals((prev) => removeDeal(prev, id));
-            setEditing(null);
-          }}
+          onSave={save}
+          onDelete={remove}
           onClose={() => setEditing(null)}
         />
       )}

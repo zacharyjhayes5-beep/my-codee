@@ -5,7 +5,6 @@ import {
   ageTone,
   dealTotal,
   money,
-  moveDeal,
   openPremium,
   type Deal,
   type DealStage,
@@ -13,8 +12,8 @@ import {
 
 interface PipelineBoardProps {
   deals: Deal[];
-  onChange: (next: Deal[]) => void;
-  /** Opens the quote drawer. Wired in step two. */
+  /** A card was dropped in another column. */
+  onMove: (id: string, stage: DealStage) => void;
   onOpen?: (deal: Deal) => void;
   onAdd?: () => void;
 }
@@ -26,13 +25,13 @@ interface PipelineBoardProps {
  * columns are a 1px grid gap showing the container through, so the hairlines
  * between them are true single pixels rather than two borders meeting.
  */
-export function PipelineBoard({ deals, onChange, onOpen, onAdd }: PipelineBoardProps) {
+export function PipelineBoard({ deals, onMove, onOpen, onAdd }: PipelineBoardProps) {
   /** The card in flight, and the column under the cursor. */
   const [dragId, setDragId] = useState<string | null>(null);
   const [hover, setHover] = useState<DealStage | null>(null);
 
   function drop(stage: DealStage) {
-    if (dragId) onChange(moveDeal(deals, dragId, stage));
+    if (dragId) onMove(dragId, stage);
     setDragId(null);
     setHover(null);
   }

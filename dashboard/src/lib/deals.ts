@@ -1,5 +1,6 @@
 import type { Opportunity, Prospect } from "../types";
 import { newId } from "./storage";
+import { blankOpportunity } from "./opportunities";
 
 /**
  * The kanban's own record.
@@ -189,12 +190,20 @@ const LINE_FROM_OPPORTUNITY: Record<string, LineType> = {
   Other: "Auto",
 };
 
+/** The stage an opportunity is written back as, one per column. */
+export const OPPORTUNITY_STAGE_FOR: Record<DealStage, string> = {
+  New: "Qualified / Open",
+  Quoted: "Quoting",
+  "Pending Decision": "Decision Pending",
+  Written: "Won",
+};
+
 /**
  * Build the board from the opportunities already in the app.
  *
- * Step one holds the board in local state, and seeding it from real
- * households rather than invented ones is what makes the review worth
- * anything — the columns show his own book.
+ * The board is a view over the records the rest of the dashboard reads, not
+ * a second copy of them. That is what keeps Operator's queue, the daily
+ * brief and the book of business agreeing with what is on screen here.
  */
 export function dealsFromOpportunities(
   opportunities: Opportunity[],
@@ -208,24 +217,120 @@ export function dealsFromOpportunities(
       if (!stage) return null;
       const household = byId.get(o.prospectId);
 
-      const rows: QuoteLine[] = (o.lines ?? []).map((line) => ({
-        line: LINE_FROM_OPPORTUNITY[line] ?? "Auto",
-        premium: o.premiums?.[line] != null ? String(o.premiums[line]) : "",
-      }));
+      // Rows the board wrote win. Anything older is read out of the coarser
+      // `lines` and `premiums` it had at the time.
+      const stored = (o.quoteRows ?? []).filter((r) => r && typeof r.line === "string");
+      const rows: QuoteLine[] =
+        stored.length > 0
+          ? stored.map((r) => ({
+              line: (LINE_TYPES.includes(r.line as LineType) ? r.line : "Auto") as LineType,
+              premium: String(r.premium ?? ""),
+            }))
+          : (o.lines ?? []).map((line) => ({
+              line: LINE_FROM_OPPORTUNITY[line] ?? "Auto",
+              premium: o.premiums?.[line] != null ? String(o.premiums[line]) : "",
+            }));
 
       return {
         id: o.id,
         name: household?.name ?? "Unknown household",
         place: household?.area?.split(",")[0] ?? "",
         phone: household?.phone ?? "",
-        source: "Referral" as DealSource,
+        source: (DEAL_SOURCES.includes(o.source as DealSource)
+          ? o.source
+          : "Referral") as DealSource,
         stage,
-        carrier: "",
+        carrier: o.carrier ?? "",
         effective: o.nextActionDate ?? "",
         notes: o.notes ?? "",
         rows: rows.length > 0 ? rows : [{ line: "Auto" as LineType, premium: "" }],
-        stageEnteredAt: o.updatedAt ? `${o.updatedAt}T00:00:00` : new Date().toISOString(),
+        stageEnteredAt:
+          o.stageEnteredAt ||
+          (o.updatedAt ? `${o.updatedAt}T00:00:00` : new Date().toISOString()),
       } satisfies Deal;
     })
     .filter((d): d is Deal => d !== null);
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Writing the board back                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The household and the account a saved card becomes.
+ *
+ * The drawer edits both at once — a name and a town belong to the person, a
+ * stage and a quote belong to the work — so saving has to touch two records.
+ * Both are returned together and written in one go, rather than one of them
+ * landing and the other not.
+ */
+export function recordsFromDeal(
+  deal: Deal,
+  opportunity: Opportunity | undefined,
+  prospect: Prospect | undefined,
+): { opportunity: Opportunity; prospect: Prospect | undefined } {
+  const base = opportunity ?? blankOpportunity(prospect?.id ?? deal.id);
+
+  const next: Opportunity = {
+    ...base,
+    id: deal.id,
+    prospectId: prospect?.id ?? base.prospectId,
+    stage: OPPORTUNITY_STAGE_FOR[deal.stage] as Opportunity["stage"],
+    stageEnteredAt: deal.stageEnteredAt,
+    quoteRows: deal.rows,
+    // `lines` still drives everything written before the board existed, so it
+    // is kept in step with the rows rather than left to rot.
+    lines: [...new Set(deal.rows.map((r) => OPPORTUNITY_LINE_FOR[r.line]).filter(Boolean))] as Opportunity["lines"],
+    source: deal.source,
+    carrier: deal.carrier,
+    notes: deal.notes,
+    nextActionDate: deal.effective || base.nextActionDate,
+    // The model refuses an account with no next action; a saved card that has
+    // never had one gets the plainest true statement of what it is.
+    nextAction: base.nextAction || "Follow up",
+    updatedAt: new Date().toISOString().slice(0, 10),
+  };
+
+  const household = prospect
+    ? {
+        ...prospect,
+        name: deal.name || prospect.name,
+        area: deal.place ? `${deal.place}, MI` : prospect.area,
+        phone: deal.phone || prospect.phone,
+      }
+    : undefined;
+
+  return { opportunity: next, prospect: household };
+}
+
+/** The reverse of LINE_FROM_OPPORTUNITY, for the lines the old field can name. */
+const OPPORTUNITY_LINE_FOR: Record<string, string> = {
+  Auto: "Auto",
+  Home: "Home",
+  Umbrella: "Umbrella",
+  Life: "Life",
+  Commercial: "Commercial",
+  "Farm / Ranch": "Other",
+  Renters: "Other",
+  "Boat / RV": "Other",
+};
+
+/**
+ * Rebuild the board's rows from the older per-line premiums.
+ *
+ * The household record still edits `lines` and `premiums`, and the board
+ * reads `quoteRows`. Without this, pricing a line from inside a household
+ * would be a silent no-op — the number saved and the board never moved.
+ * Called wherever the older editor writes.
+ */
+export function syncQuoteRowsFromPremiums(opportunity: Opportunity): Opportunity {
+  return {
+    ...opportunity,
+    quoteRows: (opportunity.lines ?? []).map((line) => ({
+      line: LINE_FROM_OPPORTUNITY[line] ?? "Auto",
+      premium:
+        opportunity.premiums?.[line] != null ? String(opportunity.premiums[line]) : "",
+    })),
+  };
 }

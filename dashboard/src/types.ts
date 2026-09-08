@@ -443,6 +443,19 @@ export interface Opportunity {
    */
   premiums: Partial<Record<OpportunityLine, number>>;
   /**
+   * The quote as the board keeps it: one row per line sold, repeatable, and
+   * over a wider set of line types than `premiums` can name. Where this is
+   * filled it is the truth and `premiums` is the older, coarser view of the
+   * same money.
+   */
+  quoteRows?: { line: string; premium: string }[];
+  /** How the household arrived. Board field. */
+  source?: string;
+  /** Prior carrier. Board field. */
+  carrier?: string;
+  /** ISO. When the card entered its current column — drives "Nd in stage". */
+  stageEnteredAt?: string;
+  /**
    * Everything worth remembering about the account, in the agent's own words.
    * Free text on purpose — it is the field that carries what no structured
    * field anticipated.

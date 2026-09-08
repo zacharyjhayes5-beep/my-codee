@@ -65,6 +65,10 @@ export function blankOpportunity(prospectId: string, overrides: Partial<Opportun
     stage: "Qualified / Open",
     lines: [],
     premiums: {},
+    quoteRows: [],
+    source: "",
+    carrier: "",
+    stageEnteredAt: new Date().toISOString(),
     notes: "",
     estimatedValue: null,
     conversionScore: null,
@@ -126,6 +130,16 @@ const TRACKED: (keyof Opportunity)[] = [
  * to zero for every record that predates this.
  */
 export function premiumTotal(opportunity: Opportunity): number {
+  // The board's rows win where they exist: they are what he last typed, they
+  // can repeat a line, and they cover line types `premiums` cannot name.
+  const rows = opportunity.quoteRows ?? [];
+  if (rows.length > 0) {
+    return rows.reduce(
+      (sum, r) => sum + (parseFloat(String(r.premium).replace(/[^0-9.]/g, "")) || 0),
+      0,
+    );
+  }
+
   const priced = Object.values(opportunity.premiums ?? {}).filter(
     (n): n is number => typeof n === "number" && Number.isFinite(n),
   );
@@ -151,6 +165,17 @@ export function normalizeOpportunity(row: Opportunity): Opportunity {
     stage,
     lines: Array.isArray(row.lines) ? row.lines : [],
     premiums: row.premiums && typeof row.premiums === "object" ? row.premiums : {},
+    quoteRows: Array.isArray(row.quoteRows) ? row.quoteRows : [],
+    source: typeof row.source === "string" ? row.source : "",
+    carrier: typeof row.carrier === "string" ? row.carrier : "",
+    // A record from before the board has no clock; the day it last moved is
+    // the closest honest answer, and it stops every old card reading "new".
+    stageEnteredAt:
+      typeof row.stageEnteredAt === "string" && row.stageEnteredAt
+        ? row.stageEnteredAt
+        : row.updatedAt
+          ? `${row.updatedAt}T00:00:00`
+          : new Date().toISOString(),
     notes: typeof row.notes === "string" ? row.notes : "",
     appointments: Array.isArray(row.appointments) ? row.appointments : [],
     history: Array.isArray(row.history) ? row.history : [],

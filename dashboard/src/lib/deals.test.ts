@@ -14,6 +14,8 @@ import {
   openPremium,
   removeDeal,
   upsertDeal,
+  recordsFromDeal,
+  syncQuoteRowsFromPremiums,
   type Deal,
 } from "./deals";
 
@@ -201,5 +203,77 @@ describe("seeding the board from the app's own records", () => {
   it("does not invent a household for an account whose prospect is gone", () => {
     const [row] = dealsFromOpportunities([account("a", "missing", "Quoting")], []);
     expect(row.name).toBe("Unknown household");
+  });
+});
+
+describe("keeping the two quote editors in step", () => {
+  it("rebuilds the board's rows from the household record's premiums", () => {
+    const o = {
+      ...blankOpportunity("p1"),
+      lines: ["Auto", "Home"],
+      premiums: { Auto: 900, Home: 1200 },
+    } as Opportunity;
+    const next = syncQuoteRowsFromPremiums(o);
+    expect(next.quoteRows).toEqual([
+      { line: "Auto", premium: "900" },
+      { line: "Home", premium: "1200" },
+    ]);
+  });
+
+  it("leaves a line priced at nothing as an empty row, not a zero", () => {
+    const o = { ...blankOpportunity("p1"), lines: ["Life"], premiums: {} } as Opportunity;
+    expect(syncQuoteRowsFromPremiums(o).quoteRows).toEqual([{ line: "Life", premium: "" }]);
+  });
+});
+
+describe("writing a card back to the records", () => {
+  const household = blankProspect({ id: "p1", name: "Old Name", area: "Lansing, MI" }) as Prospect;
+  const account = { ...blankOpportunity("p1"), id: "o1", nextAction: "Call" } as Opportunity;
+
+  const card = (over: Partial<Deal> = {}): Deal => ({
+    ...blankDeal(),
+    id: "o1",
+    name: "Marcy & Ted Hall",
+    place: "Grand Ledge",
+    phone: "(517) 555-0119",
+    stage: "Quoted",
+    rows: [{ line: "Auto", premium: "1840" }],
+    ...over,
+  });
+
+  it("puts the board's stage back as the opportunity stage it stands for", () => {
+    const stages: [Deal["stage"], string][] = [
+      ["New", "Qualified / Open"],
+      ["Quoted", "Quoting"],
+      ["Pending Decision", "Decision Pending"],
+      ["Written", "Won"],
+    ];
+    for (const [boardStage, expected] of stages) {
+      const { opportunity } = recordsFromDeal(card({ stage: boardStage }), account, household);
+      expect(opportunity.stage).toBe(expected);
+    }
+  });
+
+  it("writes the person's details onto the household, not the account", () => {
+    const { prospect } = recordsFromDeal(card(), account, household);
+    expect(prospect!.name).toBe("Marcy & Ted Hall");
+    expect(prospect!.area).toBe("Grand Ledge, MI");
+    expect(prospect!.phone).toBe("(517) 555-0119");
+  });
+
+  it("keeps the older lines field in step with the rows", () => {
+    const { opportunity } = recordsFromDeal(
+      card({ rows: [{ line: "Auto", premium: "1" }, { line: "Boat / RV", premium: "2" }] }),
+      account,
+      household,
+    );
+    // Boat has no name in the old field, so it lands under Other.
+    expect(opportunity.lines.sort()).toEqual(["Auto", "Other"]);
+  });
+
+  /** The model refuses an account with no next action. */
+  it("never saves a card without one", () => {
+    const { opportunity } = recordsFromDeal(card(), undefined, household);
+    expect(opportunity.nextAction.length).toBeGreaterThan(0);
   });
 });
