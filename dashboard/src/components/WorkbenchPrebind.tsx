@@ -8,6 +8,7 @@ import type {
 } from "../types";
 import {
   LINE_LABELS,
+  PREBIND_SOURCE,
   STATUS_LABELS,
   attachNewDoc,
   blankPrebindItem,
@@ -78,10 +79,9 @@ export function WorkbenchPrebind({ bench, prospect, opportunity, onChange }: Pre
       </header>
 
       <p className="wb-caveat">
-        Editable planning prompts, written here rather than taken from a carrier document —
-        there is no authoritative Farm Bureau checklist in this app to cite. Completing them
-        does not mean coverage is bound, underwriting has approved anything, or a carrier&rsquo;s
-        requirements have been met.
+        {PREBIND_SOURCE} Editable. Working through them shows you gathered what you meant to
+        gather — it does not mean coverage is bound, underwriting has approved anything, or a
+        carrier&rsquo;s requirements have been met.
       </p>
 
       <div className="wb-group">

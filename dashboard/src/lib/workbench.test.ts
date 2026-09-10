@@ -3,7 +3,10 @@ import type { Opportunity, Prospect, QuoteVersion, Workbench } from "../types";
 import { blankOpportunity } from "./opportunities";
 import { blankProspect } from "./prospectSchema";
 import {
+  CHECKLIST_SOURCE,
   LINE_LABELS,
+  PREBIND_DEFAULTS,
+  PREBIND_SOURCE,
   STARTER_ITEMS,
   addCustomItem,
   annualizedPremium,
@@ -213,7 +216,7 @@ describe("the missing-information request", () => {
     });
 
     expect(text).not.toContain("Current declarations page");
-    expect(text).toContain("Drivers in the household");
+    expect(text).toContain("Drivers and non-driver household members to disclose");
     expect(text).toContain("Hi Marcy");
     expect(text).toContain("Thanks! Zachary");
   });
@@ -976,5 +979,73 @@ describe("writing back to the account", () => {
     );
     expect(o.quoteRows).toHaveLength(1);
     expect(o.history).toHaveLength(0);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("the starter lists come from the agency's own material", () => {
+  it("asks what the fact finder asks on auto", () => {
+    // The distinguishing items — these exist in the fact finder and would not
+    // appear in a list somebody made up.
+    expect(STARTER_ITEMS.auto).toContain("Delivery, rideshare or other use for a fee");
+    expect(STARTER_ITEMS.auto).toContain("Comprehensive and collision carried today, per vehicle");
+    expect(STARTER_ITEMS.auto).toContain("Owned, leased or financed — lender or leasing company");
+  });
+
+  it("asks what the fact finder asks on home", () => {
+    expect(STARTER_ITEMS.home).toContain("Foundation or basement type, and finished percentage");
+    expect(STARTER_ITEMS.home).toContain("Lien billed or escrowed — lender or escrow details");
+    expect(STARTER_ITEMS.home).toContain("Pool, pond or trampoline");
+  });
+
+  it("carries the liability review onto umbrella, and never invents the limit", () => {
+    expect(STARTER_ITEMS.umbrella).toContain("Total liability amount the client selects");
+  });
+
+  it("names its source rather than presenting itself as a rule", () => {
+    expect(CHECKLIST_SOURCE).toMatch(/Fact Finder/i);
+    expect(CHECKLIST_SOURCE).toMatch(/Farm Bureau/);
+    expect(CHECKLIST_SOURCE).toMatch(/vault/i);
+  });
+
+  it("tracks facts to obtain, never a place to keep them", () => {
+    // The fact finder collects dates of birth; the checklist records only that
+    // one is owed or received, and the panel says where the value belongs.
+    const dob = STARTER_ITEMS.auto.filter((l) => /date of birth/i.test(l));
+    expect(dob).toHaveLength(1);
+    expect(dob[0]).toBe("Date of birth for each driver");
+  });
+});
+
+describe("the pre-bind list is the agency's own", () => {
+  it("carries every question from the submission checklist", () => {
+    const questions = PREBIND_DEFAULTS.filter((p) => p.category === "Questions to answer");
+    expect(questions).toHaveLength(5);
+    expect(questions.map((q) => q.label).join(" | ")).toMatch(/roof/i);
+    expect(questions.map((q) => q.label).join(" | ")).toMatch(/pleasure driver/i);
+    expect(questions.map((q) => q.label).join(" | ")).toMatch(/claims/i);
+    expect(questions.map((q) => q.label).join(" | ")).toMatch(/life polic/i);
+  });
+
+  it("carries the four attachments, including the Word-document photo format", () => {
+    const attachments = PREBIND_DEFAULTS.filter((p) => p.category === "Attachments");
+    expect(attachments).toHaveLength(4);
+    expect(attachments.map((a) => a.label)).toContain("Completed RCT");
+    expect(attachments.map((a) => a.label).join(" | ")).toMatch(/Word document/);
+  });
+
+  it("keeps the issuing steps from the Guidewire guides", () => {
+    const issuing = PREBIND_DEFAULTS.filter((p) => p.category === "Before issuing");
+    expect(issuing.map((i) => i.label).join(" | ")).toMatch(/Prior losses/i);
+    expect(issuing.map((i) => i.label).join(" | ")).toMatch(/Validations/i);
+    expect(issuing.map((i) => i.label).join(" | ")).toMatch(/Signed application/i);
+  });
+
+  it("names its source and still refuses to claim approval", () => {
+    expect(PREBIND_SOURCE).toMatch(/Pre-Bind Submission Checklist/i);
+    expect(PREBIND_SOURCE).toMatch(/vault/i);
+    // The summary that reads off this list never upgrades ticks into approval.
+    expect(readPrebind(bench()).summary).not.toMatch(/approved|bound|satisfied|ready/i);
   });
 });

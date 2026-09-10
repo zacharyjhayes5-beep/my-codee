@@ -151,78 +151,153 @@ export function applyOpportunityPatch(
 /* ------------------------------------------------------------------ */
 
 /**
- * Organisational prompts, not underwriting requirements.
+ * The agency's own fact finder, as the checklist starts.
  *
- * No authoritative Farm Bureau checklist exists anywhere in this repository,
- * so nothing here claims to be one. These are the things worth remembering to
- * ask, every one of them editable and removable, and the interface labels
- * them as what they are.
+ * These are **not invented prompts**. They are the information the agency's
+ * Auto & Home Fact Finder asks for, which in turn comes from the Farm Bureau
+ * Turbo Auto & Home Quote fact finder — recorded in the Agency vault on
+ * 25 August 2026. The source travels with them in `CHECKLIST_SOURCE` and is
+ * shown above the list, so it is always clear where the list came from and
+ * that it can be edited.
+ *
+ * Every item is still editable, removable and addable. This is the starting
+ * position, not a rule the app enforces.
+ *
+ * One deliberate omission runs through all of it: an item names a *fact to
+ * obtain*, never a place to keep it. "Date of birth for each driver" tracks
+ * whether it has been collected. The date itself belongs in Guidewire, not in
+ * this browser — see the note the checklist carries.
  */
 export const STARTER_ITEMS: Record<WorkbenchLine, string[]> = {
   auto: [
-    "Drivers in the household",
-    "Vehicles — year, make, model",
+    "Current auto insurer, payment plan and approximate premium",
+    "Tickets or accidents in the last three years",
+    "Delivery, rideshare or other use for a fee",
+    "Vehicles — year, make and model",
+    "Comprehensive and collision carried today, per vehicle",
+    "Primary use and one-way commute mileage",
+    "Owned, leased or financed — lender or leasing company",
+    "Drivers and non-driver household members to disclose",
+    "Date of birth for each driver",
+    "Assigned vehicle for each driver",
     "Current declarations page",
-    "Usage and annual mileage",
     "Requested coverage choices",
     "Unresolved questions",
   ],
   home: [
-    "Property details",
-    "Occupancy",
-    "Roof — age and material",
-    "Updates — wiring, plumbing, furnace",
-    "Other structures",
+    "Property address, if different from the mailing address",
+    "Current home insurer, payment plan and approximate premium",
+    "Lien billed or escrowed — lender or escrow details",
+    "Claims in the last three years",
+    "Approximate market value or purchase price",
+    "Occupancy — primary, seasonal or rental",
+    "Year built, acreage and home style",
+    "Above-ground square footage and number of bathrooms",
+    "Garage type and detached structures",
+    "Foundation or basement type, and finished percentage",
+    "Fireplace, wood or pellet stove",
+    "Pool, pond or trampoline",
+    "Roof replacement year, with proof where available",
+    "Electrical and furnace update years",
+    "Scheduled or higher-value property",
     "Current declarations page",
     "Unresolved questions",
   ],
   condo: [
-    "Unit details",
-    "Occupancy",
+    "Unit address, if different from the mailing address",
+    "Current condo insurer, payment plan and approximate premium",
     "Association master policy — what it covers",
+    "Claims in the last three years",
+    "Occupancy — primary, seasonal or rental",
+    "Year built, unit style and square footage",
     "Interior updates and improvements",
+    "Scheduled or higher-value property",
     "Current declarations page",
     "Unresolved questions",
   ],
   renters: [
-    "Unit details",
-    "Occupancy",
+    "Unit address, if different from the mailing address",
+    "Current renters insurer, payment plan and approximate premium",
+    "Claims in the last three years",
+    "Occupancy — primary, seasonal or rental",
     "Personal property estimate",
+    "Scheduled or higher-value property",
     "Current declarations page",
+    "Requested coverage choices",
     "Unresolved questions",
   ],
   umbrella: [
     "Underlying policies and limits",
-    "Household exposure questions",
     "Drivers and vehicles on the underlying auto",
+    "Self-employment or business ownership — name, type and current insurer",
+    "Home market value, mortgage status and lender",
+    "Other real estate, loan status and lender",
+    "Approximate retirement and non-qualified assets",
+    "Approximate value of personal property",
+    "Annual household income",
+    "Total liability amount the client selects",
     "Unresolved questions",
   ],
   life: [
     "Intended insured",
     "Purpose of the coverage",
-    "Requested coverage amount",
+    "Employer-provided life insurance and amount",
+    "Personally owned life insurance and amount",
+    "Where the current policies are held",
+    "Children under 18 — whether they should be included",
+    "Will or living trust in place",
+    "Coverage amount the client asks for",
+    "Whether the client wants to apply",
     "Next fact-finding step",
     "Unresolved questions",
   ],
 };
 
+/** Where the starter checklist comes from. Shown above the list, never hidden. */
+export const CHECKLIST_SOURCE =
+  "From your Auto & Home Fact Finder — the Farm Bureau Turbo Auto & Home Quote fact finder, recorded in the Agency vault on 25 Aug 2026.";
+
 /**
- * Pre-bind preparation prompts.
+ * The agency's own pre-bind submission checklist.
  *
- * Same caveat, stated louder: these are the agent's own planning categories.
- * Checking every box means the agent has gathered what he meant to gather. It
- * does not mean coverage is bound, underwriting has approved anything, or a
- * carrier's requirements have been satisfied.
+ * Also not invented. The questions and attachments are the ones Nathan
+ * Roersma set out for new business on 19 August 2026, recorded in the Agency
+ * vault; the issuing steps come from the Guidewire Homeowners and Personal
+ * Auto guides in the same vault. `PREBIND_SOURCE` travels with them.
+ *
+ * Working through them still proves only that the agent gathered what he
+ * meant to gather. It is not an underwriting approval and not a binding
+ * confirmation, and nothing in this app says otherwise.
  */
 export const PREBIND_DEFAULTS: { label: string; category: string }[] = [
-  { label: "Fact finder complete", category: "Fact finder" },
-  { label: "Current declarations on file", category: "Current declarations" },
-  { label: "Selected proposal confirmed with the household", category: "Selected proposal" },
-  { label: "Replacement cost estimate — where applicable", category: "Replacement cost" },
-  { label: "Photos — where applicable", category: "Photos" },
-  { label: "Applications, forms and signatures identified", category: "Forms" },
-  { label: "Underwriting questions and outstanding conditions", category: "Underwriting" },
+  {
+    label: "What year was the roof replaced? Provide the year and proof of replacement.",
+    category: "Questions to answer",
+  },
+  { label: "Is anyone a pleasure driver? If so, why?", category: "Questions to answer" },
+  { label: "Are there any claims? If so, what were they?", category: "Questions to answer" },
+  {
+    label: "Where are the client's current life policies, and how much coverage?",
+    category: "Questions to answer",
+  },
+  {
+    label: "Anything else, or questions and concerns to raise before binding",
+    category: "Questions to answer",
+  },
+  { label: "Asset Fact Finder", category: "Attachments" },
+  { label: "Completed RCT", category: "Attachments" },
+  { label: "All quotes and applications", category: "Attachments" },
+  {
+    label: "Property photos compiled in a Word document — the format required for upload",
+    category: "Attachments",
+  },
+  { label: "Prior losses retrieved", category: "Before issuing" },
+  { label: "Validations run, and anything outstanding cleared", category: "Before issuing" },
+  { label: "Signed application uploaded (DocuSign accepted)", category: "Before issuing" },
 ];
+
+export const PREBIND_SOURCE =
+  "From your New Business Pre-Bind Submission Checklist — Nathan Roersma, 19 Aug 2026 — with the issuing steps from your Guidewire Homeowners and Personal Auto guides. All recorded in the Agency vault.";
 
 /* ------------------------------------------------------------------ */
 /* Building and normalising                                            */

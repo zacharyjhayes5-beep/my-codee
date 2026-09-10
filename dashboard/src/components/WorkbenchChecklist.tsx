@@ -3,6 +3,7 @@ import type { ChecklistItem, ChecklistStatus, Workbench, WorkbenchLine } from ".
 import {
   LINE_LABELS,
   STATUS_LABELS,
+  CHECKLIST_SOURCE,
   addCustomItem,
   attachNewDoc,
   countStatuses,
@@ -95,8 +96,9 @@ export function WorkbenchChecklist({ bench, onChange, onOpenRequest }: Checklist
 
       <div className="wb-list-tools">
         <p className="wb-caveat">
-          Starter prompts to organise the file. They are not underwriting rules and not a
-          complete list of what any carrier requires — edit, add and remove freely.
+          {CHECKLIST_SOURCE} Edit, add and remove freely — this is where the list starts,
+          not a rule the app enforces. Track whether something has come in; keep dates of
+          birth, licence numbers and the documents themselves in Guidewire, not here.
         </p>
         {bench.items.length > 4 && (
           <label className="wb-filter">
