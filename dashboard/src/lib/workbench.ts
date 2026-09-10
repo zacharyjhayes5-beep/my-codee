@@ -11,6 +11,7 @@ import type {
   WorkbenchLine,
 } from "../types";
 import { newId, today } from "./storage";
+import { patchOpportunity } from "./opportunities";
 
 /**
  * The Quote Workbench.
@@ -107,6 +108,42 @@ export function opportunityLinesFrom(
     if (line === "Commercial" || line === "Other") mapped.add(line);
   }
   return [...mapped];
+}
+
+/* ------------------------------------------------------------------ */
+/* Writing back to the account                                         */
+/* ------------------------------------------------------------------ */
+
+/** Which pane of the workbench is showing. Shared so it is named once. */
+export type WorkbenchPane = "overview" | "checklist" | "quotes" | "documents" | "prebind";
+
+/**
+ * Fields whose change is a decision, and so earns a line of history.
+ *
+ * The rest are typing. The workbench saves as you go rather than on a button,
+ * which is right for a workspace this size but means every keystroke reaches
+ * the opportunity — and `patchOpportunity` records an event per differing
+ * tracked field. Left alone, typing a fifteen-character next action wrote
+ * fifteen history entries, each one noise, all of them kept forever.
+ *
+ * So free text is written straight to the record, the way the walkthrough
+ * already treats property detail: data entry, not a decision. Choosing a
+ * stage or a line still goes through `patchOpportunity`, because those are
+ * discrete, deliberate and worth being able to trace.
+ */
+const HISTORIC_FIELDS = new Set<keyof Opportunity>(["stage", "lines", "closedReason"]);
+
+export function applyOpportunityPatch(
+  opportunity: Opportunity,
+  patch: Partial<Opportunity>,
+  day = today(),
+): Opportunity {
+  const decides = Object.keys(patch).some((key) =>
+    HISTORIC_FIELDS.has(key as keyof Opportunity),
+  );
+  return decides
+    ? patchOpportunity(opportunity, patch)
+    : { ...opportunity, ...patch, updatedAt: day };
 }
 
 /* ------------------------------------------------------------------ */
@@ -789,6 +826,8 @@ export interface PortfolioTotals {
   difference: number | null;
   /** Every proposal that can be annualized, whether or not it has a baseline. */
   proposedKnownTotal: number | null;
+  /** How many chosen proposals that total actually covers. */
+  proposedPricedLines: number;
   /** How many chosen proposals carry no usable figure. */
   proposedUnpriced: number;
   message: string;
@@ -883,6 +922,7 @@ export function portfolioTotals(bench: Workbench): PortfolioTotals {
       annualizedProposals.length > 0
         ? annualizedProposals.reduce((sum, a) => sum + a.value, 0)
         : null,
+    proposedPricedLines: annualizedProposals.length,
     proposedUnpriced,
     message,
   };

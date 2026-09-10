@@ -62,6 +62,9 @@ export function RequestComposer({
 
   function toggle(id: string) {
     setChosen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    // Changing the selection means the last "marked requested" no longer
+    // describes what is on screen, so the button stops claiming it did.
+    setMarked(false);
     // Re-generating under an edit would throw the agent's wording away, so an
     // edited draft is left alone and the mismatch is called out instead.
   }

@@ -7,6 +7,7 @@ import {
   STARTER_ITEMS,
   addCustomItem,
   annualizedPremium,
+  applyOpportunityPatch,
   attachNewDoc,
   bindingQuotes,
   blankQuote,
@@ -767,6 +768,7 @@ describe("adding the account up", () => {
     const totals = portfolioTotals(wb);
     expect(totals.proposedUnpriced).toBe(1);
     expect(totals.proposedKnownTotal).toBeNull();
+    expect(totals.proposedPricedLines).toBe(0);
     expect(totals.difference).toBeNull();
     expect(totals.message).not.toMatch(/less a year|more a year/);
   });
@@ -783,8 +785,10 @@ describe("adding the account up", () => {
     const totals = portfolioTotals(wb);
     expect(totals.difference).toBeNull();
     expect(totals.message).not.toMatch(/less|more|saving/i);
-    // The proposals still add up on their own, for what that is worth.
+    // The proposals still add up on their own, for what that is worth — and
+    // the count says exactly how many lines that figure covers.
     expect(totals.proposedKnownTotal).toBe(2180);
+    expect(totals.proposedPricedLines).toBe(2);
   });
 });
 
@@ -899,5 +903,78 @@ describe("attaching a document without leaving the list", () => {
 
   it("never writes an untitled document with no name at all", () => {
     expect(attachNewDoc(bench(), { name: "   " }).bench.docs[0].name).toBe("Untitled document");
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("writing back to the account", () => {
+  const account = (): Opportunity => ({
+    ...blankOpportunity("pro-1"),
+    nextAction: "Build the quote",
+    nextActionDate: "2026-09-10",
+  });
+
+  /**
+   * The workbench saves as you type. `patchOpportunity` records an event for
+   * every differing tracked field, so without this split a fifteen-character
+   * next action wrote fifteen history entries — noise, kept forever.
+   */
+  it("keeps typing out of the history", () => {
+    let o = account();
+    for (const text of ["C", "Ch", "Cha", "Chas", "Chase"]) {
+      o = applyOpportunityPatch(o, { nextAction: text }, DAY);
+    }
+    expect(o.nextAction).toBe("Chase");
+    expect(o.history).toHaveLength(0);
+  });
+
+  it("keeps a date and free-text notes out of it too", () => {
+    const o = applyOpportunityPatch(
+      applyOpportunityPatch(account(), { nextActionDate: "2026-10-01" }, DAY),
+      { notes: "spoke Tuesday" },
+      DAY,
+    );
+    expect(o.nextActionDate).toBe("2026-10-01");
+    expect(o.notes).toBe("spoke Tuesday");
+    expect(o.history).toHaveLength(0);
+  });
+
+  it("still records a stage move, which is a decision", () => {
+    const o = applyOpportunityPatch(account(), { stage: "Quoting" }, DAY);
+    expect(o.history).toHaveLength(1);
+    expect(o.history[0].field).toBe("stage");
+    expect(o.history[0].summary).toContain("Quoting");
+  });
+
+  it("still records a change to the lines being quoted", () => {
+    const o = applyOpportunityPatch(account(), { lines: ["Auto", "Home"] }, DAY);
+    expect(o.history.map((h) => h.field)).toEqual(["lines"]);
+  });
+
+  it("stamps updatedAt either way, so nothing looks stale for being typed into", () => {
+    expect(applyOpportunityPatch(account(), { notes: "x" }, DAY).updatedAt).toBe(DAY);
+  });
+
+  it("never drops the quote rows written alongside a decision", () => {
+    const o = applyOpportunityPatch(
+      account(),
+      { lines: ["Auto"], quoteRows: [{ line: "Auto", premium: "1280" }] },
+      DAY,
+    );
+    expect(o.quoteRows).toEqual([{ line: "Auto", premium: "1280" }]);
+    expect(o.lines).toEqual(["Auto"]);
+    // The rows themselves are not a decision, so they get no line of history.
+    expect(o.history.map((h) => h.field)).toEqual(["lines"]);
+  });
+
+  it("writes quote rows on their own without touching the history", () => {
+    const o = applyOpportunityPatch(
+      account(),
+      { quoteRows: [{ line: "Auto", premium: "1280" }] },
+      DAY,
+    );
+    expect(o.quoteRows).toHaveLength(1);
+    expect(o.history).toHaveLength(0);
   });
 });

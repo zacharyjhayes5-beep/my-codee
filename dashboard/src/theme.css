@@ -8545,6 +8545,13 @@ main .active {
   color: var(--hue-cognac);
 }
 
+.wb-subtotal {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
 .wb-excluded {
   display: flex;
   flex-direction: column;

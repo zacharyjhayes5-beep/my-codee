@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Opportunity, Prospect, Workbench } from "../types";
-import { patchOpportunity } from "../lib/opportunities";
 import {
+  applyOpportunityPatch,
   blankWorkbench,
   linesFromOpportunity,
   quoteRowsFromWorkbench,
@@ -68,7 +68,25 @@ export function QuoteWorkbenchHost({
   const bench = stored ?? draft;
   if (!opportunity || !bench) return null;
 
-  const prospect = prospects.find((p) => p.id === opportunity.prospectId);
+  const account = opportunity;
+  const prospect = prospects.find((p) => p.id === account.prospectId);
+
+  /**
+   * One write per change, always.
+   *
+   * Both the workbench and the account can move in the same gesture —
+   * choosing a line re-seeds the checklist *and* changes what the board
+   * should show — and each caller here holds `opportunities` as it was at
+   * render time. Two separate writes in one tick would each be built from
+   * that same stale array, and the second would silently undo the first.
+   * So every patch to the account is merged and written exactly once.
+   */
+  function writeOpportunity(patch: Partial<Opportunity>) {
+    if (Object.keys(patch).length === 0) return;
+    onOpportunitiesChange(
+      opportunities.map((o) => (o.id === account.id ? applyOpportunityPatch(o, patch) : o)),
+    );
+  }
 
   /**
    * Saves the workbench, and keeps the pipeline card showing the same money.
@@ -80,37 +98,28 @@ export function QuoteWorkbenchHost({
    * least one proposal carries a usable premium, and until then whatever was
    * typed in the quick drawer is left exactly as it is.
    */
-  function save(next: Workbench) {
+  function save(next: Workbench, accountPatch?: Partial<Opportunity>) {
     onWorkbenchesChange(upsertWorkbench(workbenches, next));
 
+    const patch: Partial<Opportunity> = { ...accountPatch };
     const rows = quoteRowsFromWorkbench(next);
-    if (!rows) return;
-
-    const before = JSON.stringify(opportunity!.quoteRows ?? []);
-    if (JSON.stringify(rows) === before) return;
-
-    onOpportunitiesChange(
-      opportunities.map((o) =>
-        o.id === opportunity!.id ? patchOpportunity(o, { quoteRows: rows }) : o,
-      ),
-    );
+    if (rows && JSON.stringify(rows) !== JSON.stringify(account.quoteRows ?? [])) {
+      patch.quoteRows = rows;
+    }
+    writeOpportunity(patch);
   }
 
   return (
     <QuoteWorkbench
       bench={bench}
       prospect={prospect}
-      opportunity={opportunity}
+      opportunity={account}
       ownerName={ownerName}
       onChange={save}
-      onOpportunityChange={(patch) =>
-        onOpportunitiesChange(
-          opportunities.map((o) => (o.id === opportunity.id ? patchOpportunity(o, patch) : o)),
-        )
-      }
+      onOpportunityChange={writeOpportunity}
       onProspectChange={(patch) =>
         onProspectsChange((prev) =>
-          prev.map((p) => (p.id === opportunity.prospectId ? { ...p, ...patch } : p)),
+          prev.map((p) => (p.id === account.prospectId ? { ...p, ...patch } : p)),
         )
       }
       onClose={onClose}

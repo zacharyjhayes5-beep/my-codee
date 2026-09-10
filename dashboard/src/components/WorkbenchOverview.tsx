@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Opportunity, Prospect, Workbench } from "../types";
 import {
   LINE_LABELS,
@@ -12,16 +13,15 @@ import {
   quoteTitle,
   readPrebind,
   summaryLine,
+  type WorkbenchPane,
 } from "../lib/workbench";
 import { CopyButton } from "./CopyButton";
-
-type Pane = "overview" | "checklist" | "quotes" | "documents" | "prebind";
 
 interface OverviewProps {
   bench: Workbench;
   prospect: Prospect | undefined;
   opportunity: Opportunity;
-  onGo: (pane: Pane) => void;
+  onGo: (pane: WorkbenchPane) => void;
   onOpenRequest: () => void;
 }
 
@@ -45,11 +45,14 @@ export function WorkbenchOverview({
   onGo,
   onOpenRequest,
 }: OverviewProps) {
-  const counts = countStatuses(bench.items);
-  const outstanding = outstandingItems(bench.items);
-  const prebind = readPrebind(bench);
-  const totals = portfolioTotals(bench);
-  const held = currentInsurance(bench);
+  // The header above re-renders on every keystroke, so this pane does too.
+  // None of these is expensive, but recomputing five passes over the account
+  // for a character typed into the next-action box is work nobody asked for.
+  const counts = useMemo(() => countStatuses(bench.items), [bench.items]);
+  const outstanding = useMemo(() => outstandingItems(bench.items), [bench.items]);
+  const prebind = useMemo(() => readPrebind(bench), [bench]);
+  const totals = useMemo(() => portfolioTotals(bench), [bench]);
+  const held = useMemo(() => currentInsurance(bench), [bench]);
 
   const empty =
     bench.lines.length === 0 && bench.items.length === 0 && bench.quotes.length === 0;
@@ -159,6 +162,15 @@ export function WorkbenchOverview({
                   </li>
                 ))}
               </ul>
+            )}
+
+            {totals.proposedKnownTotal !== null && (
+              <p className="wb-subtotal">
+                Proposed premium totals {money(totals.proposedKnownTotal)} a year across{" "}
+                {totals.proposedPricedLines} priced line
+                {totals.proposedPricedLines === 1 ? "" : "s"} — what you are offering, not a
+                saving.
+              </p>
             )}
 
             {totals.proposedUnpriced > 0 && (

@@ -11,6 +11,7 @@ import {
   readPrebind,
   summaryLine,
   syncLines,
+  type WorkbenchPane,
 } from "../lib/workbench";
 import { WorkbenchOverview } from "./WorkbenchOverview";
 import { WorkbenchChecklist } from "./WorkbenchChecklist";
@@ -19,9 +20,7 @@ import { WorkbenchDocs } from "./WorkbenchDocs";
 import { WorkbenchPrebind } from "./WorkbenchPrebind";
 import { RequestComposer } from "./RequestComposer";
 
-type Pane = "overview" | "checklist" | "quotes" | "documents" | "prebind";
-
-const PANES: { id: Pane; label: string }[] = [
+const PANES: { id: WorkbenchPane; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "checklist", label: "Missing information" },
   { id: "quotes", label: "Quotes" },
@@ -65,7 +64,12 @@ interface QuoteWorkbenchProps {
   prospect: Prospect | undefined;
   opportunity: Opportunity;
   ownerName: string;
-  onChange: (bench: Workbench) => void;
+  /**
+   * Saves the workbench, and any account change made in the same gesture.
+   * Both travel together so the two records cannot be written twice in one
+   * tick from the same stale array.
+   */
+  onChange: (bench: Workbench, accountPatch?: Partial<Opportunity>) => void;
   /**
    * Writes to the account itself — stage, next action, notes and lines. The
    * workbench never keeps its own copy of these, which is what stops Operator
@@ -100,7 +104,7 @@ export function QuoteWorkbench({
   onProspectChange,
   onClose,
 }: QuoteWorkbenchProps) {
-  const [pane, setPane] = useState<Pane>("overview");
+  const [pane, setPane] = useState<WorkbenchPane>("overview");
   const [composing, setComposing] = useState(false);
   const [editingContact, setEditingContact] = useState(false);
 
@@ -131,8 +135,9 @@ export function QuoteWorkbench({
     const next = bench.lines.includes(line)
       ? bench.lines.filter((l) => l !== line)
       : [...bench.lines, line];
-    onChange(syncLines(bench, next));
-    onOpportunityChange({ lines: opportunityLinesFrom(next, opportunity.lines) });
+    onChange(syncLines(bench, next), {
+      lines: opportunityLinesFrom(next, opportunity.lines),
+    });
   }
 
   const blockerCount =
