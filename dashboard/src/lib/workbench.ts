@@ -752,6 +752,211 @@ export function premiumPhrase(quote: QuoteVersion): string {
 }
 
 /* ------------------------------------------------------------------ */
+/* The whole account at once                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The proposal that speaks for a line.
+ *
+ * The one marked Planning to bind, if there is one. Failing that, a single
+ * proposal is unambiguous enough to stand for the line on its own. Two or
+ * more unmarked proposals is a question nobody has answered yet, so nothing
+ * is chosen — picking the cheapest, or the newest, would be inventing a
+ * decision the agent has not made.
+ */
+export function chosenProposal(group: LineQuotes): QuoteVersion | undefined {
+  const marked = group.proposed.find((q) => q.planningToBind);
+  if (marked) return marked;
+  return group.proposed.length === 1 ? group.proposed[0] : undefined;
+}
+
+export interface LineComparison {
+  line: WorkbenchLine;
+  current: QuoteVersion | undefined;
+  proposed: QuoteVersion | undefined;
+  comparison: PremiumComparison;
+}
+
+export interface PortfolioTotals {
+  lines: LineComparison[];
+  /** Lines where a baseline and a proposal can both be put on a yearly footing. */
+  comparable: LineComparison[];
+  /** Lines left out of the total, each with the reason in plain words. */
+  excluded: { line: WorkbenchLine; reason: string }[];
+  currentTotal: number | null;
+  proposedTotal: number | null;
+  /** Positive means the comparable proposals cost less over a year. */
+  difference: number | null;
+  /** Every proposal that can be annualized, whether or not it has a baseline. */
+  proposedKnownTotal: number | null;
+  /** How many chosen proposals carry no usable figure. */
+  proposedUnpriced: number;
+  message: string;
+}
+
+/**
+ * Adds the account up, and is explicit about what it could not add.
+ *
+ * A total is the most dangerous number on this screen: it is the one that
+ * gets read out loud. So a line only counts toward it when both sides carry a
+ * premium *and* a term, and every line that could not be counted is listed
+ * with its reason rather than quietly dropped. A total over two of three
+ * lines described as though it covered all three is exactly the failure this
+ * is shaped to prevent.
+ */
+export function portfolioTotals(bench: Workbench): PortfolioTotals {
+  const lines: LineComparison[] = quotesByLine(bench).map((group) => {
+    const proposed = chosenProposal(group);
+    return {
+      line: group.line,
+      current: group.current,
+      proposed,
+      comparison: comparePremiums(group.current, proposed),
+    };
+  });
+
+  const comparable = lines.filter((l) => l.comparison.status === "comparable");
+
+  const excluded = lines
+    .filter((l) => l.comparison.status !== "comparable")
+    .map((l) => ({
+      line: l.line,
+      reason:
+        l.proposed === undefined
+          ? bench.quotes.some((q) => q.line === l.line && q.kind === "proposed")
+            ? "more than one quote and none marked Planning to bind"
+            : "no proposed quote yet"
+          : l.current === undefined
+            ? "no current policy recorded to compare against"
+            : l.comparison.status === "unknown-term"
+              ? "a policy term is not recorded"
+              : "a premium is not entered",
+    }));
+
+  const annualizedProposals = lines
+    .map((l) => (l.proposed ? annualizedPremium(l.proposed) : null))
+    .filter((a): a is Annualized => a !== null);
+
+  const proposedUnpriced = lines.filter(
+    (l) => l.proposed && annualizedPremium(l.proposed) === null,
+  ).length;
+
+  const currentTotal =
+    comparable.length > 0
+      ? comparable.reduce((sum, l) => sum + (l.comparison.current?.value ?? 0), 0)
+      : null;
+  const proposedTotal =
+    comparable.length > 0
+      ? comparable.reduce((sum, l) => sum + (l.comparison.proposed?.value ?? 0), 0)
+      : null;
+  const difference =
+    currentTotal !== null && proposedTotal !== null ? currentTotal - proposedTotal : null;
+
+  let message: string;
+  if (comparable.length === 0) {
+    message =
+      lines.length === 0
+        ? "Nothing to compare yet."
+        : "No total to compare — no line has both a current policy and a proposal with a premium and a term.";
+  } else {
+    const scope =
+      excluded.length === 0
+        ? `Across all ${comparable.length} line${comparable.length === 1 ? "" : "s"}`
+        : `Across ${comparable.length} of ${lines.length} lines`;
+    const direction =
+      difference! > 0
+        ? `${money(difference!)} less a year`
+        : difference! < 0
+          ? `${money(Math.abs(difference!))} more a year`
+          : "the same a year";
+    message = `${scope}: ${money(currentTotal!)} now versus ${money(proposedTotal!)} proposed — ${direction}. Price only; coverage differences are listed on each quote.`;
+  }
+
+  return {
+    lines,
+    comparable,
+    excluded,
+    currentTotal,
+    proposedTotal,
+    difference,
+    proposedKnownTotal:
+      annualizedProposals.length > 0
+        ? annualizedProposals.reduce((sum, a) => sum + a.value, 0)
+        : null,
+    proposedUnpriced,
+    message,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Keeping the board in step                                           */
+/* ------------------------------------------------------------------ */
+
+/** The board's line names, which are coarser than the workbench's. */
+const BOARD_LINE_FOR: Record<WorkbenchLine, string> = {
+  auto: "Auto",
+  home: "Home",
+  condo: "Home",
+  renters: "Renters",
+  umbrella: "Umbrella",
+  life: "Life",
+};
+
+/**
+ * The pipeline board's quote rows, rebuilt from the workbench.
+ *
+ * The board asks for one annual figure per line, so each chosen proposal is
+ * put on a yearly footing first — a six-month premium written straight onto
+ * the card would halve the account's apparent value. A line whose premium
+ * cannot be annualized contributes an empty figure rather than a zero, which
+ * the board already renders as "No quote".
+ *
+ * Returns null when there is nothing worth writing, and the caller then
+ * leaves whatever the drawer put there alone. That matters: until the
+ * workbench holds a priced quote it has no business overwriting a figure the
+ * agent typed on the card.
+ */
+export function quoteRowsFromWorkbench(bench: Workbench): { line: string; premium: string }[] | null {
+  const groups = quotesByLine(bench);
+  const rows: { line: string; premium: string }[] = [];
+  let priced = 0;
+
+  for (const group of groups) {
+    const proposal = chosenProposal(group);
+    if (!proposal) continue;
+    const annual = annualizedPremium(proposal);
+    if (annual) priced += 1;
+    rows.push({
+      line: BOARD_LINE_FOR[group.line],
+      premium: annual ? String(Math.round(annual.value * 100) / 100) : "",
+    });
+  }
+
+  return priced > 0 ? rows : null;
+}
+
+/* ------------------------------------------------------------------ */
+/* What the household already has                                      */
+/* ------------------------------------------------------------------ */
+
+export interface CurrentPolicyLine {
+  line: WorkbenchLine;
+  quote: QuoteVersion;
+  annual: Annualized | null;
+}
+
+/** The current policies on record, in line order. Entered, never inferred. */
+export function currentInsurance(bench: Workbench): CurrentPolicyLine[] {
+  return quotesByLine(bench)
+    .filter((g) => g.current !== undefined)
+    .map((g) => ({
+      line: g.line,
+      quote: g.current!,
+      annual: annualizedPremium(g.current!),
+    }));
+}
+
+/* ------------------------------------------------------------------ */
 /* Documents                                                           */
 /* ------------------------------------------------------------------ */
 
@@ -788,6 +993,28 @@ export function docLinkKind(location: string): "url" | "path" | "empty" {
   const trimmed = String(location ?? "").trim();
   if (!trimmed) return "empty";
   return /^https?:\/\//i.test(trimmed) ? "url" : "path";
+}
+
+/**
+ * Creates a document and hands back its id, ready to link.
+ *
+ * Exists so that "I have this on file" does not mean leaving the checklist,
+ * going to the Documents pane, adding a row, coming back and finding the item
+ * again. The name is seeded from whatever asked for it; the location is left
+ * blank because only the agent knows where the file actually is.
+ */
+export function attachNewDoc(
+  bench: Workbench,
+  seed: { name: string; line?: WorkbenchLine | null; category?: string },
+  day = today(),
+): { bench: Workbench; docId: string } {
+  const doc: WorkbenchDoc = {
+    ...blankDoc(day),
+    name: seed.name.trim() || "Untitled document",
+    category: seed.category ?? "Declarations page",
+    line: seed.line ?? null,
+  };
+  return { bench: { ...bench, docs: [...bench.docs, doc] }, docId: doc.id };
 }
 
 export function docById(bench: Workbench, id: string | undefined): WorkbenchDoc | undefined {

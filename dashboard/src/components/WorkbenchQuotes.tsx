@@ -3,6 +3,7 @@ import type { PolicyTerm, Prospect, QuoteVersion, Workbench, WorkbenchLine } fro
 import {
   LINE_LABELS,
   TERM_LABELS,
+  attachNewDoc,
   blankQuote,
   comparePremiums,
   patchQuote,
@@ -41,6 +42,12 @@ export function WorkbenchQuotes({ bench, prospect, onChange }: QuotesProps) {
 
   function setQuotes(quotes: QuoteVersion[]) {
     onChange({ ...bench, quotes });
+  }
+
+  /** "+ New document…" without leaving the quote you are typing into. */
+  function linkNewDoc(quoteId: string, name: string, line: WorkbenchLine) {
+    const made = attachNewDoc(bench, { name, line, category: "Quote / proposal" });
+    onChange({ ...made.bench, quotes: patchQuote(made.bench.quotes, quoteId, { docId: made.docId }) });
   }
 
   function add(line: WorkbenchLine, kind: "current" | "proposed") {
@@ -90,6 +97,9 @@ export function WorkbenchQuotes({ bench, prospect, onChange }: QuotesProps) {
                 setQuotes(bench.quotes.filter((q) => q.id !== group.current!.id));
                 setOpen(null);
               }}
+              onNewDoc={() =>
+                linkNewDoc(group.current!.id, quoteTitle(group.current!), group.line)
+              }
             />
           ) : (
             <button
@@ -117,6 +127,7 @@ export function WorkbenchQuotes({ bench, prospect, onChange }: QuotesProps) {
                     setOpen(null);
                   }}
                   onBind={() => setQuotes(setPlanningToBind(bench.quotes, quote.id))}
+                  onNewDoc={() => linkNewDoc(quote.id, quoteTitle(quote), group.line)}
                 />
                 <p className={`wb-compare is-${comparison.status}`}>{comparison.message}</p>
                 {comparison.current?.converted && (
@@ -152,9 +163,10 @@ interface QuoteCardProps {
   onPatch: (patch: Partial<QuoteVersion>) => void;
   onRemove: () => void;
   onBind?: () => void;
+  onNewDoc: () => void;
 }
 
-function QuoteCard({ quote, bench, open, onToggle, onPatch, onRemove, onBind }: QuoteCardProps) {
+function QuoteCard({ quote, bench, open, onToggle, onPatch, onRemove, onBind, onNewDoc }: QuoteCardProps) {
   return (
     <article className={`wb-quote kind-${quote.kind}${quote.planningToBind ? " is-binding" : ""}`}>
       <div className="wb-quote-top">
@@ -332,7 +344,13 @@ function QuoteCard({ quote, bench, open, onToggle, onPatch, onRemove, onBind }: 
             <span className="wb-label">Source document</span>
             <select
               value={quote.docId ?? ""}
-              onChange={(e) => onPatch({ docId: e.target.value || undefined })}
+              onChange={(e) => {
+                if (e.target.value === "__new") {
+                  onNewDoc();
+                  return;
+                }
+                onPatch({ docId: e.target.value || undefined });
+              }}
             >
               <option value="">— none —</option>
               {bench.docs.map((d) => (
@@ -340,6 +358,7 @@ function QuoteCard({ quote, bench, open, onToggle, onPatch, onRemove, onBind }: 
                   {d.name || "Untitled document"}
                 </option>
               ))}
+              <option value="__new">+ New document…</option>
             </select>
           </label>
 

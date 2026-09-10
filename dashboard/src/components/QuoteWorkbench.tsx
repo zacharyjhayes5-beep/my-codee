@@ -12,19 +12,52 @@ import {
   summaryLine,
   syncLines,
 } from "../lib/workbench";
+import { WorkbenchOverview } from "./WorkbenchOverview";
 import { WorkbenchChecklist } from "./WorkbenchChecklist";
 import { WorkbenchQuotes } from "./WorkbenchQuotes";
 import { WorkbenchDocs } from "./WorkbenchDocs";
 import { WorkbenchPrebind } from "./WorkbenchPrebind";
 import { RequestComposer } from "./RequestComposer";
 
-type Pane = "checklist" | "quotes" | "documents" | "prebind";
+type Pane = "overview" | "checklist" | "quotes" | "documents" | "prebind";
 
 const PANES: { id: Pane; label: string }[] = [
+  { id: "overview", label: "Overview" },
   { id: "checklist", label: "Missing information" },
   { id: "quotes", label: "Quotes" },
   { id: "documents", label: "Documents" },
   { id: "prebind", label: "Pre-bind" },
+];
+
+/**
+ * The next actions that actually recur on a quote, offered as one press.
+ *
+ * Deliberately short. A long menu of canned actions is slower to read than
+ * typing the thing, and the field stays free text — these are a shortcut, not
+ * a vocabulary.
+ */
+const NEXT_ACTION_PRESETS = [
+  "Request missing information",
+  "Follow up on the request",
+  "Build the quote",
+  "Present the proposal",
+  "Follow up on the proposal",
+  "Prepare for pre-bind review",
+];
+
+/** ISO yyyy-mm-dd, `days` from today, in local time. */
+function dayFromNow(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+const DATE_SHORTCUTS: { label: string; days: number }[] = [
+  { label: "Today", days: 0 },
+  { label: "Tomorrow", days: 1 },
+  { label: "In 3 days", days: 3 },
+  { label: "Next week", days: 7 },
 ];
 
 interface QuoteWorkbenchProps {
@@ -39,6 +72,8 @@ interface QuoteWorkbenchProps {
    * showing one answer and this screen another.
    */
   onOpportunityChange: (patch: Partial<Opportunity>) => void;
+  /** Fixing a phone number mid-quote should not mean leaving the workbench. */
+  onProspectChange: (patch: Partial<Prospect>) => void;
   onClose: () => void;
 }
 
@@ -62,10 +97,12 @@ export function QuoteWorkbench({
   ownerName,
   onChange,
   onOpportunityChange,
+  onProspectChange,
   onClose,
 }: QuoteWorkbenchProps) {
-  const [pane, setPane] = useState<Pane>("checklist");
+  const [pane, setPane] = useState<Pane>("overview");
   const [composing, setComposing] = useState(false);
+  const [editingContact, setEditingContact] = useState(false);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -98,18 +135,14 @@ export function QuoteWorkbench({
     onOpportunityChange({ lines: opportunityLinesFrom(next, opportunity.lines) });
   }
 
-  const blockers: string[] = [];
-  if (outstanding.length > 0) {
-    blockers.push(
-      `${outstanding.length} information item${outstanding.length === 1 ? "" : "s"} outstanding`,
-    );
-  }
-  if (prebind.selected.length === 0) blockers.push("no quote marked Planning to bind");
-  if (prebind.outstanding.length > 0) {
-    blockers.push(
-      `${prebind.outstanding.length} preparation item${prebind.outstanding.length === 1 ? "" : "s"} outstanding`,
-    );
-  }
+  const blockerCount =
+    (outstanding.length > 0 ? 1 : 0) +
+    (prebind.selected.length === 0 ? 1 : 0) +
+    (prebind.outstanding.length > 0 ? 1 : 0);
+
+  const contactLine =
+    [prospect?.phone, prospect?.email, prospect?.area].filter(Boolean).join(" · ") ||
+    "No contact details yet";
 
   return (
     <>
@@ -131,10 +164,38 @@ export function QuoteWorkbench({
 
           <h2 className="wb-heading">{prospect?.name || "Household"}</h2>
 
-          <p className="wb-contact">
-            {[prospect?.phone, prospect?.email, prospect?.area].filter(Boolean).join(" · ") ||
-              "No contact details on the household record yet."}
-          </p>
+          <div className="wb-contact-row">
+            <p className="wb-contact">{contactLine}</p>
+            {prospect && (
+              <button
+                type="button"
+                className="link-btn"
+                aria-expanded={editingContact}
+                onClick={() => setEditingContact((v) => !v)}
+              >
+                {editingContact ? "Done" : "Edit contact"}
+              </button>
+            )}
+          </div>
+
+          {editingContact && prospect && (
+            <div className="wb-grid wb-contact-edit">
+              <label className="wb-field">
+                <span className="wb-label">Phone</span>
+                <input
+                  value={prospect.phone}
+                  onChange={(e) => onProspectChange({ phone: e.target.value })}
+                />
+              </label>
+              <label className="wb-field">
+                <span className="wb-label">Email</span>
+                <input
+                  value={prospect.email}
+                  onChange={(e) => onProspectChange({ email: e.target.value })}
+                />
+              </label>
+            </div>
+          )}
 
           {/* ---- lines ---- */}
           <div className="wb-lines" role="group" aria-label="Lines being quoted">
@@ -170,9 +231,6 @@ export function QuoteWorkbench({
                   </option>
                 ))}
               </select>
-              <span className="wb-hint">
-                Yours to set. Nothing here advances a stage because boxes got ticked.
-              </span>
             </label>
 
             <label className="wb-field">
@@ -194,6 +252,34 @@ export function QuoteWorkbench({
             </label>
           </div>
 
+          <details className="wb-presets">
+            <summary>Quick set</summary>
+            <div className="wb-preset-row">
+              {NEXT_ACTION_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className="wb-preset"
+                  onClick={() => onOpportunityChange({ nextAction: preset })}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            <div className="wb-preset-row">
+              {DATE_SHORTCUTS.map((shortcut) => (
+                <button
+                  key={shortcut.label}
+                  type="button"
+                  className="wb-preset"
+                  onClick={() => onOpportunityChange({ nextActionDate: dayFromNow(shortcut.days) })}
+                >
+                  {shortcut.label}
+                </button>
+              ))}
+            </div>
+          </details>
+
           {(!opportunity.nextAction.trim() || !opportunity.nextActionDate) && (
             <p className="wb-warn">
               This account has no next action and date. Operator&rsquo;s queue is built from
@@ -207,23 +293,6 @@ export function QuoteWorkbench({
             </p>
           )}
 
-          {/* ---- what is stopping this ---- */}
-          <div className="wb-blockers">
-            <span className="wb-label">Before a pre-bind review</span>
-            {blockers.length === 0 ? (
-              <p className="wb-blockers-clear">
-                Nothing outstanding on either list, and a quote is selected. Still your call
-                whether it is ready — this is a count, not an approval.
-              </p>
-            ) : (
-              <ul>
-                {blockers.map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-
           <nav className="wb-panes" aria-label="Workbench sections">
             {PANES.map((p) => (
               <button
@@ -234,6 +303,9 @@ export function QuoteWorkbench({
                 onClick={() => setPane(p.id)}
               >
                 {p.label}
+                {p.id === "overview" && blockerCount > 0 && (
+                  <span className="wb-pane-count">{blockerCount}</span>
+                )}
                 {p.id === "checklist" && outstanding.length > 0 && (
                   <span className="wb-pane-count">{outstanding.length}</span>
                 )}
@@ -252,6 +324,15 @@ export function QuoteWorkbench({
         </header>
 
         <div className="wb-body">
+          {pane === "overview" && (
+            <WorkbenchOverview
+              bench={bench}
+              prospect={prospect}
+              opportunity={opportunity}
+              onGo={setPane}
+              onOpenRequest={() => setComposing(true)}
+            />
+          )}
           {pane === "checklist" && (
             <WorkbenchChecklist
               bench={bench}
@@ -272,24 +353,30 @@ export function QuoteWorkbench({
             />
           )}
 
-          <section className="wb-section">
-            <header className="wb-section-head">
-              <h3>Account notes</h3>
-            </header>
-            <label className="wb-field">
-              <span className="wb-label">Notes — kept on the account, shared with the pipeline</span>
-              <textarea
-                rows={4}
-                value={opportunity.notes}
-                placeholder="What was said, what is owed next"
-                onChange={(e) => onOpportunityChange({ notes: e.target.value })}
-              />
-            </label>
-          </section>
+          {pane !== "overview" && (
+            <section className="wb-section">
+              <header className="wb-section-head">
+                <h3>Account notes</h3>
+              </header>
+              <label className="wb-field">
+                <span className="wb-label">
+                  Notes — kept on the account, shared with the pipeline
+                </span>
+                <textarea
+                  rows={4}
+                  value={opportunity.notes}
+                  placeholder="What was said, what is owed next"
+                  onChange={(e) => onOpportunityChange({ notes: e.target.value })}
+                />
+              </label>
+            </section>
+          )}
         </div>
 
         <footer className="wb-foot">
-          <span className="wb-saved">Changes save as you make them · last saved {bench.updatedAt}</span>
+          <span className="wb-saved">
+            Changes save as you make them · last saved {bench.updatedAt}
+          </span>
           <span className="wb-foot-summary">{summaryLine(counts)}</span>
           <button type="button" className="ghost-btn" onClick={onClose}>
             Close

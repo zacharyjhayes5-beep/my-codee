@@ -126,6 +126,8 @@ function App() {
   const [tab, setTab] = useState<Tab>("operator");
   /** Set when arriving from another screen, so the right card opens. */
   const [focusProspectId, setFocusProspectId] = useState<string | null>(null);
+  /** Set when something asked to quote a household, rather than just open it. */
+  const [quoteProspectId, setQuoteProspectId] = useState<string | null>(null);
   const [lines, setLines] = useStored("lines");
   const [period, setPeriod] = useStored("period");
   const [entries, setEntries] = useStored("policies");
@@ -414,6 +416,8 @@ function App() {
             onWorkbenchesChange={setWorkbenches}
             focusProspectId={focusProspectId}
             onFocusHandled={() => setFocusProspectId(null)}
+            quoteProspectId={quoteProspectId}
+            onQuoteHandled={() => setQuoteProspectId(null)}
             onQueueReview={(proposal) => setReviews([...reviews, proposal])}
             ownerName={ownerName}
             onOwnerNameChange={setOwnerName}
@@ -473,6 +477,10 @@ function App() {
         onGoTo={(target) => setTab(target)}
         onOpenProspect={(id) => {
           setFocusProspectId(id);
+          setTab("leads");
+        }}
+        onOpenWorkbench={(id) => {
+          setQuoteProspectId(id);
           setTab("leads");
         }}
       />

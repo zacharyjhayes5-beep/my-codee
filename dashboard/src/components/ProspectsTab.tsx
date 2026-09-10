@@ -11,7 +11,12 @@ import type {
 } from "../types";
 import { prospectStages } from "../lib/defaultData";
 import { appendAudit, auditEntry, diffEntries } from "../lib/audit";
-import { opportunitiesFor, opportunityFromCall, patchOpportunity } from "../lib/opportunities";
+import {
+  blankOpportunity,
+  opportunitiesFor,
+  opportunityFromCall,
+  patchOpportunity,
+} from "../lib/opportunities";
 import { quoteReadiness } from "../lib/rules";
 import { mergeInto } from "../lib/dedupe";
 import { IntakePanel } from "./IntakePanel";
@@ -113,6 +118,9 @@ interface ProspectsTabProps {
   /** Arrived here from somewhere that named a household — open it. */
   focusProspectId: string | null;
   onFocusHandled: () => void;
+  /** Arrived here to quote somebody — open their workbench straight away. */
+  quoteProspectId: string | null;
+  onQuoteHandled: () => void;
   /** A transcript review joins the same inbox everything else goes through. */
   onQueueReview: (proposal: ReviewProposal) => void;
   ownerName: string;
@@ -134,6 +142,8 @@ export function ProspectsTab({
   onWorkbenchesChange,
   focusProspectId,
   onFocusHandled,
+  quoteProspectId,
+  onQuoteHandled,
   onQueueReview,
   ownerName,
   onOwnerNameChange,
@@ -148,6 +158,20 @@ export function ProspectsTab({
     onFocusHandled();
   }, [focusProspectId, onFocusHandled]);
 
+  /**
+   * The palette can ask for a household's workbench directly. It runs after
+   * the list has the household in hand, and clears the request immediately so
+   * closing the workbench does not reopen it on the next render.
+   */
+  useEffect(() => {
+    if (!quoteProspectId) return;
+    startWorkbench(quoteProspectId);
+    onQuoteHandled();
+    // `startWorkbench` reads the current opportunities; re-running it because
+    // that list changed is exactly what must not happen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteProspectId]);
+
   const [intent, setIntent] = useState<Intent>("move");
   const [stageFilter, setStageFilter] = useState<Stage | "All" | "Needs research">("All");
   const [mapOpen, setMapOpen] = useState(false);
@@ -161,6 +185,31 @@ export function ProspectsTab({
     () => new Set(workbenches.map((w) => w.opportunityId)),
     [workbenches],
   );
+
+  /**
+   * Open the workbench for a household that has no account yet.
+   *
+   * Quoting somebody should not require knowing that an "opportunity" has to
+   * exist first — that is the app's word, not his. One is created with the
+   * plainest true next action (you are, right now, building the quote) and
+   * the workbench opens on it.
+   */
+  function startWorkbench(prospectId: string) {
+    const existing = opportunitiesFor(opportunities, prospectId).find(
+      (o) => o.stage !== "Won" && o.stage !== "Lost",
+    );
+    if (existing) {
+      setWorkbenchId(existing.id);
+      return;
+    }
+    const made = blankOpportunity(prospectId, {
+      stage: "Fact-Find / Information Gathering",
+      nextAction: "Build the quote",
+      nextActionDate: today(),
+    });
+    onOpportunitiesChange([...opportunities, made]);
+    setWorkbenchId(made.id);
+  }
 
   /**
    * Manual retry.
@@ -673,6 +722,7 @@ export function ProspectsTab({
                         onOpportunitiesChange(opportunities.filter((x) => x.id !== id))
                       }
                       onOpenWorkbench={setWorkbenchId}
+                      onStartWorkbench={() => startWorkbench(p.id)}
                       workbenchIds={startedWorkbenches}
                     />
                   </div>
@@ -690,6 +740,7 @@ export function ProspectsTab({
         workbenches={workbenches}
         onWorkbenchesChange={onWorkbenchesChange}
         onOpportunitiesChange={onOpportunitiesChange}
+        onProspectsChange={onChange}
         ownerName={ownerName}
         onClose={() => setWorkbenchId(null)}
       />

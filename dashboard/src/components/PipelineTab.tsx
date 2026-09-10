@@ -189,6 +189,7 @@ export function PipelineTab({
         workbenches={workbenches}
         onWorkbenchesChange={onWorkbenchesChange}
         onOpportunitiesChange={onChange}
+        onProspectsChange={onProspectsChange}
         ownerName={ownerName}
         onClose={() => setWorkbenchId(null)}
       />

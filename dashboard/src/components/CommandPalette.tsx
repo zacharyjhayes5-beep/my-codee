@@ -22,6 +22,8 @@ interface CommandPaletteProps {
   onGoTo: (target: PaletteTarget) => void;
   /** Jump to a household and open it, the same path Pipeline already uses. */
   onOpenProspect: (id: string) => void;
+  /** Open a household's quote workbench directly. */
+  onOpenWorkbench?: (prospectId: string) => void;
 }
 
 interface Command {
@@ -49,6 +51,7 @@ export function CommandPalette({
   prospects,
   onGoTo,
   onOpenProspect,
+  onOpenWorkbench,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -104,12 +107,29 @@ export function CommandPalette({
         );
       })
       .slice(0, 8)
-      .map((p) => ({
-        id: `p-${p.id}`,
-        label: p.name || "Untitled household",
-        detail: [p.area, needsResearch(p) ? "Needs research" : p.stage].filter(Boolean).join(" · "),
-        run: () => onOpenProspect(p.id),
-      }));
+      .flatMap((p) => {
+        const rows: Command[] = [
+          {
+            id: `p-${p.id}`,
+            label: p.name || "Untitled household",
+            detail: [p.area, needsResearch(p) ? "Needs research" : p.stage]
+              .filter(Boolean)
+              .join(" · "),
+            run: () => onOpenProspect(p.id),
+          },
+        ];
+        // Quoting is the thing most often wanted after finding somebody, so it
+        // is one keystroke away rather than a scroll down the opened record.
+        if (onOpenWorkbench) {
+          rows.push({
+            id: `wb-${p.id}`,
+            label: `Quote ${p.name || "this household"}`,
+            detail: "Open the quote workbench",
+            run: () => onOpenWorkbench(p.id),
+          });
+        }
+        return rows;
+      });
 
     const matchedSections = sections.filter(
       (s) => !q || s.label.toLowerCase().includes(q) || s.detail.toLowerCase().includes(q),
@@ -118,7 +138,7 @@ export function CommandPalette({
     // Households first when you have typed something — that is nearly always
     // what a search means here.
     return [...households, ...matchedSections];
-  }, [query, prospects, sections, onOpenProspect]);
+  }, [query, prospects, sections, onOpenProspect, onOpenWorkbench]);
 
   // Keep the highlight inside the list as it shrinks under you.
   useEffect(() => {

@@ -32,6 +32,8 @@ interface ProspectCardProps {
   onSaveOpportunity: (opportunity: Opportunity, isNew: boolean) => void;
   onRemoveOpportunity: (id: string) => void;
   onOpenWorkbench?: (opportunityId: string) => void;
+  /** Quote a household that has no account yet — one is created for it. */
+  onStartWorkbench?: () => void;
   workbenchIds?: Set<string>;
 }
 
@@ -57,6 +59,7 @@ export function ProspectCard({
   onSaveOpportunity,
   onRemoveOpportunity,
   onOpenWorkbench,
+  onStartWorkbench,
   workbenchIds,
 }: ProspectCardProps) {
   const [tagDraft, setTagDraft] = useState("");
@@ -310,6 +313,7 @@ export function ProspectCard({
             onSave={onSaveOpportunity}
             onRemove={onRemoveOpportunity}
             onOpenWorkbench={onOpenWorkbench}
+            onStartWorkbench={onStartWorkbench}
             workbenchIds={workbenchIds}
           />
 

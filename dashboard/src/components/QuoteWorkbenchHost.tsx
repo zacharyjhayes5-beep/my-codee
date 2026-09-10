@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import type { Opportunity, Prospect, Workbench } from "../types";
 import { patchOpportunity } from "../lib/opportunities";
-import { blankWorkbench, linesFromOpportunity, upsertWorkbench, workbenchFor } from "../lib/workbench";
+import {
+  blankWorkbench,
+  linesFromOpportunity,
+  quoteRowsFromWorkbench,
+  upsertWorkbench,
+  workbenchFor,
+} from "../lib/workbench";
 import { QuoteWorkbench } from "./QuoteWorkbench";
 
 interface HostProps {
@@ -12,6 +18,7 @@ interface HostProps {
   workbenches: Workbench[];
   onWorkbenchesChange: (next: Workbench[]) => void;
   onOpportunitiesChange: (next: Opportunity[]) => void;
+  onProspectsChange: (updater: (prev: Prospect[]) => Prospect[]) => void;
   ownerName: string;
   onClose: () => void;
 }
@@ -37,6 +44,7 @@ export function QuoteWorkbenchHost({
   workbenches,
   onWorkbenchesChange,
   onOpportunitiesChange,
+  onProspectsChange,
   ownerName,
   onClose,
 }: HostProps) {
@@ -62,16 +70,47 @@ export function QuoteWorkbenchHost({
 
   const prospect = prospects.find((p) => p.id === opportunity.prospectId);
 
+  /**
+   * Saves the workbench, and keeps the pipeline card showing the same money.
+   *
+   * The board reads `quoteRows` and asks for one annual figure per line, so
+   * the chosen proposals are annualized on the way across — writing a
+   * six-month premium straight onto the card would halve what the account
+   * looks like it is worth. `quoteRowsFromWorkbench` returns null until at
+   * least one proposal carries a usable premium, and until then whatever was
+   * typed in the quick drawer is left exactly as it is.
+   */
+  function save(next: Workbench) {
+    onWorkbenchesChange(upsertWorkbench(workbenches, next));
+
+    const rows = quoteRowsFromWorkbench(next);
+    if (!rows) return;
+
+    const before = JSON.stringify(opportunity!.quoteRows ?? []);
+    if (JSON.stringify(rows) === before) return;
+
+    onOpportunitiesChange(
+      opportunities.map((o) =>
+        o.id === opportunity!.id ? patchOpportunity(o, { quoteRows: rows }) : o,
+      ),
+    );
+  }
+
   return (
     <QuoteWorkbench
       bench={bench}
       prospect={prospect}
       opportunity={opportunity}
       ownerName={ownerName}
-      onChange={(next) => onWorkbenchesChange(upsertWorkbench(workbenches, next))}
+      onChange={save}
       onOpportunityChange={(patch) =>
         onOpportunitiesChange(
           opportunities.map((o) => (o.id === opportunity.id ? patchOpportunity(o, patch) : o)),
+        )
+      }
+      onProspectChange={(patch) =>
+        onProspectsChange((prev) =>
+          prev.map((p) => (p.id === opportunity.prospectId ? { ...p, ...patch } : p)),
         )
       }
       onClose={onClose}

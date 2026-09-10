@@ -8410,6 +8410,296 @@ main .active {
   color: var(--gold-300);
 }
 
+/* ---------- The overview pane ----------
+   The account on one screen: what they hold, where the quotes stand, what is
+   missing, what is left before a pre-bind review, and what is owed next. Each
+   card summarises and hands through to the pane that can change it. */
+
+.wb-overview {
+  gap: 18px;
+}
+
+.wb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  border: 1px solid var(--line-quiet);
+  border-left: 2px solid rgba(201, 168, 106, 0.35);
+  padding: 15px 16px;
+  background: var(--ink-field);
+}
+
+.wb-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.wb-card-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.wb-card-actions {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.wb-mini-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wb-mini-list li {
+  display: grid;
+  grid-template-columns: 78px 1fr auto;
+  gap: 4px 12px;
+  align-items: baseline;
+  border-bottom: 1px solid var(--line-table);
+  padding: 8px 0;
+  font-size: 12.5px;
+}
+
+.wb-mini-list li:last-child {
+  border-bottom: none;
+}
+
+.wb-mini-line {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.wb-mini-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+  color: var(--text-primary);
+}
+
+.wb-mini-figure {
+  font-family: var(--font-display);
+  font-size: 15px;
+  white-space: nowrap;
+  color: var(--gold-200);
+}
+
+/* The reason a line could not be compared sits under it, spanning the row. */
+.wb-mini-note,
+.wb-mini-list .wb-hint {
+  grid-column: 2 / -1;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+.wb-mini-note.is-missing-premium,
+.wb-mini-note.is-unknown-term {
+  color: var(--hue-cognac);
+}
+
+.wb-mini-more {
+  display: block !important;
+  padding-top: 8px !important;
+}
+
+.wb-status-word {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.wb-tag-bind {
+  border: 1px solid rgba(79, 127, 117, 0.55);
+  padding: 1px 6px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hue-verdigris);
+}
+
+/* The total. The most-read number here, so it is the most careful one. */
+.wb-total {
+  margin: 4px 0 0;
+  border-top: 1px solid var(--line-row);
+  padding-top: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+.wb-total.is-refused {
+  font-size: 12px;
+  color: var(--hue-cognac);
+}
+
+.wb-excluded {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wb-excluded li {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+.wb-excluded li::before {
+  content: "— ";
+}
+
+.wb-next-read {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* ---------- polished empty state ---------- */
+
+.wb-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px dashed var(--line-quiet);
+  padding: 26px 24px;
+  text-align: left;
+}
+
+.wb-empty-state h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.wb-empty-state p {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* ---------- contact, presets, filter ---------- */
+
+.wb-contact-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -6px;
+}
+
+.wb-contact-row .wb-contact {
+  margin: 0;
+}
+
+.wb-contact-edit {
+  margin-top: 2px;
+}
+
+.wb-presets summary {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.wb-presets summary:hover {
+  color: var(--gold-300);
+}
+
+.wb-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.wb-preset {
+  border: 1px solid var(--line-quiet);
+  border-radius: 0;
+  padding: 5px 10px;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    color var(--t-hover),
+    border-color var(--t-hover);
+}
+
+.wb-preset:hover {
+  border-color: var(--line-button-hover);
+  color: var(--gold-300);
+}
+
+.wb-list-tools {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wb-filter {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.opportunity-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+@media (max-width: 860px) {
+  .wb-mini-list li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .wb-mini-line {
+    grid-column: 1 / -1;
+  }
+
+  .wb-mini-note,
+  .wb-mini-list .wb-hint {
+    grid-column: 1 / -1;
+  }
+
+  .wb-list-tools {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
 /* ---------- laptop and below ---------- */
 
 @media (max-width: 1180px) {

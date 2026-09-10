@@ -4,6 +4,7 @@ import {
   LINE_LABELS,
   STATUS_LABELS,
   addCustomItem,
+  attachNewDoc,
   countStatuses,
   docById,
   patchItem,
@@ -36,10 +37,20 @@ export function WorkbenchChecklist({ bench, onChange, onOpenRequest }: Checklist
   const [draft, setDraft] = useState("");
   const [draftLine, setDraftLine] = useState<WorkbenchLine | "household">("household");
   const [expanded, setExpanded] = useState<string | null>(null);
+  /** A fourteen-item list is mostly noise once half of it is settled. */
+  const [outstandingOnly, setOutstandingOnly] = useState(false);
 
-  const groups = visibleItems(bench);
   const counts = countStatuses(bench.items);
   const outstanding = counts.needed + counts.requested;
+
+  const groups = visibleItems(bench)
+    .map((g) => ({
+      ...g,
+      items: outstandingOnly
+        ? g.items.filter((i) => i.status === "needed" || i.status === "requested")
+        : g.items,
+    }))
+    .filter((g) => g.items.length > 0);
 
   function setItems(items: ChecklistItem[]) {
     onChange({ ...bench, items });
@@ -47,10 +58,17 @@ export function WorkbenchChecklist({ bench, onChange, onOpenRequest }: Checklist
 
   function addDraft() {
     if (!draft.trim()) return;
-    setItems(
-      addCustomItem(bench.items, draft, draftLine === "household" ? null : draftLine),
-    );
+    setItems(addCustomItem(bench.items, draft, draftLine === "household" ? null : draftLine));
     setDraft("");
+  }
+
+  /** "+ New document…" in the picker, so evidence never means leaving here. */
+  function linkNewDoc(item: ChecklistItem) {
+    const made = attachNewDoc(bench, { name: item.label, line: item.line });
+    onChange({
+      ...made.bench,
+      items: patchItem(made.bench.items, item.id, { docId: made.docId }),
+    });
   }
 
   return (
@@ -75,15 +93,34 @@ export function WorkbenchChecklist({ bench, onChange, onOpenRequest }: Checklist
         </button>
       </header>
 
-      <p className="wb-caveat">
-        Starter prompts to organise the file. They are not underwriting rules and not a
-        complete list of what any carrier requires — edit, add and remove freely.
-      </p>
+      <div className="wb-list-tools">
+        <p className="wb-caveat">
+          Starter prompts to organise the file. They are not underwriting rules and not a
+          complete list of what any carrier requires — edit, add and remove freely.
+        </p>
+        {bench.items.length > 4 && (
+          <label className="wb-filter">
+            <input
+              type="checkbox"
+              checked={outstandingOnly}
+              onChange={(e) => setOutstandingOnly(e.target.checked)}
+            />
+            <span>Outstanding only</span>
+          </label>
+        )}
+      </div>
 
       {bench.items.length === 0 ? (
         <p className="empty">
           No items yet. Choose the lines above to load their starter prompts, or add
           something of your own below.
+        </p>
+      ) : groups.length === 0 ? (
+        <p className="empty">
+          Nothing outstanding.{" "}
+          <button type="button" className="link-btn" onClick={() => setOutstandingOnly(false)}>
+            Show everything
+          </button>
         </p>
       ) : (
         groups.map((group) => (
@@ -161,13 +198,17 @@ export function WorkbenchChecklist({ bench, onChange, onOpenRequest }: Checklist
                           <span className="wb-label">Supporting document</span>
                           <select
                             value={item.docId ?? ""}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              if (e.target.value === "__new") {
+                                linkNewDoc(item);
+                                return;
+                              }
                               setItems(
                                 patchItem(bench.items, item.id, {
                                   docId: e.target.value || undefined,
                                 }),
-                              )
-                            }
+                              );
+                            }}
                           >
                             <option value="">— none —</option>
                             {bench.docs.map((d) => (
@@ -175,10 +216,12 @@ export function WorkbenchChecklist({ bench, onChange, onOpenRequest }: Checklist
                                 {d.name || "Untitled document"}
                               </option>
                             ))}
+                            <option value="__new">+ New document…</option>
                           </select>
                           <span className="wb-hint">
-                            A linked document is evidence. It does not mark this verified —
-                            that stays your call.
+                            {doc
+                              ? `Linked to “${doc.name || "Untitled"}”. ${doc.location.trim() ? "" : "Add its location on the Documents tab. "}A linked document is evidence — it does not mark this verified.`
+                              : "A linked document is evidence. It does not mark this verified — that stays your call."}
                           </span>
                         </label>
 

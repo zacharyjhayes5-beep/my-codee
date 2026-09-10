@@ -9,6 +9,7 @@ import type {
 import {
   LINE_LABELS,
   STATUS_LABELS,
+  attachNewDoc,
   blankPrebindItem,
   handoffSummary,
   patchPrebind,
@@ -48,6 +49,15 @@ export function WorkbenchPrebind({ bench, prospect, opportunity, onChange }: Pre
 
   function setItems(prebind: PrebindItem[]) {
     onChange({ ...bench, prebind });
+  }
+
+  /** Evidence without leaving the list you are working down. */
+  function linkNewDoc(itemId: string, name: string) {
+    const made = attachNewDoc(bench, { name, category: "Other" });
+    onChange({
+      ...made.bench,
+      prebind: patchPrebind(made.bench.prebind, itemId, { docId: made.docId }),
+    });
   }
 
   function add() {
@@ -160,13 +170,17 @@ export function WorkbenchPrebind({ bench, prospect, opportunity, onChange }: Pre
                       <span className="wb-label">Evidence</span>
                       <select
                         value={item.docId ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          if (e.target.value === "__new") {
+                            linkNewDoc(item.id, item.label);
+                            return;
+                          }
                           setItems(
                             patchPrebind(bench.prebind, item.id, {
                               docId: e.target.value || undefined,
                             }),
-                          )
-                        }
+                          );
+                        }}
                       >
                         <option value="">— none —</option>
                         {bench.docs.map((d) => (
@@ -174,6 +188,7 @@ export function WorkbenchPrebind({ bench, prospect, opportunity, onChange }: Pre
                             {d.name || "Untitled document"}
                           </option>
                         ))}
+                        <option value="__new">+ New document…</option>
                       </select>
                       <span className="wb-hint">
                         Linking evidence does not verify the item — set the status yourself.

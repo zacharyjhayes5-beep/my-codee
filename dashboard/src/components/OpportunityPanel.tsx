@@ -16,6 +16,8 @@ interface OpportunityPanelProps {
   onRemove: (id: string) => void;
   /** Opens the quote workspace for one account. Absent on screens without it. */
   onOpenWorkbench?: (opportunityId: string) => void;
+  /** Quote a household that has no account yet — one is created for it. */
+  onStartWorkbench?: () => void;
   /** Accounts that already have something entered in a workbench. */
   workbenchIds?: Set<string>;
 }
@@ -40,6 +42,7 @@ export function OpportunityPanel({
   onSave,
   onRemove,
   onOpenWorkbench,
+  onStartWorkbench,
   workbenchIds,
 }: OpportunityPanelProps) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -47,7 +50,21 @@ export function OpportunityPanel({
 
   return (
     <div className="opportunity-panel">
-      {opportunities.length === 0 && !draft && <p className="empty">No account yet.</p>}
+      {opportunities.length === 0 && !draft && (
+        <div className="opportunity-empty">
+          <p className="empty">No account yet.</p>
+          {onStartWorkbench && (
+            <>
+              <button type="button" className="primary-btn" onClick={onStartWorkbench}>
+                Start quoting this household
+              </button>
+              <span className="muted-note">
+                Opens the quote workbench and creates the account behind it.
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
       {opportunities.map((o) => {
         const open = openId === o.id;

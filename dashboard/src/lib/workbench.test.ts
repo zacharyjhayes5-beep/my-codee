@@ -7,11 +7,14 @@ import {
   STARTER_ITEMS,
   addCustomItem,
   annualizedPremium,
+  attachNewDoc,
   bindingQuotes,
   blankQuote,
   blankWorkbench,
+  chosenProposal,
   comparePremiums,
   countStatuses,
+  currentInsurance,
   docLinkKind,
   handoffSummary,
   itemIsEmpty,
@@ -22,7 +25,9 @@ import {
   outstandingItems,
   parsePremium,
   patchItem,
+  portfolioTotals,
   proposalSummary,
+  quoteRowsFromWorkbench,
   readPrebind,
   requestDraft,
   setPlanningToBind,
@@ -654,5 +659,245 @@ describe("line labels", () => {
       expect(LINE_LABELS[line]).toBeTruthy();
       expect(STARTER_ITEMS[line].length).toBeGreaterThan(0);
     }
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("choosing the proposal that speaks for a line", () => {
+  const group = (proposed: QuoteVersion[]) => ({
+    line: "auto" as const,
+    current: undefined,
+    proposed,
+  });
+
+  it("takes the one marked Planning to bind", () => {
+    const chosen = chosenProposal(
+      group([quote({ id: "a" }), quote({ id: "b", planningToBind: true })]),
+    );
+    expect(chosen?.id).toBe("b");
+  });
+
+  it("takes a lone proposal, which is unambiguous", () => {
+    expect(chosenProposal(group([quote({ id: "a" })]))?.id).toBe("a");
+  });
+
+  it("chooses nothing when two are unmarked rather than picking one", () => {
+    expect(chosenProposal(group([quote({ id: "a" }), quote({ id: "b" })]))).toBeUndefined();
+  });
+
+  it("chooses nothing when there is nothing", () => {
+    expect(chosenProposal(group([]))).toBeUndefined();
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("adding the account up", () => {
+  function withQuotes(quotes: QuoteVersion[]): Workbench {
+    return { ...bench(["auto", "home"]), quotes };
+  }
+
+  it("totals the lines it can, and says how many that is", () => {
+    const wb = withQuotes([
+      quote({ id: "ac", kind: "current", line: "auto", premium: "1400", term: "annual" }),
+      quote({ id: "ap", line: "auto", premium: "640", term: "six-month" }),
+      quote({ id: "hc", kind: "current", line: "home", premium: "1200", term: "annual" }),
+      quote({ id: "hp", line: "home", premium: "1000", term: "annual" }),
+    ]);
+
+    const totals = portfolioTotals(wb);
+    expect(totals.comparable).toHaveLength(2);
+    expect(totals.currentTotal).toBe(2600);
+    expect(totals.proposedTotal).toBe(2280);
+    expect(totals.difference).toBe(320);
+    expect(totals.message).toContain("Across all 2 lines");
+    expect(totals.message).toContain("$320 less a year");
+    expect(totals.excluded).toHaveLength(0);
+  });
+
+  it("names every line it had to leave out, and says why", () => {
+    const wb = withQuotes([
+      quote({ id: "ac", kind: "current", line: "auto", premium: "1400", term: "annual" }),
+      quote({ id: "ap", line: "auto", premium: "1200", term: "annual" }),
+      // Home has a proposal but no baseline to compare against.
+      quote({ id: "hp", line: "home", premium: "900", term: "annual" }),
+    ]);
+
+    const totals = portfolioTotals(wb);
+    expect(totals.comparable).toHaveLength(1);
+    expect(totals.message).toContain("Across 1 of 2 lines");
+    expect(totals.excluded).toEqual([
+      { line: "home", reason: "no current policy recorded to compare against" },
+    ]);
+    // The total covers auto only, and never silently absorbs home.
+    expect(totals.currentTotal).toBe(1400);
+    expect(totals.proposedTotal).toBe(1200);
+  });
+
+  it("explains an unrecorded term rather than guessing at it", () => {
+    const wb = withQuotes([
+      quote({ id: "ac", kind: "current", line: "auto", premium: "1400", term: "annual" }),
+      quote({ id: "ap", line: "auto", premium: "640", term: "unknown" }),
+    ]);
+    const totals = portfolioTotals(wb);
+    expect(totals.difference).toBeNull();
+    expect(totals.excluded[0].reason).toBe("a policy term is not recorded");
+    expect(totals.message).toContain("No total to compare");
+  });
+
+  it("refuses to choose between two unmarked quotes on the same line", () => {
+    const wb = withQuotes([
+      quote({ id: "ac", kind: "current", line: "auto", premium: "1400", term: "annual" }),
+      quote({ id: "a1", line: "auto", premium: "1200", term: "annual" }),
+      quote({ id: "a2", line: "auto", premium: "1300", term: "annual" }),
+    ]);
+    const totals = portfolioTotals(wb);
+    expect(totals.difference).toBeNull();
+    expect(totals.excluded[0].reason).toBe(
+      "more than one quote and none marked Planning to bind",
+    );
+  });
+
+  it("counts a chosen quote with no usable premium instead of assuming one", () => {
+    const wb = withQuotes([
+      quote({ id: "ac", kind: "current", line: "auto", premium: "1400", term: "annual" }),
+      quote({ id: "ap", line: "auto", premium: "", term: "annual" }),
+    ]);
+    const totals = portfolioTotals(wb);
+    expect(totals.proposedUnpriced).toBe(1);
+    expect(totals.proposedKnownTotal).toBeNull();
+    expect(totals.difference).toBeNull();
+    expect(totals.message).not.toMatch(/less a year|more a year/);
+  });
+
+  it("says there is nothing to compare on an empty workbench", () => {
+    expect(portfolioTotals(bench([])).message).toBe("Nothing to compare yet.");
+  });
+
+  it("never reports a saving that the inputs do not support", () => {
+    const wb = withQuotes([
+      quote({ id: "ap", line: "auto", premium: "640", term: "six-month" }),
+      quote({ id: "hp", line: "home", premium: "900", term: "annual" }),
+    ]);
+    const totals = portfolioTotals(wb);
+    expect(totals.difference).toBeNull();
+    expect(totals.message).not.toMatch(/less|more|saving/i);
+    // The proposals still add up on their own, for what that is worth.
+    expect(totals.proposedKnownTotal).toBe(2180);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("keeping the pipeline board in step", () => {
+  it("writes one annualized figure per line", () => {
+    const wb: Workbench = {
+      ...bench(["auto", "home"]),
+      quotes: [
+        quote({ id: "ap", line: "auto", premium: "640", term: "six-month", planningToBind: true }),
+        quote({ id: "hp", line: "home", premium: "1200", term: "annual" }),
+      ],
+    };
+    // $640 twice a year is $1,280 on the card — not $640.
+    expect(quoteRowsFromWorkbench(wb)).toEqual([
+      { line: "Auto", premium: "1280" },
+      { line: "Home", premium: "1200" },
+    ]);
+  });
+
+  it("folds condo and renters onto the board's own line names", () => {
+    const wb: Workbench = {
+      ...bench(["condo", "renters"]),
+      quotes: [
+        quote({ id: "c", line: "condo", premium: "500", term: "annual" }),
+        quote({ id: "r", line: "renters", premium: "240", term: "annual" }),
+      ],
+    };
+    expect(quoteRowsFromWorkbench(wb)?.map((r) => r.line)).toEqual(["Home", "Renters"]);
+  });
+
+  it("writes an empty figure, never a zero, for a quote it cannot price", () => {
+    const wb: Workbench = {
+      ...bench(["auto", "home"]),
+      quotes: [
+        quote({ id: "ap", line: "auto", premium: "1200", term: "annual" }),
+        quote({ id: "hp", line: "home", premium: "", term: "annual" }),
+      ],
+    };
+    expect(quoteRowsFromWorkbench(wb)).toEqual([
+      { line: "Auto", premium: "1200" },
+      { line: "Home", premium: "" },
+    ]);
+  });
+
+  it("leaves the board alone until something is actually priced", () => {
+    expect(quoteRowsFromWorkbench(bench(["auto"]))).toBeNull();
+
+    const unpriced: Workbench = {
+      ...bench(["auto"]),
+      quotes: [quote({ id: "a", line: "auto", premium: "", term: "unknown" })],
+    };
+    expect(quoteRowsFromWorkbench(unpriced)).toBeNull();
+  });
+
+  it("ignores the current policy — the board shows what is being sold", () => {
+    const wb: Workbench = {
+      ...bench(["auto"]),
+      quotes: [quote({ id: "c", kind: "current", line: "auto", premium: "1400", term: "annual" })],
+    };
+    expect(quoteRowsFromWorkbench(wb)).toBeNull();
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("what the household already has", () => {
+  it("lists the current policies in line order, with the yearly figure", () => {
+    const wb: Workbench = {
+      ...bench(["auto", "home"]),
+      quotes: [
+        quote({ id: "h", kind: "current", line: "home", premium: "1200", term: "annual" }),
+        quote({ id: "a", kind: "current", line: "auto", premium: "640", term: "six-month" }),
+        quote({ id: "p", line: "auto", premium: "600", term: "six-month" }),
+      ],
+    };
+    const held = currentInsurance(wb);
+    expect(held.map((h) => h.line)).toEqual(["auto", "home"]);
+    expect(held[0].annual?.value).toBe(1280);
+    expect(held[0].annual?.converted).toBe(true);
+    expect(held[1].annual?.converted).toBe(false);
+  });
+
+  it("is empty when no baseline has been entered", () => {
+    expect(currentInsurance(bench(["auto"]))).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("attaching a document without leaving the list", () => {
+  it("creates the document and hands back an id to link", () => {
+    const wb = bench(["auto"]);
+    const made = attachNewDoc(wb, { name: "Current declarations page", line: "auto" });
+
+    expect(made.bench.docs).toHaveLength(1);
+    expect(made.bench.docs[0].name).toBe("Current declarations page");
+    expect(made.bench.docs[0].line).toBe("auto");
+    // The location is the one thing it cannot know, so it stays blank.
+    expect(made.bench.docs[0].location).toBe("");
+    expect(made.docId).toBe(made.bench.docs[0].id);
+  });
+
+  it("linking one still does not verify the item", () => {
+    const wb = bench(["auto"]);
+    const item = wb.items[0];
+    const made = attachNewDoc(wb, { name: item.label, line: item.line });
+    const items = patchItem(made.bench.items, item.id, { docId: made.docId }, DAY);
+    expect(items.find((i) => i.id === item.id)?.status).toBe("needed");
+  });
+
+  it("never writes an untitled document with no name at all", () => {
+    expect(attachNewDoc(bench(), { name: "   " }).bench.docs[0].name).toBe("Untitled document");
   });
 });
