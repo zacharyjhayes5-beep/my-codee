@@ -14,6 +14,10 @@ interface OpportunityPanelProps {
   opportunities: Opportunity[];
   onSave: (opportunity: Opportunity, isNew: boolean) => void;
   onRemove: (id: string) => void;
+  /** Opens the quote workspace for one account. Absent on screens without it. */
+  onOpenWorkbench?: (opportunityId: string) => void;
+  /** Accounts that already have something entered in a workbench. */
+  workbenchIds?: Set<string>;
 }
 
 function money(n: number): string {
@@ -35,6 +39,8 @@ export function OpportunityPanel({
   opportunities,
   onSave,
   onRemove,
+  onOpenWorkbench,
+  workbenchIds,
 }: OpportunityPanelProps) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Opportunity | null>(null);
@@ -66,6 +72,23 @@ export function OpportunityPanel({
               <div className="opportunity-next">
                 <strong>Next:</strong> {o.nextAction}
                 {o.nextActionDate && <span className="opp-due"> · due {o.nextActionDate}</span>}
+              </div>
+            )}
+
+            {onOpenWorkbench && (
+              <div className="opportunity-tools">
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() => onOpenWorkbench(o.id)}
+                >
+                  Open quote workbench
+                </button>
+                <span className="muted-note">
+                  {workbenchIds?.has(o.id)
+                    ? "Checklists, quotes and pre-bind preparation"
+                    : "Not started — opens a fresh workspace"}
+                </span>
               </div>
             )}
 

@@ -25,6 +25,7 @@ import {
 import { migratedLines, migratedProspects, migratedTasks } from "./migrate";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import { normalizeOpportunities } from "./opportunities";
+import { normalizeWorkbenches } from "./workbench";
 import type {
   AuditEntry,
   BraindumpRow,
@@ -38,6 +39,7 @@ import type {
   ReviewProposal,
   Suggestion,
   Task,
+  Workbench,
 } from "../types";
 
 /**
@@ -136,6 +138,7 @@ interface Cache {
   campaigns: CampaignEntry[];
   meetings: Meeting[];
   braindump: BraindumpRow[];
+  workbenches: Workbench[];
   googleCalendarClientId: string;
 }
 
@@ -388,6 +391,7 @@ export async function initRepository(): Promise<BootResult> {
       // Born in IndexedDB; there is no localStorage fallback for them.
       meetings: [],
       braindump: [],
+      workbenches: [],
       ...loadSettings(),
     };
     ready = true;
@@ -425,6 +429,10 @@ export async function initRepository(): Promise<BootResult> {
     campaigns: await readAll<CampaignEntry>("campaigns"),
     meetings: await readAll<Meeting>("meetings"),
     braindump: await readAll<BraindumpRow>("braindump"),
+    // Normalised on the way in for the same reason prospects and
+    // opportunities are: a row from an older build must not be able to take
+    // a screen down when it is opened.
+    workbenches: normalizeWorkbenches(await readAll<Workbench>("workbenches")),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
@@ -534,6 +542,7 @@ export interface RepositorySnapshot {
     campaigns: CampaignEntry[];
     meetings: Meeting[];
     braindump: BraindumpRow[];
+    workbenches: Workbench[];
   };
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
@@ -559,6 +568,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         campaigns: await readAll<CampaignEntry>("campaigns"),
         meetings: await readAll<Meeting>("meetings"),
         braindump: await readAll<BraindumpRow>("braindump"),
+        workbenches: await readAll<Workbench>("workbenches"),
       }
     : {
         prospects: get("prospects"),
@@ -572,6 +582,7 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         campaigns: get("campaigns"),
         meetings: get("meetings"),
         braindump: get("braindump"),
+        workbenches: get("workbenches"),
       };
 
   const dismissed = usable ? ((await readMeta<string[]>(DISMISSED_KEY)) ?? []) : get("dismissed");
@@ -607,6 +618,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     await writeAll("campaigns", next.records.campaigns ?? []);
     await writeAll("meetings", next.records.meetings ?? []);
     await writeAll("braindump", next.records.braindump ?? []);
+    await writeAll("workbenches", normalizeWorkbenches(next.records.workbenches ?? []));
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -643,6 +655,7 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     campaigns: next.records.campaigns ?? [],
     meetings: next.records.meetings ?? [],
     braindump: next.records.braindump ?? [],
+    workbenches: normalizeWorkbenches(next.records.workbenches ?? []),
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

@@ -7,6 +7,7 @@ import type {
   ReviewProposal,
   Suggestion,
   Task,
+  Workbench,
 } from "../types";
 import { PROSPECT_SCHEMA_VERSION, normalizeProspects } from "./prospectSchema";
 import type { CampaignEntry } from "./campaigns";
@@ -43,6 +44,7 @@ export interface BackupRecords {
   campaigns: CampaignEntry[];
   meetings: Meeting[];
   braindump: BraindumpRow[];
+  workbenches: Workbench[];
 }
 
 export interface BackupV4 {
@@ -116,6 +118,7 @@ export function countsOf(snap: RepositorySnapshot): Record<string, number> {
     campaigns: snap.records.campaigns.length,
     meetings: snap.records.meetings.length,
     braindump: snap.records.braindump.length,
+    workbenches: snap.records.workbenches.length,
     dismissed: snap.meta.dismissed.length,
     settings: Object.keys(snap.settings).length,
   };
@@ -141,6 +144,8 @@ function parseRecordSections(file: BackupSectioned): RepositorySnapshot {
       // Absent from every file written before meetings existed.
       meetings: asArray<Meeting>(file.records?.meetings),
       braindump: asArray<BraindumpRow>(file.records?.braindump),
+      // Absent from every file written before the quote workbench existed.
+      workbenches: asArray<Workbench>(file.records?.workbenches),
     },
     meta: { dismissed: asArray<string>(file.meta?.dismissed) },
     settings: file.settings && typeof file.settings === "object" ? { ...file.settings } : {},
@@ -171,6 +176,7 @@ function parseV1(file: BackupV1): RepositorySnapshot {
       campaigns: [],
       meetings: [],
       braindump: [],
+      workbenches: [],
     },
     meta: { dismissed: asArray<string>(data[LEGACY_RECORD_KEYS.dismissed]) },
     settings,

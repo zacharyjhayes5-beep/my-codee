@@ -16,6 +16,8 @@ interface PipelineBoardProps {
   onMove: (id: string, stage: DealStage) => void;
   onOpen?: (deal: Deal) => void;
   onAdd?: () => void;
+  /** Opens the full quote workspace for the account behind this card. */
+  onOpenWorkbench?: (id: string) => void;
 }
 
 /**
@@ -25,7 +27,7 @@ interface PipelineBoardProps {
  * columns are a 1px grid gap showing the container through, so the hairlines
  * between them are true single pixels rather than two borders meeting.
  */
-export function PipelineBoard({ deals, onMove, onOpen, onAdd }: PipelineBoardProps) {
+export function PipelineBoard({ deals, onMove, onOpen, onAdd, onOpenWorkbench }: PipelineBoardProps) {
   /** The card in flight, and the column under the cursor. */
   const [dragId, setDragId] = useState<string | null>(null);
   const [hover, setHover] = useState<DealStage | null>(null);
@@ -129,6 +131,21 @@ export function PipelineBoard({ deals, onMove, onOpen, onAdd }: PipelineBoardPro
                           {ageLabel(deal)}
                         </span>
                       </span>
+
+                      {onOpenWorkbench && (
+                        <button
+                          type="button"
+                          className="kanban-workbench"
+                          /* The card itself opens the quick drawer, so this has
+                             to stop the click reaching it. */
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenWorkbench(deal.id);
+                          }}
+                        >
+                          Workbench
+                        </button>
+                      )}
                     </div>
                   );
                 })}

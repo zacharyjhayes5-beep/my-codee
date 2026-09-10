@@ -7,6 +7,7 @@ import type {
   ReviewProposal,
   Stage,
   Task,
+  Workbench,
 } from "../types";
 import { prospectStages } from "../lib/defaultData";
 import { appendAudit, auditEntry, diffEntries } from "../lib/audit";
@@ -22,6 +23,7 @@ import { reconcileProspect } from "../lib/rules";
 import { today } from "../lib/storage";
 import { whenPersisted } from "../lib/repository";
 import { ProspectCard } from "./ProspectCard";
+import { QuoteWorkbenchHost } from "./QuoteWorkbenchHost";
 import { tagColor } from "../lib/tags";
 import { needsResearch, researchCount } from "../lib/research";
 import {
@@ -105,6 +107,9 @@ interface ProspectsTabProps {
   onAuditChange: (entries: AuditEntry[]) => void;
   opportunities: Opportunity[];
   onOpportunitiesChange: (opportunities: Opportunity[]) => void;
+  /** The quote workspaces, and the door to them. Owned by App. */
+  workbenches: Workbench[];
+  onWorkbenchesChange: (workbenches: Workbench[]) => void;
   /** Arrived here from somewhere that named a household — open it. */
   focusProspectId: string | null;
   onFocusHandled: () => void;
@@ -125,6 +130,8 @@ export function ProspectsTab({
   onAuditChange,
   opportunities,
   onOpportunitiesChange,
+  workbenches,
+  onWorkbenchesChange,
   focusProspectId,
   onFocusHandled,
   onQueueReview,
@@ -147,6 +154,13 @@ export function ProspectsTab({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncNote, setSyncNote] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
+  /** The account whose quote workbench is open, if any. */
+  const [workbenchId, setWorkbenchId] = useState<string | null>(null);
+  /** Which accounts already have a saved workspace, for the panel's subtitle. */
+  const startedWorkbenches = useMemo(
+    () => new Set(workbenches.map((w) => w.opportunityId)),
+    [workbenches],
+  );
 
   /**
    * Manual retry.
@@ -658,6 +672,8 @@ export function ProspectsTab({
                       onRemoveOpportunity={(id) =>
                         onOpportunitiesChange(opportunities.filter((x) => x.id !== id))
                       }
+                      onOpenWorkbench={setWorkbenchId}
+                      workbenchIds={startedWorkbenches}
                     />
                   </div>
                 )}
@@ -666,6 +682,17 @@ export function ProspectsTab({
           })}
         </div>
       )}
+
+      <QuoteWorkbenchHost
+        opportunityId={workbenchId}
+        opportunities={opportunities}
+        prospects={prospects}
+        workbenches={workbenches}
+        onWorkbenchesChange={onWorkbenchesChange}
+        onOpportunitiesChange={onOpportunitiesChange}
+        ownerName={ownerName}
+        onClose={() => setWorkbenchId(null)}
+      />
     </div>
   );
 }

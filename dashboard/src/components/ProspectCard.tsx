@@ -31,6 +31,8 @@ interface ProspectCardProps {
   opportunities: Opportunity[];
   onSaveOpportunity: (opportunity: Opportunity, isNew: boolean) => void;
   onRemoveOpportunity: (id: string) => void;
+  onOpenWorkbench?: (opportunityId: string) => void;
+  workbenchIds?: Set<string>;
 }
 
 function formatDay(iso: string) {
@@ -54,6 +56,8 @@ export function ProspectCard({
   opportunities,
   onSaveOpportunity,
   onRemoveOpportunity,
+  onOpenWorkbench,
+  workbenchIds,
 }: ProspectCardProps) {
   const [tagDraft, setTagDraft] = useState("");
   const [tagShade, setTagShade] = useState(DEFAULT_TAG_COLOR);
@@ -305,6 +309,8 @@ export function ProspectCard({
             opportunities={opportunities}
             onSave={onSaveOpportunity}
             onRemove={onRemoveOpportunity}
+            onOpenWorkbench={onOpenWorkbench}
+            workbenchIds={workbenchIds}
           />
 
           <details className="profile-section">

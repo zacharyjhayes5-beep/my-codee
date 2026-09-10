@@ -146,6 +146,7 @@ function App() {
   const [campaigns, setCampaigns] = useStored("campaigns");
   const [meetings, setMeetings] = useStored("meetings");
   const [braindump, setBraindump] = useStored("braindump");
+  const [workbenches, setWorkbenches] = useStored("workbenches");
   const [googleCalendarClientId, setGoogleCalendarClientId] = useStored(
     "googleCalendarClientId",
   );
@@ -409,6 +410,8 @@ function App() {
             onAuditChange={setAudit}
             opportunities={opportunities}
             onOpportunitiesChange={setOpportunities}
+            workbenches={workbenches}
+            onWorkbenchesChange={setWorkbenches}
             focusProspectId={focusProspectId}
             onFocusHandled={() => setFocusProspectId(null)}
             onQueueReview={(proposal) => setReviews([...reviews, proposal])}
@@ -424,6 +427,9 @@ function App() {
             entries={entries}
             onEntriesChange={setEntries}
             onProspectsChange={setProspects}
+            workbenches={workbenches}
+            onWorkbenchesChange={setWorkbenches}
+            ownerName={ownerName}
             onOpenProspect={(id) => {
               setFocusProspectId(id);
               setTab("leads");

@@ -575,3 +575,165 @@ export interface BraindumpRow {
   /** True when the item was filed as a to-do, so it can be un-done. */
   wasTodo?: boolean;
 }
+
+/* ------------------------------------------------------------------ */
+/* Quote Workbench                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The lines a workbench organises itself around.
+ *
+ * Deliberately finer-grained than `OpportunityLine`: a condo and a renters
+ * policy ask for different information even though the opportunity model
+ * calls both of them Home. The mapping between the two lives in
+ * `lib/workbench.ts` and is one-way — the opportunity's own `lines` field
+ * stays the coarse truth the board and the book already read.
+ */
+export type WorkbenchLine = "auto" | "home" | "condo" | "renters" | "umbrella" | "life";
+
+/**
+ * Where one piece of information stands.
+ *
+ * `received` and `verified` are deliberately separate. A document arriving is
+ * not the same as somebody having read it, and a linked file is evidence, not
+ * a verification — nothing in this app promotes one to the other on its own.
+ */
+export type ChecklistStatus = "needed" | "requested" | "received" | "verified" | "na";
+
+/**
+ * One thing to find out or collect.
+ *
+ * These are organisational prompts in the agent's own workspace. They are not
+ * underwriting rules and not a carrier's requirement list, and the interface
+ * says so wherever a default set is offered.
+ */
+export interface ChecklistItem {
+  id: string;
+  /** Which line asked for it. `null` on a household-wide custom item. */
+  line: WorkbenchLine | null;
+  label: string;
+  status: ChecklistStatus;
+  notes: string;
+  /** A `WorkbenchDoc` id. Evidence, never a verification. */
+  docId?: string;
+  /** ISO yyyy-mm-dd, set only by the explicit "mark requested" action. */
+  requestedAt?: string;
+  /** ISO yyyy-mm-dd — when the status last moved. */
+  updatedAt: string;
+  /**
+   * True when the agent added it by hand. Custom items are never removed by a
+   * line-selection change; a starter item for a dropped line is only hidden
+   * while it still holds nothing, and kept the moment it holds anything.
+   */
+  custom: boolean;
+}
+
+/** How long a premium figure covers. "unknown" is a real, sayable answer. */
+export type PolicyTerm = "annual" | "six-month" | "monthly" | "quarterly" | "unknown";
+
+/** One user-entered coverage limit or deductible. Never inferred. */
+export interface CoverageFigure {
+  id: string;
+  label: string;
+  value: string;
+}
+
+/**
+ * A policy as it stands today, or a quote being considered.
+ *
+ * `premium` is kept as the string that was typed, exactly like the board's
+ * quote rows: an empty premium means nothing has been priced, which is a
+ * different fact from a premium of zero, and parsing on read is what keeps
+ * those apart.
+ */
+export interface QuoteVersion {
+  id: string;
+  /** `current` is the baseline in force; `proposed` is something being offered. */
+  kind: "current" | "proposed";
+  line: WorkbenchLine;
+  carrier: string;
+  /** "Version A", "with $1,000 deductible" — whatever distinguishes it. */
+  label: string;
+  quoteDate: string;
+  effectiveDate: string;
+  /** The figure as typed. Blank means not priced, never zero. */
+  premium: string;
+  term: PolicyTerm;
+  billingNotes: string;
+  coverages: CoverageFigure[];
+  /** Material differences from the baseline, in the agent's own words. */
+  differences: string;
+  questions: string;
+  docId?: string;
+  /**
+   * Whether this is the version intended for binding. At most one per line
+   * among the proposed versions — `setPlanningToBind` enforces it.
+   */
+  planningToBind: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * A pointer to a document, never its contents.
+ *
+ * `location` holds a URL or a file path as typed. The interface does not
+ * pretend a browser can open an arbitrary Windows path: anything that is not
+ * an http(s) URL gets a copy-path control instead of a link.
+ */
+export interface WorkbenchDoc {
+  id: string;
+  name: string;
+  category: string;
+  location: string;
+  notes: string;
+  /** What it belongs to. Any or all may be blank. */
+  line?: WorkbenchLine | null;
+  quoteId?: string;
+  itemId?: string;
+  createdAt: string;
+}
+
+/**
+ * One pre-bind preparation item.
+ *
+ * The defaults are labelled as editable planning prompts, because no
+ * authoritative Farm Bureau checklist exists in this repository to cite. A
+ * checked box here records that the agent did something; it never means
+ * coverage is bound, underwriting has approved anything, or a carrier
+ * requirement has been met.
+ */
+export interface PrebindItem {
+  id: string;
+  label: string;
+  category: string;
+  status: ChecklistStatus;
+  notes: string;
+  docId?: string;
+  updatedAt: string;
+  custom: boolean;
+}
+
+/**
+ * One household's quote workspace, hung off the opportunity it serves.
+ *
+ * Not a second copy of the household or the account. The name, the phone
+ * number, the stage and the next action all stay on `Prospect` and
+ * `Opportunity`, and the workbench reads and writes them in place — which is
+ * why changing the next action here shows up in Operator's queue without
+ * creating a duplicate task.
+ */
+export interface Workbench {
+  id: string;
+  /** The account this workspace belongs to. One workbench per opportunity. */
+  opportunityId: string;
+  /** Carried for fast lookup and for a backup that can be read on its own. */
+  prospectId: string;
+  lines: WorkbenchLine[];
+  items: ChecklistItem[];
+  quotes: QuoteVersion[];
+  docs: WorkbenchDoc[];
+  prebind: PrebindItem[];
+  createdAt: string;
+  updatedAt: string;
+}

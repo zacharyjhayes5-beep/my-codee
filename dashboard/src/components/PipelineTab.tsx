@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import type { Opportunity, PolicyEntry, Prospect } from "../types";
+import type { Opportunity, PolicyEntry, Prospect, Workbench } from "../types";
 import { PipelineBoard } from "./PipelineBoard";
 import { QuoteDrawer } from "./QuoteDrawer";
+import { QuoteWorkbenchHost } from "./QuoteWorkbenchHost";
 import {
   OPPORTUNITY_STAGE_FOR,
   blankDeal,
@@ -22,6 +23,9 @@ interface PipelineTabProps {
   onEntriesChange: (updater: (prev: PolicyEntry[]) => PolicyEntry[]) => void;
   onProspectsChange: (updater: (prev: Prospect[]) => Prospect[]) => void;
   onOpenProspect: (prospectId: string) => void;
+  workbenches: Workbench[];
+  onWorkbenchesChange: (workbenches: Workbench[]) => void;
+  ownerName: string;
 }
 
 /**
@@ -48,6 +52,9 @@ export function PipelineTab({
   entries,
   onEntriesChange,
   onProspectsChange,
+  workbenches,
+  onWorkbenchesChange,
+  ownerName,
 }: PipelineTabProps) {
   const deals = useMemo(
     () => dealsFromOpportunities(opportunities, prospects),
@@ -56,6 +63,12 @@ export function PipelineTab({
 
   /** The card open in the drawer. Held by value so edits are on a copy. */
   const [editing, setEditing] = useState<Deal | null>(null);
+  /**
+   * The account whose workbench is open. Separate from `editing`: the drawer
+   * is the four-field quick edit for moving a card along, the workbench is the
+   * workspace behind it, and opening one must not open the other.
+   */
+  const [workbenchId, setWorkbenchId] = useState<string | null>(null);
   const isNew = editing !== null && !opportunities.some((o) => o.id === editing.id);
 
   /**
@@ -156,6 +169,7 @@ export function PipelineTab({
         onMove={moveTo}
         onOpen={setEditing}
         onAdd={() => setEditing(blankDeal())}
+        onOpenWorkbench={setWorkbenchId}
       />
 
       {editing && (
@@ -167,6 +181,17 @@ export function PipelineTab({
           onClose={() => setEditing(null)}
         />
       )}
+
+      <QuoteWorkbenchHost
+        opportunityId={workbenchId}
+        opportunities={opportunities}
+        prospects={prospects}
+        workbenches={workbenches}
+        onWorkbenchesChange={onWorkbenchesChange}
+        onOpportunitiesChange={onChange}
+        ownerName={ownerName}
+        onClose={() => setWorkbenchId(null)}
+      />
     </div>
   );
 }
