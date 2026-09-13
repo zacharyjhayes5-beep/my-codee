@@ -1,3 +1,4 @@
+import type { Account, AccountDocument, AccountQuote } from "./accountTypes";
 import { useCallback, useSyncExternalStore } from "react";
 import {
   META_STORE,
@@ -139,6 +140,9 @@ interface Cache {
   meetings: Meeting[];
   braindump: BraindumpRow[];
   workbenches: Workbench[];
+  accountQuotes: AccountQuote[];
+  accountDocuments: AccountDocument[];
+  accounts: Account[];
   googleCalendarClientId: string;
 }
 
@@ -392,6 +396,9 @@ export async function initRepository(): Promise<BootResult> {
       meetings: [],
       braindump: [],
       workbenches: [],
+      accountQuotes: [],
+      accountDocuments: [],
+      accounts: [],
       ...loadSettings(),
     };
     ready = true;
@@ -433,6 +440,9 @@ export async function initRepository(): Promise<BootResult> {
     // opportunities are: a row from an older build must not be able to take
     // a screen down when it is opened.
     workbenches: normalizeWorkbenches(await readAll<Workbench>("workbenches")),
+    accountQuotes: await readAll<AccountQuote>("accountQuotes"),
+    accountDocuments: await readAll<AccountDocument>("accountDocuments"),
+    accounts: await readAll<Account>("accounts"),
     dismissed: (await readMeta<string[]>(DISMISSED_KEY)) ?? [],
     ...loadSettings(),
   };
@@ -508,6 +518,40 @@ export function whenPersisted(): Promise<void> {
   return queue;
 }
 
+/** Accounts needs an acknowledged, atomic save, including new household + membership.
+ * Compute against the latest cache inside the queue, and publish only on commit.
+ * Unlike legacy optimistic writes, failures reject and leave the cache untouched.
+ */
+type AccountChanges = Partial<Pick<Cache, "accounts" | "accountDocuments" | "accountQuotes" | "prospects">>;
+export function commitAccountChanges(build: () => AccountChanges): Promise<void> {
+  return enqueue(async () => {
+    const changes = build();
+    const keys = Object.keys(changes) as (keyof AccountChanges)[];
+    if (!keys.length) return;
+    const db = await openDb();
+    const tx = db.transaction(keys, "readwrite");
+    const completed = new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("Could not save account changes."));
+      tx.onabort = () => reject(tx.error ?? new Error("Account save was cancelled."));
+    });
+    try {
+      for (const key of keys) {
+        const store = tx.objectStore(key);
+        store.clear();
+        for (const row of changes[key] ?? []) store.put(row);
+      }
+    } catch (error) {
+      tx.abort();
+      await completed.catch(() => {});
+      throw error;
+    }
+    await completed;
+    Object.assign(requireCache(), changes);
+    emit();
+  });
+}
+
 async function persist(key: StoreKey, value: unknown): Promise<void> {
   try {
     if (RECORD_KEYS.has(key)) {
@@ -543,6 +587,9 @@ export interface RepositorySnapshot {
     meetings: Meeting[];
     braindump: BraindumpRow[];
     workbenches: Workbench[];
+    accountQuotes: AccountQuote[];
+    accountDocuments: AccountDocument[];
+    accounts: Account[];
   };
   meta: { dismissed: string[] };
   settings: Record<string, unknown>;
@@ -569,6 +616,9 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         meetings: await readAll<Meeting>("meetings"),
         braindump: await readAll<BraindumpRow>("braindump"),
         workbenches: await readAll<Workbench>("workbenches"),
+        accountQuotes: await readAll<AccountQuote>("accountQuotes"),
+        accountDocuments: await readAll<AccountDocument>("accountDocuments"),
+        accounts: await readAll<Account>("accounts"),
       }
     : {
         prospects: get("prospects"),
@@ -583,6 +633,9 @@ export async function snapshot(): Promise<RepositorySnapshot> {
         meetings: get("meetings"),
         braindump: get("braindump"),
         workbenches: get("workbenches"),
+        accountQuotes: get("accountQuotes"),
+        accountDocuments: get("accountDocuments"),
+        accounts: get("accounts"),
       };
 
   const dismissed = usable ? ((await readMeta<string[]>(DISMISSED_KEY)) ?? []) : get("dismissed");
@@ -619,6 +672,10 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     await writeAll("meetings", next.records.meetings ?? []);
     await writeAll("braindump", next.records.braindump ?? []);
     await writeAll("workbenches", normalizeWorkbenches(next.records.workbenches ?? []));
+    await writeAll("accountQuotes", next.records.accountQuotes ?? []);
+    await writeAll("accountDocuments", next.records.accountDocuments ?? []);
+    await writeAll("accounts", next.records.accounts ?? []);
+    await writeMeta("accountsFolder", null); // Folder handles are local permissions, never portable backups.
     await writeMeta(DISMISSED_KEY, next.meta.dismissed);
     // A restore is a legitimate migrated state — don't re-run migration and
     // overwrite what was just put in.
@@ -656,6 +713,9 @@ export async function replaceAll(next: RepositorySnapshot): Promise<void> {
     meetings: next.records.meetings ?? [],
     braindump: next.records.braindump ?? [],
     workbenches: normalizeWorkbenches(next.records.workbenches ?? []),
+    accountQuotes: next.records.accountQuotes ?? [],
+    accountDocuments: next.records.accountDocuments ?? [],
+    accounts: next.records.accounts ?? [],
     dismissed: next.meta.dismissed,
     ...loadSettings(),
   };

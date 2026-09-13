@@ -1,3 +1,4 @@
+import type { Account, AccountDocument, AccountQuote } from "./accountTypes";
 import type {
   AuditEntry,
   Call,
@@ -22,6 +23,8 @@ import { LEGACY_RECORD_KEYS, SETTING_KEYS, type RepositorySnapshot, snapshot } f
  *   IndexedDB.
  * - **v3** — adds the calls, reviews and audit stores, and prospects in the
  *   v4 schema.
+ * - **v5** — adds Accounts membership, document references, and account quotes.
+ *   Managed-folder handles and file contents are deliberately not exported.
  *
  * Every older version still restores. For anyone who exported before a given
  * phase, that file is the only copy of the book that exists, so reading it is
@@ -30,7 +33,7 @@ import { LEGACY_RECORD_KEYS, SETTING_KEYS, type RepositorySnapshot, snapshot } f
  */
 
 export const FILE_MARKER = "agency-dashboard-backup";
-export const CURRENT_VERSION = 4;
+export const CURRENT_VERSION = 5;
 
 export interface BackupRecords {
   prospects: Prospect[];
@@ -45,11 +48,14 @@ export interface BackupRecords {
   meetings: Meeting[];
   braindump: BraindumpRow[];
   workbenches: Workbench[];
+  accountQuotes: AccountQuote[];
+  accountDocuments: AccountDocument[];
+  accounts: Account[];
 }
 
-export interface BackupV4 {
+export interface BackupV5 {
   app: typeof FILE_MARKER;
-  version: 4;
+  version: 5;
   exportedAt: string;
   /** Schema of the prospect records inside, so a reader never has to guess. */
   prospectSchema: number;
@@ -59,12 +65,12 @@ export interface BackupV4 {
 }
 
 /**
- * v2 and v3 carry the same sectioned shape with fewer record collections, so
- * one reader handles all three — the gaps come back as empty arrays.
+ * Older versions carry the same sectioned shape with fewer collections;
+ * absent collections come back as empty arrays.
  */
 interface BackupSectioned {
   app: typeof FILE_MARKER;
-  version: 2 | 3 | 4;
+  version: 2 | 3 | 4 | 5;
   exportedAt: string;
   records: Partial<BackupRecords>;
   meta: { dismissed: string[] };
@@ -92,7 +98,7 @@ function asArray<T>(value: unknown): T[] {
 }
 
 /** Builds the file contents from what is actually in storage right now. */
-export async function buildBackup(): Promise<BackupV4> {
+export async function buildBackup(): Promise<BackupV5> {
   const snap = await snapshot();
   return {
     app: FILE_MARKER,
@@ -119,6 +125,9 @@ export function countsOf(snap: RepositorySnapshot): Record<string, number> {
     meetings: snap.records.meetings.length,
     braindump: snap.records.braindump.length,
     workbenches: snap.records.workbenches.length,
+    accountQuotes: snap.records.accountQuotes.length,
+    accountDocuments: snap.records.accountDocuments.length,
+    accounts: snap.records.accounts.length,
     dismissed: snap.meta.dismissed.length,
     settings: Object.keys(snap.settings).length,
   };
@@ -146,6 +155,9 @@ function parseRecordSections(file: BackupSectioned): RepositorySnapshot {
       braindump: asArray<BraindumpRow>(file.records?.braindump),
       // Absent from every file written before the quote workbench existed.
       workbenches: asArray<Workbench>(file.records?.workbenches),
+      accountQuotes: asArray<AccountQuote>(file.records?.accountQuotes),
+      accountDocuments: asArray<AccountDocument>(file.records?.accountDocuments),
+      accounts: asArray<Account>(file.records?.accounts),
     },
     meta: { dismissed: asArray<string>(file.meta?.dismissed) },
     settings: file.settings && typeof file.settings === "object" ? { ...file.settings } : {},
@@ -177,6 +189,9 @@ function parseV1(file: BackupV1): RepositorySnapshot {
       meetings: [],
       braindump: [],
       workbenches: [],
+      accountQuotes: [],
+      accountDocuments: [],
+      accounts: [],
     },
     meta: { dismissed: asArray<string>(data[LEGACY_RECORD_KEYS.dismissed]) },
     settings,

@@ -231,6 +231,7 @@ function asContacts(value: unknown): Contact[] {
       firstName: c.firstName ?? "",
       lastName: c.lastName ?? "",
       dob: c.dob ?? "",
+      ...(typeof c.manualAge === "number" && Number.isInteger(c.manualAge) && c.manualAge >= 0 && c.manualAge <= 130 ? { manualAge: c.manualAge } : {}),
       phone: c.phone ?? "",
       email: c.email ?? "",
       isPrimary: Boolean(c.isPrimary),

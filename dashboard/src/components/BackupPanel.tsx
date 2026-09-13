@@ -74,6 +74,7 @@ export function BackupPanel({ onExported }: { onExported: () => void }) {
 
   return (
     <div className="backup-panel">
+      <p>Account files are not inside this backup. Keep a separate backup of your managed documents folder, then reconnect it after restoring.</p>
       <div className="backup-buttons">
         <button className="ghost-btn" onClick={() => void exportBackup()} disabled={busy}>
           Back up

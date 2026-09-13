@@ -1,3 +1,4 @@
+import { OperatorDial } from "./OperatorDial";
 import { useMemo, useState } from "react";
 import type {
   Meeting,
@@ -11,7 +12,7 @@ import type {
 } from "../types";
 import { countsByCategory, currency, totalsFor } from "../lib/policies";
 import { readPace, lineTotals } from "../lib/pace";
-import { dueTag, upNext, waitingOnYou } from "../lib/operator";
+import { dueTag, waitingOnYou } from "../lib/operator";
 import { isTerminal } from "../lib/leadView";
 import { today } from "../lib/storage";
 import { DayCalendar } from "./DayCalendar";
@@ -52,9 +53,9 @@ function newTaskId(): string {
 }
 
 /**
- * Operator — what you owe today, and who is up next.
+ * Operator — tasks, meetings, and production at a glance.
  *
- * Four sections and no more: the hero pairs the to-do list with the queue,
+ * The hero contains the to-do list,
  * the vitals strip carries exactly four figures, and the goal row puts pace
  * beside the short list of things waiting on a decision. Today's calendar
  * follows at the foot.
@@ -126,13 +127,6 @@ export function OperatorTab({
 
   const byId = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
 
-  /* ---------- Hero: who is up next ---------- */
-
-  const queue = useMemo(
-    () => upNext({ prospects, opportunities, tasks, reviews, today: day }),
-    [prospects, opportunities, tasks, reviews, day],
-  );
-
   /* ---------- Vitals ---------- */
 
   const inPeriod = useMemo(
@@ -200,24 +194,94 @@ export function OperatorTab({
 
   return (
     <div className="operator">
-      {/* ---------- Meetings, above everything ---------- */}
-      <section className="op-meetings">
-        <MeetingsPanel
-          kicker="Meetings scheduled this week"
-          meetings={thisWeek}
-          today={day}
-          emptyText="Nothing booked this week yet."
-          onAdd={addMeeting}
-          onRemove={removeMeeting}
-        />
-        <MeetingsPanel
-          kicker="Meetings scheduled next week"
-          meetings={nextWeek}
-          today={day}
-          emptyText="Nothing booked for next week yet."
-          onAdd={addMeeting}
-          onRemove={removeMeeting}
-        />
+      {/* ---------- 2. Vitals ---------- */}
+      <section className="op-vitals" aria-label="Vitals">
+        {vitals.map((v) => (
+          <div className="op-vital" key={v.label}>
+            <span className="micro-label">{v.label}</span>
+            {v.label === "Net commission" ? <OperatorDial commission={earnings.net} /> : <span className="op-figure">{v.value}</span>}
+            <span className="op-vital-sub" style={{ color: TONE_VAR[v.tone] }}>
+              {v.sub}
+            </span>
+          </div>
+        ))}
+      </section>
+
+      {/* ---------- 3. Goal pace, and what is waiting ---------- */}
+      <section className="op-goal-row">
+        <div className="op-panel op-goal">
+          <div className="op-section-head">
+            <h2 className="op-panel-title">Toward {totals.policyGoal} policies</h2>
+            <span className="op-rule" aria-hidden="true" />
+            <span
+              className="op-pace-flag"
+              style={{
+                color: pace.onPace ? "var(--hue-verdigris)" : "var(--hue-terracotta)",
+              }}
+            >
+              {pace.onPace ? "On pace" : `${pace.behindBy} behind`}
+            </span>
+            <button type="button" className="op-link" onClick={() => onGo("progress")}>
+              Open the book
+            </button>
+          </div>
+
+          <OperatorDial pace={pace} />
+
+          <div className="op-goal-caption">
+            <span>
+              {totals.policyCount} written · {pace.remaining} to go
+            </span>
+            <span>
+              {pace.valid && pace.daysLeft > 0
+                ? `${pace.perWeek.toFixed(1)} per week to finish`
+                : "Period closed"}
+            </span>
+          </div>
+
+          <div className="op-lines">
+            {lines.map((line, index) => {
+              const count = derived.counts[line.id] ?? 0;
+              const pct = line.policyGoal > 0 ? Math.min(100, (count / line.policyGoal) * 100) : 0;
+              const hue = `var(--series-${index + 1})`;
+              return (
+                <div className="op-line" key={line.id}>
+                  <span className="op-line-head">
+                    <span className="op-line-dot" style={{ background: hue }} aria-hidden="true" />
+                    <span className="micro-label">{line.name}</span>
+                  </span>
+                  <span className="op-line-count">
+                    {count}
+                    <span className="op-line-goal"> / {line.policyGoal}</span>
+                  </span>
+                  <span className="op-line-bar" aria-hidden="true">
+                    <span style={{ width: `${pct}%`, background: hue }} />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="op-panel op-panel-quiet op-waiting">
+          <span className="kicker">Needs attention</span>
+          <ul>
+            {waiting.map((row) => (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  className="op-waiting-row"
+                  onClick={() => onGo(row.id === "no-phone" ? "leads" : "todo")}
+                >
+                  <span>{row.label}</span>
+                  <span className="op-waiting-count" style={{ color: TONE_VAR[row.tone] }}>
+                    {row.count}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       {/* ---------- 1. Hero ---------- */}
@@ -304,141 +368,26 @@ export function OperatorTab({
           </form>
         </div>
 
-        <div className="op-hero-queue">
-          <div className="op-section-head">
-            <span className="kicker">Then</span>
-            <span className="op-rule" aria-hidden="true" />
-          </div>
-
-          {queue.length === 0 ? (
-            <p className="op-empty">Nobody is waiting. The queue is genuinely clear.</p>
-          ) : (
-            <ul className="op-queue">
-              {queue.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className="op-queue-row"
-                    onClick={() => item.prospectId && onOpenProspect(item.prospectId)}
-                  >
-                    <span className="op-numeral">{item.numeral}</span>
-                    <span className="op-queue-body">
-                      <span className="op-queue-name">{item.name}</span>
-                      <span className="op-queue-reason">{item.reason}</span>
-                    </span>
-                    <span className="op-queue-action" style={{ color: TONE_VAR[item.tone] }}>
-                      {item.action}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </section>
 
-      {/* ---------- 2. Vitals ---------- */}
-      <section className="op-vitals" aria-label="Vitals">
-        {vitals.map((v) => (
-          <div className="op-vital" key={v.label}>
-            <span className="micro-label">{v.label}</span>
-            <span className="op-figure">{v.value}</span>
-            <span className="op-vital-sub" style={{ color: TONE_VAR[v.tone] }}>
-              {v.sub}
-            </span>
-          </div>
-        ))}
-      </section>
-
-      {/* ---------- 3. Goal pace, and what is waiting ---------- */}
-      <section className="op-goal-row">
-        <div className="op-panel op-goal">
-          <div className="op-section-head">
-            <h2 className="op-panel-title">Toward {totals.policyGoal} policies</h2>
-            <span className="op-rule" aria-hidden="true" />
-            <span
-              className="op-pace-flag"
-              style={{
-                color: pace.onPace ? "var(--hue-verdigris)" : "var(--hue-terracotta)",
-              }}
-            >
-              {pace.onPace ? "On pace" : `${pace.behindBy} behind`}
-            </span>
-            <button type="button" className="op-link" onClick={() => onGo("progress")}>
-              Open the book
-            </button>
-          </div>
-
-          <div
-            className="op-track"
-            role="progressbar"
-            aria-valuenow={Math.round(pace.writtenPct)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`${totals.policyCount} of ${totals.policyGoal} policies written`}
-          >
-            <span className="op-track-fill" style={{ width: `${pace.writtenPct}%` }} />
-            {/* Where the count *should* be today. Without this the bar is
-                just a number; with it, the bar is a verdict. */}
-            {pace.valid && (
-              <span className="op-pace-marker" style={{ left: `${pace.elapsedPct}%` }} />
-            )}
-          </div>
-
-          <div className="op-goal-caption">
-            <span>
-              {totals.policyCount} written · {pace.remaining} to go
-            </span>
-            <span>
-              {pace.valid && pace.daysLeft > 0
-                ? `${pace.perWeek.toFixed(1)} per week to finish`
-                : "Period closed"}
-            </span>
-          </div>
-
-          <div className="op-lines">
-            {lines.map((line, index) => {
-              const count = derived.counts[line.id] ?? 0;
-              const pct = line.policyGoal > 0 ? Math.min(100, (count / line.policyGoal) * 100) : 0;
-              const hue = `var(--series-${index + 1})`;
-              return (
-                <div className="op-line" key={line.id}>
-                  <span className="op-line-head">
-                    <span className="op-line-dot" style={{ background: hue }} aria-hidden="true" />
-                    <span className="micro-label">{line.name}</span>
-                  </span>
-                  <span className="op-line-count">
-                    {count}
-                    <span className="op-line-goal"> / {line.policyGoal}</span>
-                  </span>
-                  <span className="op-line-bar" aria-hidden="true">
-                    <span style={{ width: `${pct}%`, background: hue }} />
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="op-panel op-panel-quiet op-waiting">
-          <span className="kicker">Waiting on you</span>
-          <ul>
-            {waiting.map((row) => (
-              <li key={row.id}>
-                <button
-                  type="button"
-                  className="op-waiting-row"
-                  onClick={() => onGo(row.id === "no-phone" ? "leads" : "todo")}
-                >
-                  <span>{row.label}</span>
-                  <span className="op-waiting-count" style={{ color: TONE_VAR[row.tone] }}>
-                    {row.count}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* ---------- Meetings, above everything ---------- */}
+      <section className="op-meetings">
+        <MeetingsPanel
+          kicker="This week’s meetings"
+          meetings={thisWeek}
+          today={day}
+          emptyText="Nothing booked this week yet."
+          onAdd={addMeeting}
+          onRemove={removeMeeting}
+        />
+        <MeetingsPanel
+          kicker="Next week’s meetings"
+          meetings={nextWeek}
+          today={day}
+          emptyText="Nothing booked for next week yet."
+          onAdd={addMeeting}
+          onRemove={removeMeeting}
+        />
       </section>
 
       {/* ---------- 4. Today ---------- */}

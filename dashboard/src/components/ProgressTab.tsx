@@ -1,3 +1,4 @@
+import { ProgressGauges } from "./ProgressGauges";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import type { Period, PolicyEntry, PolicyLine } from "../types";
@@ -9,8 +10,6 @@ import { BookOfBusiness } from "./BookOfBusiness";
 import { Meter } from "./Meter";
 import { StatTile } from "./StatTile";
 import { TierSection } from "./TierSection";
-import { useCameraTilt } from "../hooks/useCameraTilt";
-import { useDollyIn } from "../hooks/useDollyIn";
 
 function formatCount(n: number) {
   return n.toLocaleString("en-US");
@@ -75,24 +74,15 @@ export function ProgressTab({
       ? "On pace"
       : `${formatCount(Math.abs(Math.round(paceDelta)))} ${paceDelta > 0 ? "ahead" : "behind"}`;
 
-  // The scene holds the perspective and listens for the pointer. The decks are
-  // what actually rotate, and carry the panels at their various depths.
-  //
-  // There are two of them, with the book of business sitting flat between: a
-  // 300-row editable table has no business tilting under the cursor, and depth
-  // alone would not have saved it — a panel at translateZ(0) still inherits
-  // its parent's rotation.
-  const sceneRef = useCameraTilt<HTMLDivElement>();
-  useDollyIn(sceneRef, [lines.length]);
 
   function updateLine(id: string, patch: Partial<PolicyLine>) {
     onChange(lines.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   }
 
   return (
-    <div className="tab-panel p3d-scene" ref={sceneRef}>
-      <div className="p3d-deck">
-        <div className="period-bar dolly">
+    <div className="tab-panel progress-static">
+      <div className="progress-deck">
+        <div className="period-bar">
           <div className="period-dates">
             <label>
               Period start
@@ -128,7 +118,9 @@ export function ProgressTab({
           )}
         </div>
 
-        <div className="stat-row earnings-row dolly">
+        <ProgressGauges lines={lines} period={period} entries={entries} />
+
+        <div className="stat-row earnings-row">
           <StatTile
             label="Net commission"
             value={currency(earnings.net, 0)}
@@ -160,8 +152,8 @@ export function ProgressTab({
 
       <BookOfBusiness entries={entries} onChange={onEntriesChange} />
 
-      <div className="p3d-deck">
-        <section className="goals-section dolly">
+      <div className="progress-deck">
+        <section className="goals-section">
           <div className="section-head">
             <h2>Goals</h2>
             <p>
@@ -242,11 +234,11 @@ export function ProgressTab({
           </div>
         </section>
 
-        <div className="dolly">
+        <div className="progress-section">
           <TierSection counts={derived.counts} />
         </div>
 
-        <div className="dolly">
+        <div className="progress-section">
           <AllAmericanSection entries={inPeriod} />
         </div>
       </div>

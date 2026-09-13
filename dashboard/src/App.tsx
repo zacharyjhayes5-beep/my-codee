@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 // Loaded last: the design system that governs the whole interface.
 import "./theme.css";
+import { AccountsTab } from "./components/AccountsTab";
 import { BackupPanel } from "./components/BackupPanel";
 import { OperatorTab } from "./components/OperatorTab";
 import { ProgressTab } from "./components/ProgressTab";
@@ -20,6 +21,7 @@ import { readSyncSettings, runSync } from "./lib/gisSync";
 import { appendAudit, auditEntry } from "./lib/audit";
 import { applyProposal, rejectProposal, type Conflict } from "./lib/reviews";
 import type { CoverageItem, PropertyProfile, ReviewProposal } from "./types";
+import "./dashboard-style.css";
 
 /**
  * The five destinations in the top bar, and the three that are no longer in it.
@@ -30,6 +32,7 @@ import type { CoverageItem, PropertyProfile, ReviewProposal } from "./types";
  * reachable from the command palette.
  */
 type NavTab =
+  | "accounts"
   | "operator"
   | "leads"
   | "pipeline"
@@ -44,6 +47,7 @@ type Tab = NavTab | QuietTab;
 const NAV: { id: NavTab; label: string }[] = [
   { id: "operator", label: "Operator" },
   { id: "leads", label: "Leads" },
+  { id: "accounts", label: "Accounts" },
   { id: "pipeline", label: "Pipeline" },
   { id: "progress", label: "Progress" },
   { id: "campaigns", label: "Campaigns" },
@@ -56,10 +60,11 @@ const NAV: { id: NavTab; label: string }[] = [
  * that answers "what matters here" without a decorative heading.
  */
 const PAGE: Record<Tab, { kicker: string; title: string; standfirst: string }> = {
+  accounts: { kicker: "Directory", title: "Accounts", standfirst: "Your prospects, information, documents, and quotes." },
   operator: {
     kicker: "Today",
     title: "Operator",
-    standfirst: "What you owe today, and who is up next.",
+    standfirst: "Your tasks, meetings, and production at a glance.",
   },
   leads: {
     kicker: "Households",
@@ -123,7 +128,14 @@ const IS_MAC = typeof navigator !== "undefined" && /Mac|iP(hone|ad|od)/.test(nav
 const PALETTE_HINT = IS_MAC ? "⌘K" : "Ctrl K";
 
 function App() {
-  const [tab, setTab] = useState<Tab>("operator");
+  const [tab, setTabState] = useState<Tab>("operator");
+  const accountsGuard = useRef<(() => boolean) | null>(null);
+  const setAccountsGuard = useCallback((guard: (() => boolean) | null) => { accountsGuard.current = guard; }, []);
+  function setTab(next: Tab) {
+    if (next === tab) return;
+    if (tab === "accounts" && accountsGuard.current && !accountsGuard.current()) return;
+    setTabState(next);
+  }
   /** Set when arriving from another screen, so the right card opens. */
   const [focusProspectId, setFocusProspectId] = useState<string | null>(null);
   /** Set when something asked to quote a household, rather than just open it. */
@@ -345,6 +357,7 @@ function App() {
         />
 
         <main>
+        {tab === "accounts" && <AccountsTab onGuardChange={setAccountsGuard} />}
         {tab === "operator" && (
           <OperatorTab
             prospects={prospects}
@@ -450,8 +463,8 @@ function App() {
               <span className="kicker">Your data</span>
               <h2 id="backup-title">Back up and restore</h2>
               <p>
-                Everything you have entered lives in this browser, on this computer.
-                <strong> Back up</strong> saves all of it to a file you keep.
+                Your dashboard records live in this browser, on this computer.
+                <strong> Back up</strong> saves those records to a file you keep. Account documents remain in your managed folder; back up that folder separately.
                 <strong> Restore</strong> reads one back in — on this machine or any other.
                 Nothing happens automatically; it only happens when you press it.
               </p>

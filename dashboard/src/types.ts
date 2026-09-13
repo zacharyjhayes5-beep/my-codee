@@ -139,6 +139,7 @@ export interface Contact {
   firstName: string;
   lastName: string;
   dob: string; // ISO yyyy-mm-dd, blank when unknown
+  manualAge?: number; // User-entered, only used when DOB is unknown
   phone: string;
   email: string;
   isPrimary: boolean;

@@ -3,6 +3,7 @@ import type { Prospect } from "../types";
 import { needsResearch } from "../lib/research";
 
 export type PaletteTarget =
+  | "accounts"
   | "operator"
   | "leads"
   | "pipeline"
@@ -70,6 +71,7 @@ export function CommandPalette({
 
   const sections: Command[] = useMemo(
     () => [
+      { id: "go-accounts", label: "Accounts", detail: "Selected prospects, documents, and quotes", run: () => onGoTo("accounts") },
       { id: "go-operator", label: "Operator", detail: "What you owe today, and who is up next", run: () => onGoTo("operator") },
       { id: "go-leads", label: "Leads", detail: "Every household and the one thing owed to it", run: () => onGoTo("leads") },
       { id: "go-pipeline", label: "Pipeline", detail: "Opportunities by stage, and what has gone quiet", run: () => onGoTo("pipeline") },

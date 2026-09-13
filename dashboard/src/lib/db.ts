@@ -8,8 +8,9 @@ export const DB_NAME = "fb-dashboard";
 /**
  * v2 added calls, reviews and audit. v3 adds opportunities. v4 adds
  * campaigns. v5 adds meetings. v6 adds braindump. v7 adds workbenches.
+ * v8 adds Accounts membership, document metadata, and independent quotes.
  */
-export const DB_VERSION = 7;
+export const DB_VERSION = 8;
 
 /** Stores holding one row per record, keyed by the record's own id. */
 export const RECORD_STORES = [
@@ -25,6 +26,9 @@ export const RECORD_STORES = [
   "meetings",
   "braindump",
   "workbenches",
+  "accounts",
+  "accountDocuments",
+  "accountQuotes",
 ] as const;
 export type RecordStore = (typeof RECORD_STORES)[number];
 

@@ -50,13 +50,13 @@ export function StorageNotice({
         <div>
           <strong>Before you put real work in here</strong>
           <p>
-            This dashboard keeps everything <em>in this browser, on this computer</em>. It
+            This dashboard keeps its records <em>in this browser, on this computer</em>. It
             does not sync, and no copy exists anywhere else. Opening it on your phone or
             another machine shows a different, empty book.
           </p>
           <p>
-            <strong>Back up</strong>, at the foot of the Vault screen, saves everything
-            to a file. Nothing does that for you — it only happens when you press it. Do
+            <strong>Back up</strong>, at the foot of the Vault screen, saves those records
+            to a file. Account documents stay in your managed folder, which needs a separate backup. Nothing does that for you — it only happens when you press it. Do
             it after any session where you enter real households or calls.
           </p>
         </div>

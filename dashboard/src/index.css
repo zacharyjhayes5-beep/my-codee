@@ -234,3 +234,56 @@ textarea {
     scroll-behavior: auto !important;
   }
 }
+
+/* Exact palette from the instrument-cluster design reference. */
+:root {
+ --ref-page: #0c0d0f;
+ --ref-panel: #131619;
+ --ref-field: #0e1012;
+ --ref-raised: #22262a;
+ --ref-border: rgba(255,255,255,.08);
+ --ref-metal: rgba(255,255,255,.3);
+ --ref-orange: #ff7a2f;
+ --ref-cyan: #37c8e0;
+ --ref-text: #f2f3f5;
+ --ref-secondary: rgba(255,255,255,.65);
+ --ref-muted: rgba(255,255,255,.45);
+ --ref-orange-soft: rgba(255,122,47,.12);
+ --ref-warning: #ff8f5a;
+ --ref-mint: #8fd9c4;
+ --ref-shadow: rgba(0,0,0,.5);
+ --page: var(--ref-page);
+ --surface-1: var(--ref-field);
+ --surface-2: var(--ref-panel);
+ --navy: var(--ref-orange);
+ --navy-2: #2f9fd6;
+ --navy-3: #eef4f8;
+ --cognac: var(--ref-orange);
+ --cognac-2: #ff5a24;
+ --cognac-ink: var(--ref-warning);
+ --accent: var(--ref-orange);
+ --accent-hover: #ff9557;
+ --attention: var(--ref-warning);
+ --attention-soft: var(--ref-orange-soft);
+ --success: var(--ref-mint);
+ --danger: #ff5a24;
+ --metal: var(--ref-metal);
+ --gridline: rgba(255,255,255,.06);
+ --border: var(--ref-border);
+ --series-1: var(--ref-mint);
+ --series-2: var(--ref-cyan);
+ --series-3: var(--ref-orange);
+}
+.progress-gauges {
+ --page: #050607;
+ --surface-1: #0e1012;
+ --surface-2: #14181c;
+ --surface-3: #22262a;
+ --text-primary: #f2f3f5;
+ --text-secondary: rgba(255,255,255,.5);
+ --text-muted: rgba(255,255,255,.35);
+ --accent-soft: rgba(255,122,47,.35);
+ --on-accent: #14120f;
+ --shadow-2: none;
+}
+.progress-gauges .tank-view { --surface-2: #131619; }

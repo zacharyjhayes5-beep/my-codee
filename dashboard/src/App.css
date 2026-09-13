@@ -4557,3 +4557,336 @@ h5 {
   color: var(--text-muted);
   font-weight: 400;
 }
+
+/* =========================================================================
+   Progress cluster — instrument gauges for the Progress tab.
+   Appended to App.css. Tokens only; no raw colour.
+   ========================================================================= */
+
+.gauge-switch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  width: fit-content;
+}
+.gauge-switch button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--t-fast);
+}
+.gauge-switch button:hover { color: var(--text-primary); }
+.gauge-switch button[aria-pressed="true"] {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+/* ---------- Cluster shell ---------- */
+
+.cluster {
+  display: grid;
+  grid-template-columns: minmax(0, 590px) minmax(240px, 1fr) 300px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background:
+    radial-gradient(58% 88% at 20% 42%, var(--surface-2), transparent 72%),
+    radial-gradient(46% 88% at 86% 46%, var(--surface-2), transparent 72%),
+    var(--page);
+  box-shadow: inset 0 1px 0 rgba(238, 233, 228, 0.06), var(--shadow-2);
+}
+.cluster-pod { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cluster-pod-right { align-items: center; }
+.comb-svg { width: 100%; height: auto; overflow: visible; }
+.dial-svg { width: 292px; height: 292px; overflow: visible; }
+
+/* ---------- Comb ---------- */
+
+.comb-track { fill: none; stroke: var(--gridline); stroke-width: 15; }
+.comb-fill { fill: none; stroke-width: 15; }
+.comb-pacemark { fill: none; stroke: var(--cognac-2); stroke-width: 17; }
+.comb-tick { stroke: var(--metal); stroke-width: 1.4; }
+.comb-tick.major { stroke: var(--text-primary); stroke-width: 3; }
+.comb-tick.red, .comb-tick.red.major { stroke: var(--danger); }
+.comb-label {
+  fill: var(--text-primary);
+  font: 500 27px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.comb-readout {
+  fill: var(--text-primary);
+  font: 700 96px/1 var(--font-sans);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.comb-caption, .comb-note, .comb-verdict {
+  font-family: var(--font-mono);
+  letter-spacing: 0.14em;
+}
+.comb-caption { fill: var(--text-secondary); font-size: 12px; }
+.comb-verdict { fill: var(--attention); font-size: 13px; font-weight: 500; }
+.comb-verdict.good { fill: var(--success); }
+.comb-note { fill: var(--text-muted); font-size: 11px; }
+
+/* ---------- Weekly-rate dial ---------- */
+
+.dial-tick { stroke: var(--metal); stroke-width: 1.4; }
+.dial-tick.major { stroke: var(--text-primary); stroke-width: 3; }
+.dial-disc { fill: none; stroke: var(--text-secondary); stroke-width: 2.5; }
+.dial-label {
+  fill: var(--text-primary);
+  font: 500 24px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.dial-unit, .dial-need { font-family: var(--font-mono); letter-spacing: 0.14em; }
+.dial-unit { fill: var(--text-secondary); font-size: 11px; }
+.dial-need { fill: var(--attention); font-size: 11px; font-weight: 500; }
+.dial-readout {
+  fill: var(--text-primary);
+  font: 700 62px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.dial-index { stroke: var(--danger); stroke-width: 4; }
+.dial-pointer line { stroke: var(--text-primary); stroke-width: 5; stroke-linecap: round; }
+.dial-pointer circle { fill: var(--text-primary); }
+.dial-pointer { transition: transform 600ms var(--ease); }
+
+/* ---------- Trip readout ---------- */
+
+.cluster-trip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 var(--space-4);
+  min-width: 0;
+}
+.trip-rule { width: 100%; height: 1px; background: var(--border); }
+.trip-title { padding: 12px 0 10px; font: 500 16px/1 var(--font-sans); color: var(--text-primary); }
+.trip-rows { width: 100%; display: flex; flex-direction: column; gap: 11px; padding: 13px 0; }
+.trip-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.trip-swatch { width: 11px; height: 11px; border-radius: 2px; }
+.trip-value {
+  font: 600 19px/1 var(--font-sans);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.trip-unit {
+  font: 400 11px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.trip-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 0 13px;
+  font: 400 11px/1 var(--font-mono);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.trip-hint kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  color: var(--text-primary);
+}
+.trip-foot {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 11px;
+  font: 500 12px/1 var(--font-mono);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.trip-foot strong {
+  font: 600 20px/1 var(--font-sans);
+  letter-spacing: 0.22em;
+  color: var(--attention);
+}
+.trip-foot strong.good { color: var(--success); }
+
+/* ---------- Raked strips (temp / fuel) ---------- */
+
+.cluster-strip { display: flex; align-items: center; gap: 9px; padding-left: var(--space-2); }
+.strip-end { font: 500 11px/1 var(--font-mono); color: var(--text-secondary); }
+.strip-note {
+  font: 400 10px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-left: var(--space-1);
+}
+.strip-bars { display: flex; gap: 3px; }
+.strip-bar {
+  width: 4px;
+  height: 11px;
+  background: var(--gridline);
+  transform: skewX(-14deg);
+}
+.strip-bar.on { background: var(--accent); }
+.strip-bar.tail.on, .strip-bar.tail { background: var(--danger); }
+
+/* ---------- Fuel view ---------- */
+
+.tank-view {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+.tank-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(120% 130% at 50% 0%, var(--surface-2), var(--page) 72%);
+}
+.tank-heading {
+  font: 400 10px/1 var(--font-mono);
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+.tank-hero-body { display: flex; align-items: flex-end; gap: var(--space-4); }
+.tank-hero-svg { width: 186px; height: 279px; }
+.tank-handle { fill: none; stroke: var(--metal); stroke-width: 4; }
+.tank-cap { fill: var(--surface-2); stroke: var(--metal); stroke-width: 3; }
+.tank-shell { fill: var(--surface-2); stroke: var(--metal); stroke-width: 3; }
+.tank-surface { fill: var(--navy-3); }
+.tank-graduation { fill: rgba(238, 233, 228, 0.1); }
+.tank-emboss { fill: none; stroke: var(--border); stroke-width: 2; }
+.tank-hero-pct {
+  fill: var(--on-accent);
+  font: 700 40px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.tank-liquid { transition: y 600ms var(--ease), height 600ms var(--ease); }
+.tank-scale-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 200px;
+  padding-bottom: 6px;
+  font: 400 10px/1 var(--font-mono);
+  color: var(--text-muted);
+}
+.tank-scale-col .strong { font-weight: 500; font-size: 11px; color: var(--text-secondary); }
+.tank-scale-col .warn { font-weight: 500; font-size: 11px; color: var(--attention); }
+.tank-hero-readout { display: flex; align-items: baseline; gap: var(--space-2); }
+.tank-hero-readout strong {
+  font: 700 56px/1 var(--font-sans);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.tank-hero-readout span { font-size: 12px; color: var(--text-secondary); }
+.tank-verdict {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  background: var(--attention-soft);
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--attention);
+}
+.tank-verdict.good { background: var(--success-soft); color: var(--success); }
+.tank-verdict i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+.tank-side { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.tank-line-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.tank-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.mini-can { width: 38px; height: 61px; flex: none; }
+.tank-line-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tank-line-name { font: 500 10px/1 var(--font-mono); letter-spacing: 0.14em; }
+.tank-line-count {
+  font: 700 32px/1 var(--font-sans);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.tank-line-count i { font: 500 13px/1 var(--font-sans); font-style: normal; color: var(--text-muted); }
+.tank-line-pct { font: 400 9.5px/1 var(--font-mono); color: var(--text-muted); }
+
+.tank-flow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.tank-flow-head {
+  display: flex;
+  justify-content: space-between;
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing: 0.16em;
+  color: var(--text-secondary);
+}
+.tank-flow-head span:last-child { color: var(--text-muted); letter-spacing: 0.1em; }
+.tank-flow-bars { display: flex; align-items: flex-end; gap: 7px; height: 118px; }
+.tank-flow-bars i {
+  flex: 1;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.tank-flow-bars i.best { background: var(--accent); }
+.tank-flow-foot {
+  display: flex;
+  justify-content: space-between;
+  font: 400 9.5px/1 var(--font-mono);
+  color: var(--text-muted);
+}
+
+@media (max-width: 1180px) {
+  .cluster { grid-template-columns: minmax(0, 1fr); justify-items: center; row-gap: var(--space-5); }
+  .cluster-trip { max-width: 420px; }
+  .tank-view { grid-template-columns: minmax(0, 1fr); }
+  .tank-line-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Token overrides for the two literal colors in the verbatim handoff. */
+.cluster { box-shadow: inset 0 1px 0 var(--gridline), var(--shadow-2); }
+.tank-graduation { fill: var(--gridline); }
+
+/* Static instruments: no pointer tilt, entrance motion, or animated values. */
+.progress-deck { display: flex; flex-direction: column; gap: var(--space-6); }
+.progress-static *, .progress-static *::before, .progress-static *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.progress-gauges .tank-view { --navy-2: var(--accent); --navy-3: var(--accent); }
+.progress-gauges .strip-bar.on { background: var(--series-2); }
+.progress-gauges .strip-bar.tail { background: var(--danger); }
+.progress-gauges .dial-svg { max-width: 100%; height: auto; }

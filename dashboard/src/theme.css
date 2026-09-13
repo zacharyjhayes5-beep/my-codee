@@ -4306,6 +4306,8 @@ a.agenda-event {
   gap: 2px;
   height: 100%;
   min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .topbar-item {
@@ -4336,7 +4338,8 @@ a.agenda-event {
 /* ---------- Right cluster ---------- */
 
 .topbar-right {
-  flex: 1;
+  flex: 0 0 auto;
+  margin-left: auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
